@@ -1,0 +1,5 @@
+/target
+**/target
+/*/metadata.mps.sqlite
+metadata.mps.sqlite
+**.m3u8

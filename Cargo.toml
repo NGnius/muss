@@ -1,0 +1,17 @@
+[package]
+name = "mps"
+version = "0.1.0"
+edition = "2021"
+authors = ["NGnius (Graham) <ngniusness@gmail.com>"]
+description = "Music Playlist Scripting language (MPS)"
+
+[workspace]
+members = [
+    "mps-interpreter",
+    "mps-player"
+]
+
+[dependencies]
+# local
+mps-interpreter = { path = "./mps-interpreter" }
+mps-player = { path = "./mps-player" }
