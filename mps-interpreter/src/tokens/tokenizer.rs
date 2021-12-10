@@ -63,8 +63,8 @@ impl<R> MpsTokenizer<R> where R: std::io::Read {
                     );
                     bigger_buf.clear();
                 },
-                ReaderStateMachine::Bracket{..} => {
-                    let out = bigger_buf.pop().unwrap(); // bracket token
+                ReaderStateMachine::SingleCharToken{..} => {
+                    let out = bigger_buf.pop().unwrap(); // bracket or comma token
                     if bigger_buf.len() != 0 { // bracket tokens can be beside other tokens, without separator
                         let token = String::from_utf8(bigger_buf.clone())
                             .map_err(|e| self.error(format!("UTF-8 encoding error: {}", e)))?;
@@ -171,7 +171,7 @@ enum ReaderStateMachine {
     InsideQuoteLiteral{
         out: u8,
     },
-    Bracket {
+    SingleCharToken {
         out: u8,
     },
     EndLiteral{},
@@ -186,7 +186,7 @@ impl ReaderStateMachine {
         match self {
             Self::Start{}
             | Self::Regular{..}
-            | Self::Bracket{..}
+            | Self::SingleCharToken{..}
             | Self::EndLiteral{}
             | Self::EndToken{}
             | Self::EndStatement{} =>
@@ -197,7 +197,7 @@ impl ReaderStateMachine {
                     ' ' => Self::EndToken{},
                     '\n' | '\r' | ';' => Self::EndStatement{},
                     '\0' => Self::EndOfFile{},
-                    '(' | ')' => Self::Bracket{out: input},
+                    '(' | ')' | ',' => Self::SingleCharToken{out: input},
                     _ => Self::Regular{out: input},
                 },
             Self::Escaped{inside} => match inside {
@@ -240,7 +240,7 @@ impl ReaderStateMachine {
     pub fn output(&self) -> Option<u8> {
         match self {
             Self::Regular{ out, ..}
-            | Self::Bracket{ out, ..}
+            | Self::SingleCharToken{ out, ..}
             | Self::InsideTickLiteral{ out, ..}
             | Self::InsideQuoteLiteral{ out, ..} => Some(*out),
             _ => None

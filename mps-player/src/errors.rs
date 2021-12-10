@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display, Formatter, Error};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PlaybackError {
     pub(crate) msg: String
 }

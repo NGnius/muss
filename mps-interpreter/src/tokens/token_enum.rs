@@ -5,7 +5,9 @@ pub enum MpsToken {
     Sql,
     OpenBracket,
     CloseBracket,
+    Comma,
     Literal(String),
+    Name(String),
 }
 
 impl MpsToken {
@@ -14,7 +16,22 @@ impl MpsToken {
             "sql" => Ok(Self::Sql),
             "(" => Ok(Self::OpenBracket),
             ")" => Ok(Self::CloseBracket),
-            _ => Err(s),
+            "," => Ok(Self::Comma),
+            _ => {
+                // name validation
+                let mut ok = true;
+                for invalid_c in ["-", "+", ","] {
+                    if s.contains(invalid_c) {
+                        ok = false;
+                        break;
+                    }
+                }
+                if ok {
+                    Ok(Self::Name(s))
+                } else {
+                    Err(s)
+                }
+            },
         }
     }
 
@@ -45,6 +62,13 @@ impl MpsToken {
             _ => false
         }
     }
+
+    pub fn is_name(&self) -> bool {
+        match self {
+            Self::Name(_) => true,
+            _ => false
+        }
+    }
 }
 
 impl Display for MpsToken {
@@ -53,7 +77,9 @@ impl Display for MpsToken {
             Self::Sql => write!(f, "sql"),
             Self::OpenBracket => write!(f, "("),
             Self::CloseBracket => write!(f, ")"),
+            Self::Comma => write!(f, ","),
             Self::Literal(s) => write!(f, "\"{}\"", s),
+            Self::Name(s) => write!(f, "{}", s),
         }
     }
 }

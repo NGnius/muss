@@ -62,6 +62,26 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
         Ok(())
     }
 
+    pub fn enqueue(&mut self, count: usize) -> Result<(), PlaybackError> {
+        let mut items_left = count;
+        for item in &mut self.runner {
+            if items_left == 0 { return Ok(()); }
+            match item {
+                Ok(music) => {
+                    let file = fs::File::open(music.filename).map_err(PlaybackError::from_err)?;
+                    let stream = io::BufReader::new(file);
+                    let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
+                    self.sink.append(source);
+                    self.sink.play(); // idk if this is necessary
+                    Ok(())
+                },
+                Err(e) => Err(PlaybackError::from_err(e))
+            }?;
+            items_left -= 1;
+        }
+        Ok(())
+    }
+
     pub fn resume(&self) {
         self.sink.play()
     }
@@ -104,6 +124,14 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
             }?;
         }
         playlist.write_to(w).map_err(PlaybackError::from_err)
+    }
+
+    pub fn is_paused(&self) -> bool {
+        self.sink.is_paused()
+    }
+
+    pub fn set_volume(&self, volume: f32) {
+        self.sink.set_volume(volume);
     }
 }
 

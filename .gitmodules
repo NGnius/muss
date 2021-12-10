@@ -1,0 +1,3 @@
+[submodule "mpris-player"]
+	path = mpris-player
+	url = https://github.com/NGnius/mpris-player
