@@ -6,8 +6,6 @@ use mps_interpreter::tokens::MpsTokenReader;
 use super::MpsPlayer;
 use super::PlaybackError;
 
-const DEFAULT_QUEUE_SIZE: usize = 1;
-
 pub struct MpsPlayerServer<T: MpsTokenReader> {
     player: MpsPlayer<T>,
     control: Receiver<ControlAction>,
@@ -25,29 +23,23 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
 
     fn run_loop(&mut self) {
         // this can panic since it's not on the main thread
-        if let Err(e) = self.player.enqueue_all() {
+        // initial queue full
+        if let Err(e) = self.player.enqueue(1) {
             self.event.send(PlayerAction::Exception(e)).unwrap();
         }
         loop {
             let command = self.control.recv().unwrap();
 
-            // keep queue full
-            if self.player.queue_len() < DEFAULT_QUEUE_SIZE {
-                if let Err(e) = self.player.enqueue(DEFAULT_QUEUE_SIZE - self.player.queue_len()) {
-                    self.event.send(PlayerAction::Exception(e)).unwrap();
-                }
-                if self.player.queue_len() == 0 { // no more music to add
-                    self.event.send(PlayerAction::End).unwrap();
-                }
-            }
+            let mut is_exiting = false;
 
             // process command
-            let mut is_exiting = false;
             match command {
                 ControlAction::Next{..} => {
-                    if self.player.queue_len() <= 1 {
-                        self.player.stop();
-                        //self.player.resume();
+                    //println!("Executing next command (queue_len: {})", self.player.queue_len());
+                    if let Err(e) = self.player.new_sink() {
+                        self.event.send(PlayerAction::Exception(e)).unwrap();
+                    }
+                    if !self.player.is_paused() {
                         self.player.enqueue(1).unwrap();
                     }
                 },
@@ -76,12 +68,24 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
                     self.player.set_volume((volume as f32) / (u32::MAX as f32));
                 }
             }
+
+            // keep queue full (while playing music)
+            if self.player.queue_len() == 0 && !self.player.is_paused() && !is_exiting {
+                if let Err(e) = self.player.enqueue(1) {
+                    self.event.send(PlayerAction::Exception(e)).unwrap();
+                }
+                if self.player.queue_len() == 0  { // no more music to add
+                    is_exiting = true;
+                }
+            }
+
             if command.needs_ack() {
                 self.event.send(PlayerAction::Acknowledge(command)).unwrap();
             }
 
             if is_exiting { break; }
         }
+        self.event.send(PlayerAction::End).unwrap();
     }
 
     pub fn spawn<F: FnOnce() -> MpsPlayer<T> + Send + 'static>(
@@ -111,7 +115,7 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
 
 /// Action the controller wants the player to perform
 #[allow(dead_code)]
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum ControlAction {
     Next{ack: bool},
     Previous{ack: bool},
@@ -143,7 +147,7 @@ impl ControlAction {
 }
 
 /// Action the player has performed/encountered
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum PlayerAction {
     Acknowledge(ControlAction),
     Exception(PlaybackError),

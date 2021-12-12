@@ -1,7 +1,7 @@
 use std::io;
 use std::fs;
 
-use rodio::{decoder::Decoder, OutputStream, Sink};
+use rodio::{decoder::Decoder, OutputStream, Sink, OutputStreamHandle};
 
 use m3u8_rs::{MediaPlaylist, MediaSegment};
 
@@ -14,6 +14,7 @@ pub struct MpsPlayer<T: MpsTokenReader> {
     sink: Sink,
     #[allow(dead_code)]
     output_stream: OutputStream, // this is required for playback, so it must live as long as this struct instance
+    output_handle: OutputStreamHandle,
 }
 
 impl<T: MpsTokenReader> MpsPlayer<T> {
@@ -23,6 +24,7 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
             runner: runner,
             sink: Sink::try_new(&output_handle).map_err(PlaybackError::from_err)?,
             output_stream: stream,
+            output_handle: output_handle
         })
     }
 
@@ -53,7 +55,7 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
                     let stream = io::BufReader::new(file);
                     let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
                     self.sink.append(source);
-                    self.sink.play(); // idk if this is necessary
+                    //self.sink.play(); // idk if this is necessary
                     Ok(())
                 },
                 Err(e) => Err(PlaybackError::from_err(e))
@@ -64,20 +66,22 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
 
     pub fn enqueue(&mut self, count: usize) -> Result<(), PlaybackError> {
         let mut items_left = count;
+        if items_left == 0 { return Ok(()); }
         for item in &mut self.runner {
-            if items_left == 0 { return Ok(()); }
             match item {
                 Ok(music) => {
+                    //println!("Enqueuing {}", music.filename);
                     let file = fs::File::open(music.filename).map_err(PlaybackError::from_err)?;
                     let stream = io::BufReader::new(file);
                     let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
                     self.sink.append(source);
-                    self.sink.play(); // idk if this is necessary
+                    //self.sink.play(); // idk if this is necessary
                     Ok(())
                 },
                 Err(e) => Err(PlaybackError::from_err(e))
             }?;
             items_left -= 1;
+            if items_left == 0 { break; }
         }
         Ok(())
     }
@@ -100,6 +104,10 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
 
     pub fn queue_len(&self) -> usize {
         self.sink.len()
+    }
+
+    pub fn empty(&self) -> bool {
+        self.sink.empty()
     }
 
     pub fn save_m3u8<W: io::Write>(&mut self, w: &mut W) -> Result<(), PlaybackError> {
@@ -132,6 +140,20 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
 
     pub fn set_volume(&self, volume: f32) {
         self.sink.set_volume(volume);
+    }
+
+    pub fn new_sink(&mut self) -> Result<(), PlaybackError> {
+        let is_paused = self.sink.is_paused();
+        let volume = self.sink.volume();
+
+        self.stop();
+        self.sink = Sink::try_new(&self.output_handle).map_err(PlaybackError::from_err)?;
+
+        if is_paused {
+            self.sink.pause();
+        }
+        self.sink.set_volume(volume);
+        Ok(())
     }
 }
 

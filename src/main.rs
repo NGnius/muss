@@ -13,11 +13,17 @@ fn play_cursor() -> Result<(), PlaybackError> {
 fn main() {
     //play_cursor().unwrap();
     let ctrl = MpsController::create(|| {
-        let cursor = io::Cursor::<&'static str>::new("sql(`SELECT * FROM songs JOIN artists ON songs.artist = artists.artist_id WHERE artists.name like 'thundercat'`);");
+        //let cursor = io::Cursor::<&'static str>::new("sql(`SELECT * FROM songs JOIN artists ON songs.artist = artists.artist_id WHERE artists.name like 'thundercat'`);");
+        let cursor = io::Cursor::<&'static str>::new(
+        "sql(`SELECT * FROM songs JOIN artists ON songs.artist = artists.artist_id WHERE artists.name like 'thundercat'`);
+        artist(`gwen`);"
+        );
         let runner = MpsRunner::with_stream(cursor);
-        MpsPlayer::new(runner).unwrap()
+        let player = MpsPlayer::new(runner).unwrap();
+        player.set_volume(0.8);
+        player
     });
 
     ctrl.wait_for_done().unwrap();
-    ctrl.exit().unwrap();
+    //ctrl.exit().unwrap(); // don't use both
 }
