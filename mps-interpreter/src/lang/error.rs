@@ -1,7 +1,7 @@
-use std::fmt::{Debug, Display, Formatter, Error};
+use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::tokens::MpsToken;
 use super::MpsOp;
+use crate::tokens::MpsToken;
 
 #[derive(Debug)]
 pub struct SyntaxError {
@@ -11,12 +11,18 @@ pub struct SyntaxError {
 
 impl Display for SyntaxError {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "SyntaxError (line {}): Unexpected {}", &self.line, &self.token)
+        write!(
+            f,
+            "SyntaxError (line {}): Unexpected {}",
+            &self.line, &self.token
+        )
     }
 }
 
 impl MpsLanguageError for SyntaxError {
-    fn set_line(&mut self, line: usize) {self.line = line}
+    fn set_line(&mut self, line: usize) {
+        self.line = line
+    }
 }
 
 #[derive(Debug)]
@@ -33,7 +39,9 @@ impl Display for RuntimeError {
 }
 
 impl MpsLanguageError for RuntimeError {
-    fn set_line(&mut self, line: usize) {self.line = line}
+    fn set_line(&mut self, line: usize) {
+        self.line = line
+    }
 }
 
 pub trait MpsLanguageError: Display + Debug {

@@ -1,9 +1,9 @@
-use std::iter::Iterator;
 use std::io::Read;
+use std::iter::Iterator;
 
-use super::{MpsInterpretor, MpsContext, MpsMusicItem};
-use super::tokens::{MpsTokenReader, MpsTokenizer};
 use super::lang::{MpsLanguageDictionary, MpsLanguageError};
+use super::tokens::{MpsTokenReader, MpsTokenizer};
+use super::{MpsContext, MpsInterpretor, MpsMusicItem};
 
 pub struct MpsRunnerSettings<T: MpsTokenReader> {
     pub vocabulary: MpsLanguageDictionary,

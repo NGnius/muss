@@ -13,7 +13,9 @@ pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
     let conn = rusqlite::Connection::open(DEFAULT_SQLITE_FILEPATH)?;
     // skip db building if SQLite file already exists
     // TODO do a more exhaustive db check to make sure it's actually the correct file
-    if db_exists {return Ok(conn);}
+    if db_exists {
+        return Ok(conn);
+    }
     // build db tables
     conn.execute_batch(
         "BEGIN;
@@ -50,7 +52,7 @@ pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
             genre_id INTEGER NOT NULL PRIMARY KEY,
             title TEXT
         );
-        COMMIT;"
+        COMMIT;",
     )?;
     // generate data and store in db
     #[cfg(feature = "music_library")]
@@ -67,7 +69,7 @@ pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
                         filename,
                         metadata,
                         genre
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 )?;
                 for song in lib.all_songs() {
                     song_insert.execute(song.to_params().as_slice())?;
@@ -81,7 +83,7 @@ pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
                         disc,
                         duration,
                         date
-                    ) VALUES (?, ?, ?, ?, ?, ?)"
+                    ) VALUES (?, ?, ?, ?, ?, ?)",
                 )?;
                 for meta in lib.all_metadata() {
                     metadata_insert.execute(meta.to_params().as_slice())?;
@@ -92,7 +94,7 @@ pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
                         artist_id,
                         name,
                         genre
-                    ) VALUES (?, ?, ?)"
+                    ) VALUES (?, ?, ?)",
                 )?;
                 for artist in lib.all_artists() {
                     artist_insert.execute(artist.to_params().as_slice())?;
@@ -105,7 +107,7 @@ pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
                         metadata,
                         artist,
                         genre
-                    ) VALUES (?, ?, ?, ?, ?)"
+                    ) VALUES (?, ?, ?, ?, ?)",
                 )?;
                 for album in lib.all_albums() {
                     album_insert.execute(album.to_params().as_slice())?;
@@ -115,13 +117,13 @@ pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
                     "INSERT OR REPLACE INTO genres (
                         genre_id,
                         title
-                    ) VALUES (?, ?)"
+                    ) VALUES (?, ?)",
                 )?;
                 for genre in lib.all_genres() {
                     genre_insert.execute(genre.to_params().as_slice())?;
                 }
-            },
-            Err(e) => println!("Unable to load music from {}: {}", music_path.display(), e)
+            }
+            Err(e) => println!("Unable to load music from {}: {}", music_path.display(), e),
         }
     }
     Ok(conn)
@@ -140,7 +142,7 @@ pub struct DbMusicItem {
 
 impl DatabaseObj for DbMusicItem {
     fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Self> {
-        Ok(Self{
+        Ok(Self {
             song_id: row.get(0)?,
             title: row.get(1)?,
             artist: row.get(2)?,
@@ -163,7 +165,9 @@ impl DatabaseObj for DbMusicItem {
         ]
     }
 
-    fn id(&self) -> u64 {self.song_id}
+    fn id(&self) -> u64 {
+        self.song_id
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -173,12 +177,12 @@ pub struct DbMetaItem {
     pub track: u64,
     pub disc: u64,
     pub duration: u64, // seconds
-    pub date: u64, // year
+    pub date: u64,     // year
 }
 
 impl DatabaseObj for DbMetaItem {
     fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Self> {
-        Ok(Self{
+        Ok(Self {
             meta_id: row.get(0)?,
             plays: row.get(1)?,
             track: row.get(2)?,
@@ -199,7 +203,9 @@ impl DatabaseObj for DbMetaItem {
         ]
     }
 
-    fn id(&self) -> u64 {self.meta_id}
+    fn id(&self) -> u64 {
+        self.meta_id
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -211,7 +217,7 @@ pub struct DbArtistItem {
 
 impl DatabaseObj for DbArtistItem {
     fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Self> {
-        Ok(Self{
+        Ok(Self {
             artist_id: row.get(0)?,
             name: row.get(1)?,
             genre: row.get(2)?,
@@ -219,14 +225,12 @@ impl DatabaseObj for DbArtistItem {
     }
 
     fn to_params(&self) -> Vec<&dyn rusqlite::ToSql> {
-        vec![
-            &self.artist_id,
-            &self.name,
-            &self.genre,
-        ]
+        vec![&self.artist_id, &self.name, &self.genre]
     }
 
-    fn id(&self) -> u64 {self.artist_id}
+    fn id(&self) -> u64 {
+        self.artist_id
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -240,7 +244,7 @@ pub struct DbAlbumItem {
 
 impl DatabaseObj for DbAlbumItem {
     fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Self> {
-        Ok(Self{
+        Ok(Self {
             album_id: row.get(0)?,
             title: row.get(1)?,
             metadata: row.get(2)?,
@@ -259,7 +263,9 @@ impl DatabaseObj for DbAlbumItem {
         ]
     }
 
-    fn id(&self) -> u64 {self.album_id}
+    fn id(&self) -> u64 {
+        self.album_id
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -270,18 +276,17 @@ pub struct DbGenreItem {
 
 impl DatabaseObj for DbGenreItem {
     fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Self> {
-        Ok(Self{
+        Ok(Self {
             genre_id: row.get(0)?,
             title: row.get(1)?,
         })
     }
 
     fn to_params(&self) -> Vec<&dyn rusqlite::ToSql> {
-        vec![
-            &self.genre_id,
-            &self.title,
-        ]
+        vec![&self.genre_id, &self.title]
     }
 
-    fn id(&self) -> u64 {self.genre_id}
+    fn id(&self) -> u64 {
+        self.genre_id
+    }
 }

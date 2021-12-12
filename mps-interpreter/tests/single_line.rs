@@ -1,8 +1,8 @@
-use std::io::Cursor;
-use std::collections::VecDeque;
-use mps_interpreter::*;
 use mps_interpreter::lang::MpsLanguageError;
-use mps_interpreter::tokens::{ParseError, MpsToken, MpsTokenizer};
+use mps_interpreter::tokens::{MpsToken, MpsTokenizer, ParseError};
+use mps_interpreter::*;
+use std::collections::VecDeque;
+use std::io::Cursor;
 
 #[test]
 fn parse_line() -> Result<(), ParseError> {
@@ -34,9 +34,8 @@ fn parse_line() -> Result<(), ParseError> {
     Ok(())
 }
 
-#[test]
-fn execute_line() -> Result<(), Box<dyn MpsLanguageError>> {
-    let cursor = Cursor::new("sql(`SELECT * FROM songs ORDER BY artist;`)");
+fn execute_single_line(line: &str, should_be_emtpy: bool) -> Result<(), Box<dyn MpsLanguageError>> {
+    let cursor = Cursor::new(line);
 
     let tokenizer = MpsTokenizer::new(cursor);
     let interpreter = MpsInterpretor::with_standard_vocab(tokenizer);
@@ -44,14 +43,36 @@ fn execute_line() -> Result<(), Box<dyn MpsLanguageError>> {
     let mut count = 0;
     for result in interpreter {
         if let Ok(item) = result {
-            count +=1;
-            if count > 100 {continue;} // no need to spam the rest of the songs
+            count += 1;
+            if count > 100 {
+                continue;
+            } // no need to spam the rest of the songs
             println!("Got song `{}` (file: `{}`)", item.title, item.filename);
         } else {
             println!("Got error while iterating (executing)");
             result?;
         }
     }
-    assert_ne!(count, 0); // database is populated
+    if should_be_emtpy {
+        assert_eq!(count, 0);
+    } else {
+        assert_ne!(count, 0); // database is populated
+    }
     Ok(())
+}
+
+#[test]
+fn execute_sql_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line("sql(`SELECT * FROM songs ORDER BY artist;`)", false)
+}
+
+#[test]
+fn execute_simple_sql_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line("song(`lov`)", false)
+}
+
+#[test]
+fn execute_comment_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line("// this is a comment", true)?;
+    execute_single_line("# this is a special comment", true)
 }

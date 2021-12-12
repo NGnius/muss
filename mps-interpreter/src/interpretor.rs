@@ -1,14 +1,17 @@
-use std::iter::Iterator;
 use std::collections::VecDeque;
-use std::path::Path;
 use std::fs::File;
+use std::iter::Iterator;
+use std::path::Path;
 
-use super::MpsMusicItem;
-use super::MpsContext;
+use super::lang::{MpsLanguageDictionary, MpsLanguageError, MpsOp};
 use super::tokens::MpsToken;
-use super::lang::{MpsOp, MpsLanguageError, MpsLanguageDictionary};
+use super::MpsContext;
+use super::MpsMusicItem;
 
-pub struct MpsInterpretor<T> where T: crate::tokens::MpsTokenReader {
+pub struct MpsInterpretor<T>
+where
+    T: crate::tokens::MpsTokenReader,
+{
     tokenizer: T,
     buffer: VecDeque<MpsToken>,
     current_stmt: Option<Box<dyn MpsOp>>,
@@ -22,7 +25,8 @@ pub fn interpretor<R: std::io::Read>(stream: R) -> MpsInterpretor<crate::tokens:
 }
 
 impl<T> MpsInterpretor<T>
-    where T: crate::tokens::MpsTokenReader
+where
+    T: crate::tokens::MpsTokenReader,
 {
     pub fn with_vocab(tokenizer: T, vocab: MpsLanguageDictionary) -> Self {
         Self {
@@ -72,7 +76,8 @@ impl MpsInterpretor<crate::tokens::MpsTokenizer<File>> {
 }
 
 impl<T> Iterator for MpsInterpretor<T>
-    where T: crate::tokens::MpsTokenReader
+where
+    T: crate::tokens::MpsTokenReader,
 {
     type Item = Result<MpsMusicItem, Box<dyn MpsLanguageError>>;
 
@@ -84,21 +89,27 @@ impl<T> Iterator for MpsInterpretor<T>
                 is_stmt_done = true;
             }
             match next_item {
-                Some(item) => Some(item.map_err(|e| box_error_with_ctx(
-                    e, self.tokenizer.current_line()
-                ))),
-                None => None
+                Some(item) => {
+                    Some(item.map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line())))
+                }
+                None => None,
             }
         } else {
-            if self.tokenizer.end_of_file() { return None; }
+            if self.tokenizer.end_of_file() {
+                return None;
+            }
             // build new statement
-            let token_result = self.tokenizer.next_statements(1, &mut self.buffer)
+            let token_result = self
+                .tokenizer
+                .next_statement(&mut self.buffer)
                 .map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line()));
             match token_result {
-                Ok(_) => {},
-                Err(x) => return Some(Err(x))
+                Ok(_) => {}
+                Err(x) => return Some(Err(x)),
             }
-            if self.tokenizer.end_of_file() && self.buffer.len() == 0 { return None; }
+            if self.tokenizer.end_of_file() && self.buffer.len() == 0 {
+                return None;
+            }
             let stmt = self.vocabulary.try_build_statement(&mut self.buffer);
             match stmt {
                 Ok(mut stmt) => {
@@ -109,17 +120,15 @@ impl<T> Iterator for MpsInterpretor<T>
                         is_stmt_done = true;
                     }
                     match next_item {
-                        Some(item) => Some(item.map_err(|e| box_error_with_ctx(
-                            e,
-                            self.tokenizer.current_line()
-                        ))),
-                        None => None
+                        Some(item) => Some(
+                            item.map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line())),
+                        ),
+                        None => None,
                     }
-                },
-                Err(e) => Some(Err(e).map_err(|e| box_error_with_ctx(
-                    e,
-                    self.tokenizer.current_line()
-                )))
+                }
+                Err(e) => {
+                    Some(Err(e).map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line())))
+                }
             }
         };
         if is_stmt_done {
@@ -129,12 +138,17 @@ impl<T> Iterator for MpsInterpretor<T>
     }
 }
 
-fn box_error_with_ctx<E: MpsLanguageError + 'static>(mut error: E, line: usize) -> Box<dyn MpsLanguageError> {
+fn box_error_with_ctx<E: MpsLanguageError + 'static>(
+    mut error: E,
+    line: usize,
+) -> Box<dyn MpsLanguageError> {
     error.set_line(line);
     Box::new(error) as Box<dyn MpsLanguageError>
 }
 
 pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
     vocabulary
-            .add(crate::lang::vocabulary::SqlStatementFactory);
+        .add(crate::lang::vocabulary::SqlStatementFactory)
+        .add(crate::lang::vocabulary::SimpleSqlStatementFactory)
+        .add(crate::lang::vocabulary::CommentStatementFactory);
 }

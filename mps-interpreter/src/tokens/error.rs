@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display, Formatter, Error};
+use std::fmt::{Debug, Display, Error, Formatter};
 
 use crate::lang::MpsLanguageError;
 
@@ -11,14 +11,22 @@ pub struct ParseError {
 
 impl Display for ParseError {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "ParseError (line {}, column {}): Unexpected {}", &self.line, &self.column, &self.item)
+        write!(
+            f,
+            "ParseError (line {}, column {}): Unexpected {}",
+            &self.line, &self.column, &self.item
+        )
     }
 }
 
 impl MpsTokenError for ParseError {
-    fn set_line(&mut self, line: usize) {self.line = line}
+    fn set_line(&mut self, line: usize) {
+        self.line = line
+    }
 
-    fn set_column(&mut self, column: usize) {self.column = column}
+    fn set_column(&mut self, column: usize) {
+        self.column = column
+    }
 }
 
 pub trait MpsTokenError: Display + Debug {

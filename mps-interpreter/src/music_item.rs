@@ -9,7 +9,7 @@ pub struct MpsMusicItem {
 impl MpsMusicItem {
     pub fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Self> {
         let item = DbMusicItem::map_row(row)?;
-        Ok(Self{
+        Ok(Self {
             title: item.title,
             filename: item.filename,
         })

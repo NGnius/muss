@@ -1,14 +1,15 @@
-use std::fmt::{Debug, Display, Formatter, Error};
+use super::processing::database::{MpsDatabaseQuerier, MpsSQLiteExecutor};
+use std::fmt::{Debug, Display, Error, Formatter};
 
 #[derive(Debug)]
 pub struct MpsContext {
-    pub sqlite_connection: Option<rusqlite::Connection>,
+    pub database: Box<dyn MpsDatabaseQuerier>,
 }
 
 impl Default for MpsContext {
     fn default() -> Self {
         Self {
-            sqlite_connection: None, // initialized by first SQL statement instead
+            database: Box::new(MpsSQLiteExecutor::default()),
         }
     }
 }
@@ -16,7 +17,7 @@ impl Default for MpsContext {
 impl std::clone::Clone for MpsContext {
     fn clone(&self) -> Self {
         Self {
-            sqlite_connection: None,
+            database: Box::new(MpsSQLiteExecutor::default()),
         }
     }
 }

@@ -4,8 +4,8 @@ use std::path::Path;
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::probe::Hint;
 
-use crate::lang::db::*;
 use super::tag::Tags;
+use crate::lang::db::*;
 
 #[derive(Clone, Default)]
 pub struct MpsLibrary {
@@ -55,7 +55,7 @@ impl MpsLibrary {
         let path = path.as_ref();
         if path.is_dir() && depth != 0 {
             for entry in path.read_dir()? {
-                self.read_path(entry?.path(), depth-1)?;
+                self.read_path(entry?.path(), depth - 1)?;
             }
         } else if path.is_file() {
             self.read_file(path)?;
@@ -72,7 +72,7 @@ impl MpsLibrary {
             &Hint::new(),
             mss,
             &Default::default(),
-            &Default::default()
+            &Default::default(),
         );
         // process audio file, ignoring any processing errors (skip file on error)
         if let Ok(mut probed) = probed {
@@ -99,27 +99,32 @@ impl MpsLibrary {
 
     /// generate data structures and links
     fn generate_entries(&mut self, tags: &Tags) {
-        if tags.len() == 0 { return; } // probably not a valid song, let's skip it
+        if tags.len() == 0 {
+            return;
+        } // probably not a valid song, let's skip it
         let song_id = self.songs.len() as u64; // guaranteed to be created
         let meta_id = self.metadata.len() as u64; // guaranteed to be created
         self.metadata.insert(meta_id, tags.meta(meta_id)); // definitely necessary
-        // genre has no links to others, so find that first
+                                                           // genre has no links to others, so find that first
         let mut genre = tags.genre(0);
         genre.genre_id = Self::find_or_gen_id(&self.genres, &genre.title);
         if genre.genre_id == self.genres.len() as u64 {
-            self.genres.insert(Self::sanitise_key(&genre.title), genre.clone());
+            self.genres
+                .insert(Self::sanitise_key(&genre.title), genre.clone());
         }
         // artist only links to genre, so that can be next
         let mut artist = tags.artist(0, genre.genre_id);
         artist.artist_id = Self::find_or_gen_id(&self.artists, &artist.name);
         if artist.artist_id == self.artists.len() as u64 {
-            self.artists.insert(Self::sanitise_key(&artist.name), artist.clone());
+            self.artists
+                .insert(Self::sanitise_key(&artist.name), artist.clone());
         }
         // same with album artist
         let mut album_artist = tags.album_artist(0, genre.genre_id);
         album_artist.artist_id = Self::find_or_gen_id(&self.artists, &album_artist.name);
         if album_artist.artist_id == self.artists.len() as u64 {
-            self.artists.insert(Self::sanitise_key(&album_artist.name), album_artist.clone());
+            self.artists
+                .insert(Self::sanitise_key(&album_artist.name), album_artist.clone());
         }
         // album now has all links ready
         let mut album = tags.album(0, 0, album_artist.artist_id, genre.genre_id);
@@ -127,12 +132,22 @@ impl MpsLibrary {
         if album.album_id == self.albums.len() as u64 {
             let album_meta = tags.album_meta(self.metadata.len() as u64);
             album.metadata = album_meta.meta_id;
-            self.albums.insert(Self::sanitise_key(&album.title), album.clone());
+            self.albums
+                .insert(Self::sanitise_key(&album.title), album.clone());
             self.metadata.insert(album_meta.meta_id, album_meta);
         }
         //let meta_album_id = self.metadata.len() as u64;
         //let album = tags.album(album_id, meta_album_id);
-        self.songs.insert(song_id, tags.song(song_id, artist.artist_id, Some(album.album_id), meta_id, genre.genre_id));
+        self.songs.insert(
+            song_id,
+            tags.song(
+                song_id,
+                artist.artist_id,
+                Some(album.album_id),
+                meta_id,
+                genre.genre_id,
+            ),
+        );
     }
 
     #[inline]

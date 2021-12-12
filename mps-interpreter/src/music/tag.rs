@@ -24,20 +24,37 @@ impl Tags {
         }
     }
 
-    pub fn len(&self) -> usize {self.data.len()}
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
 
-    pub fn song(&self, id: u64, artist_id: u64, album_id: Option<u64>, meta_id: u64, genre_id: u64) -> DbMusicItem {
+    pub fn song(
+        &self,
+        id: u64,
+        artist_id: u64,
+        album_id: Option<u64>,
+        meta_id: u64,
+        genre_id: u64,
+    ) -> DbMusicItem {
         let default_title = || {
-            let extension = self.filename.extension().and_then(|ext| ext.to_str()).unwrap_or("");
-            self.filename.file_name()
+            let extension = self
+                .filename
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .unwrap_or("");
+            self.filename
+                .file_name()
                 .and_then(|file| file.to_str())
                 .and_then(|file| Some(file.replacen(extension, "", 1)))
                 .unwrap_or("Unknown Title".into())
         };
         DbMusicItem {
             song_id: id,
-            title:  self.data.get("TITLE")
-                .unwrap_or(&TagType::Unknown).str()
+            title: self
+                .data
+                .get("TITLE")
+                .unwrap_or(&TagType::Unknown)
+                .str()
                 .and_then(|s| Some(s.to_string()))
                 .unwrap_or_else(default_title),
             artist: artist_id,
@@ -51,18 +68,49 @@ impl Tags {
     pub fn meta(&self, id: u64) -> DbMetaItem {
         DbMetaItem {
             meta_id: id,
-            plays: self.data.get("PLAYS").unwrap_or(&TagType::Unknown).uint().unwrap_or(0),
-            track: self.data.get("TRACKNUMBER").unwrap_or(&TagType::Unknown).uint().unwrap_or(id),
-            disc: self.data.get("DISCNUMBER").unwrap_or(&TagType::Unknown).uint().unwrap_or(1),
-            duration: self.data.get("DURATION").unwrap_or(&TagType::Unknown).uint().unwrap_or(0),
-            date: self.data.get("DATE").unwrap_or(&TagType::Unknown).uint().unwrap_or(0),
+            plays: self
+                .data
+                .get("PLAYS")
+                .unwrap_or(&TagType::Unknown)
+                .uint()
+                .unwrap_or(0),
+            track: self
+                .data
+                .get("TRACKNUMBER")
+                .unwrap_or(&TagType::Unknown)
+                .uint()
+                .unwrap_or(id),
+            disc: self
+                .data
+                .get("DISCNUMBER")
+                .unwrap_or(&TagType::Unknown)
+                .uint()
+                .unwrap_or(1),
+            duration: self
+                .data
+                .get("DURATION")
+                .unwrap_or(&TagType::Unknown)
+                .uint()
+                .unwrap_or(0),
+            date: self
+                .data
+                .get("DATE")
+                .unwrap_or(&TagType::Unknown)
+                .uint()
+                .unwrap_or(0),
         }
     }
 
     pub fn artist(&self, id: u64, genre_id: u64) -> DbArtistItem {
         DbArtistItem {
             artist_id: id,
-            name: self.data.get("ARTIST").unwrap_or(&TagType::Unknown).str().unwrap_or("Unknown Artist").into(),
+            name: self
+                .data
+                .get("ARTIST")
+                .unwrap_or(&TagType::Unknown)
+                .str()
+                .unwrap_or("Unknown Artist")
+                .into(),
             genre: genre_id,
         }
     }
@@ -70,7 +118,13 @@ impl Tags {
     pub fn album_artist(&self, id: u64, genre_id: u64) -> DbArtistItem {
         DbArtistItem {
             artist_id: id,
-            name: self.data.get("ALBUMARTIST").unwrap_or(&TagType::Unknown).str().unwrap_or("Unknown Artist").into(),
+            name: self
+                .data
+                .get("ALBUMARTIST")
+                .unwrap_or(&TagType::Unknown)
+                .str()
+                .unwrap_or("Unknown Artist")
+                .into(),
             genre: genre_id,
         }
     }
@@ -78,7 +132,13 @@ impl Tags {
     pub fn album(&self, id: u64, meta_id: u64, artist_id: u64, genre_id: u64) -> DbAlbumItem {
         DbAlbumItem {
             album_id: id,
-            title: self.data.get("ALBUM").unwrap_or(&TagType::Unknown).str().unwrap_or("Unknown Album").into(),
+            title: self
+                .data
+                .get("ALBUM")
+                .unwrap_or(&TagType::Unknown)
+                .str()
+                .unwrap_or("Unknown Album")
+                .into(),
             metadata: meta_id,
             artist: artist_id,
             genre: genre_id,
@@ -88,18 +148,44 @@ impl Tags {
     pub fn album_meta(&self, id: u64) -> DbMetaItem {
         DbMetaItem {
             meta_id: id,
-            plays: self.data.get("PLAYS").unwrap_or(&TagType::Unknown).uint().unwrap_or(0),
-            track: self.data.get("TRACKTOTAL").unwrap_or(&TagType::Unknown).uint().unwrap_or(0),
-            disc: self.data.get("DISCTOTAL").unwrap_or(&TagType::Unknown).uint().unwrap_or(1),
+            plays: self
+                .data
+                .get("PLAYS")
+                .unwrap_or(&TagType::Unknown)
+                .uint()
+                .unwrap_or(0),
+            track: self
+                .data
+                .get("TRACKTOTAL")
+                .unwrap_or(&TagType::Unknown)
+                .uint()
+                .unwrap_or(0),
+            disc: self
+                .data
+                .get("DISCTOTAL")
+                .unwrap_or(&TagType::Unknown)
+                .uint()
+                .unwrap_or(1),
             duration: 0,
-            date: self.data.get("DATE").unwrap_or(&TagType::Unknown).uint().unwrap_or(0),
+            date: self
+                .data
+                .get("DATE")
+                .unwrap_or(&TagType::Unknown)
+                .uint()
+                .unwrap_or(0),
         }
     }
 
     pub fn genre(&self, id: u64) -> DbGenreItem {
         DbGenreItem {
             genre_id: id,
-            title: self.data.get("GENRE").unwrap_or(&TagType::Unknown).str().unwrap_or("Unknown Genre").into(),
+            title: self
+                .data
+                .get("GENRE")
+                .unwrap_or(&TagType::Unknown)
+                .str()
+                .unwrap_or("Unknown Genre")
+                .into(),
         }
     }
 }
@@ -111,7 +197,7 @@ enum TagType {
     I64(i64),
     U64(u64),
     Str(String),
-    Unknown
+    Unknown,
 }
 
 impl TagType {
@@ -130,7 +216,7 @@ impl TagType {
     fn str(&self) -> Option<&str> {
         match self {
             Self::Str(s) => Some(&s),
-            _ => None
+            _ => None,
         }
     }
 
@@ -139,7 +225,7 @@ impl TagType {
             Self::I64(i) => (*i).try_into().ok(),
             Self::U64(u) => Some(*u),
             Self::Str(s) => s.parse::<u64>().ok(),
-            _ => None
+            _ => None,
         }
     }
 }
