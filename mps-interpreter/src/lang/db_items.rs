@@ -1,3 +1,5 @@
+use std::path::Path;
+
 pub const DEFAULT_SQLITE_FILEPATH: &str = "metadata.mps.sqlite";
 
 pub trait DatabaseObj: Sized {
@@ -9,11 +11,25 @@ pub trait DatabaseObj: Sized {
 }
 
 pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
-    let db_exists = std::path::Path::new(DEFAULT_SQLITE_FILEPATH).exists();
-    let conn = rusqlite::Connection::open(DEFAULT_SQLITE_FILEPATH)?;
+    generate_db(super::utility::music_folder(), DEFAULT_SQLITE_FILEPATH, true)
+}
+
+pub fn generate_db<P1: AsRef<Path>, P2: AsRef<Path>>(
+    music_path: P1,
+    sqlite_path: P2,
+    generate: bool
+) -> rusqlite::Result<rusqlite::Connection> {
+    let music_path = music_path.as_ref();
+    let sqlite_path = sqlite_path.as_ref();
+    let db_exists = std::path::Path::new(sqlite_path).exists();
+    #[cfg(not(feature = "music_library"))]
+    let conn = rusqlite::Connection::open(sqlite_path)?;
+    #[cfg(feature = "music_library")]
+    let mut conn = rusqlite::Connection::open(sqlite_path)?;
     // skip db building if SQLite file already exists
-    // TODO do a more exhaustive db check to make sure it's actually the correct file
-    if db_exists {
+    // TODO do a more exhaustive db check to make sure it's actually the correct file and database structure
+    #[cfg(not(feature = "music_library"))]
+    if db_exists && !generate {
         return Ok(conn);
     }
     // build db tables
@@ -56,11 +72,18 @@ pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
     )?;
     // generate data and store in db
     #[cfg(feature = "music_library")]
-    {
-        let music_path = super::utility::music_folder();
-        match crate::music::build_library(&music_path) {
-            Ok(lib) => {
-                let mut song_insert = conn.prepare(
+    if generate {
+
+        let mut lib = crate::music::MpsLibrary::new();
+        if db_exists {
+            crate::music::build_library_from_sqlite(&conn, &mut lib)?;
+        }
+        lib.clear_modified();
+        match crate::music::build_library_from_files(&music_path, &mut lib) {
+            Ok(_) => if lib.is_modified() {
+                let transaction = conn.transaction()?;
+                {
+                let mut song_insert = transaction.prepare(
                     "INSERT OR REPLACE INTO songs (
                         song_id,
                         title,
@@ -75,7 +98,7 @@ pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
                     song_insert.execute(song.to_params().as_slice())?;
                 }
 
-                let mut metadata_insert = conn.prepare(
+                let mut metadata_insert = transaction.prepare(
                     "INSERT OR REPLACE INTO metadata (
                         meta_id,
                         plays,
@@ -89,7 +112,7 @@ pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
                     metadata_insert.execute(meta.to_params().as_slice())?;
                 }
 
-                let mut artist_insert = conn.prepare(
+                let mut artist_insert = transaction.prepare(
                     "INSERT OR REPLACE INTO artists (
                         artist_id,
                         name,
@@ -100,7 +123,7 @@ pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
                     artist_insert.execute(artist.to_params().as_slice())?;
                 }
 
-                let mut album_insert = conn.prepare(
+                let mut album_insert = transaction.prepare(
                     "INSERT OR REPLACE INTO albums (
                         album_id,
                         title,
@@ -113,7 +136,7 @@ pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
                     album_insert.execute(album.to_params().as_slice())?;
                 }
 
-                let mut genre_insert = conn.prepare(
+                let mut genre_insert = transaction.prepare(
                     "INSERT OR REPLACE INTO genres (
                         genre_id,
                         title
@@ -122,7 +145,9 @@ pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
                 for genre in lib.all_genres() {
                     genre_insert.execute(genre.to_params().as_slice())?;
                 }
-            }
+                }
+                transaction.commit()?;
+            },
             Err(e) => println!("Unable to load music from {}: {}", music_path.display(), e),
         }
     }

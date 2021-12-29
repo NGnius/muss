@@ -1,5 +1,6 @@
-use std::collections::HashMap;
-use std::path::Path;
+use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::probe::Hint;
@@ -14,6 +15,8 @@ pub struct MpsLibrary {
     artists: HashMap<String, DbArtistItem>,
     albums: HashMap<String, DbAlbumItem>,
     genres: HashMap<String, DbGenreItem>,
+    files: HashSet<PathBuf>,
+    dirty: bool,
 }
 
 impl MpsLibrary {
@@ -24,6 +27,8 @@ impl MpsLibrary {
             artists: HashMap::new(),
             albums: HashMap::new(),
             genres: HashMap::new(),
+            files: HashSet::new(),
+            dirty: false,
         }
     }
 
@@ -31,28 +36,80 @@ impl MpsLibrary {
         self.songs.len()
     }
 
+    pub fn clear_modified(&mut self) {
+        self.dirty = false;
+    }
+
+    pub fn is_modified(&self) -> bool {
+        self.dirty
+    }
+
+    #[inline(always)]
+    fn modify(&mut self) {
+        self.dirty = true;
+    }
+
+    #[inline]
+    pub fn contains_path<P: AsRef<Path>>(&self, path: P) -> bool {
+        self.files.contains(&path.as_ref().to_path_buf())
+    }
+
     pub fn all_songs<'a>(&'a self) -> Vec<&'a DbMusicItem> {
         self.songs.values().collect()
+    }
+
+    #[inline]
+    pub fn add_song(&mut self, song: DbMusicItem) {
+        self.modify();
+        if let Ok(path) = PathBuf::from_str(&song.filename) {
+            self.files.insert(path);
+        }
+        self.songs.insert(song.song_id, song);
     }
 
     pub fn all_metadata<'a>(&'a self) -> Vec<&'a DbMetaItem> {
         self.metadata.values().collect()
     }
 
+    #[inline]
+    pub fn add_metadata(&mut self, meta: DbMetaItem) {
+        self.modify();
+        self.metadata.insert(meta.meta_id, meta);
+    }
+
     pub fn all_artists<'a>(&'a self) -> Vec<&'a DbArtistItem> {
         self.artists.values().collect()
+    }
+
+    #[inline]
+    pub fn add_artist(&mut self, artist: DbArtistItem) {
+        self.modify();
+        self.artists.insert(Self::sanitise_key(&artist.name), artist);
     }
 
     pub fn all_albums<'a>(&'a self) -> Vec<&'a DbAlbumItem> {
         self.albums.values().collect()
     }
 
+    #[inline]
+    pub fn add_album(&mut self, album: DbAlbumItem) {
+        self.modify();
+        self.albums.insert(Self::sanitise_key(&album.title), album);
+    }
+
     pub fn all_genres<'a>(&'a self) -> Vec<&'a DbGenreItem> {
         self.genres.values().collect()
     }
 
+    #[inline]
+    pub fn add_genre(&mut self, genre: DbGenreItem) {
+        self.modify();
+        self.genres.insert(Self::sanitise_key(&genre.title), genre);
+    }
+
     pub fn read_path<P: AsRef<Path>>(&mut self, path: P, depth: usize) -> std::io::Result<()> {
         let path = path.as_ref();
+        if self.contains_path(path) { return Ok(()); } // skip existing entries
         if path.is_dir() && depth != 0 {
             for entry in path.read_dir()? {
                 self.read_path(entry?.path(), depth - 1)?;
@@ -104,27 +161,24 @@ impl MpsLibrary {
         } // probably not a valid song, let's skip it
         let song_id = self.songs.len() as u64; // guaranteed to be created
         let meta_id = self.metadata.len() as u64; // guaranteed to be created
-        self.metadata.insert(meta_id, tags.meta(meta_id)); // definitely necessary
+        self.add_metadata(tags.meta(meta_id)); // definitely necessary
                                                            // genre has no links to others, so find that first
         let mut genre = tags.genre(0);
         genre.genre_id = Self::find_or_gen_id(&self.genres, &genre.title);
         if genre.genre_id == self.genres.len() as u64 {
-            self.genres
-                .insert(Self::sanitise_key(&genre.title), genre.clone());
+            self.add_genre(genre.clone());
         }
         // artist only links to genre, so that can be next
         let mut artist = tags.artist(0, genre.genre_id);
         artist.artist_id = Self::find_or_gen_id(&self.artists, &artist.name);
         if artist.artist_id == self.artists.len() as u64 {
-            self.artists
-                .insert(Self::sanitise_key(&artist.name), artist.clone());
+            self.add_artist(artist.clone());
         }
         // same with album artist
         let mut album_artist = tags.album_artist(0, genre.genre_id);
         album_artist.artist_id = Self::find_or_gen_id(&self.artists, &album_artist.name);
         if album_artist.artist_id == self.artists.len() as u64 {
-            self.artists
-                .insert(Self::sanitise_key(&album_artist.name), album_artist.clone());
+            self.add_artist(album_artist.clone());
         }
         // album now has all links ready
         let mut album = tags.album(0, 0, album_artist.artist_id, genre.genre_id);
@@ -132,14 +186,12 @@ impl MpsLibrary {
         if album.album_id == self.albums.len() as u64 {
             let album_meta = tags.album_meta(self.metadata.len() as u64);
             album.metadata = album_meta.meta_id;
-            self.albums
-                .insert(Self::sanitise_key(&album.title), album.clone());
-            self.metadata.insert(album_meta.meta_id, album_meta);
+            self.add_album(album.clone());
+            self.add_metadata(album_meta);
         }
         //let meta_album_id = self.metadata.len() as u64;
         //let album = tags.album(album_id, meta_album_id);
-        self.songs.insert(
-            song_id,
+        self.add_song(
             tags.song(
                 song_id,
                 artist.artist_id,

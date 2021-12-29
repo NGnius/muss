@@ -2,9 +2,9 @@ use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
-use super::utility::{assert_token, assert_token_raw};
-use super::{BoxedMpsOpFactory, MpsLanguageDictionary, MpsOp, MpsOpFactory};
-use super::{RuntimeError, SyntaxError};
+use crate::lang::utility::{assert_token, assert_token_raw};
+use crate::lang::{BoxedMpsOpFactory, MpsLanguageDictionary, MpsOp, MpsOpFactory};
+use crate::lang::{RuntimeError, SyntaxError};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsMusicItem;
@@ -83,7 +83,7 @@ impl SimpleSqlStatement {
                     Ok(item) => Some(Ok(item.clone())),
                     Err(e) => Some(Err(RuntimeError {
                         line: e.line,
-                        op: Box::new(self.clone()),
+                        op: (Box::new(self.clone()) as Box<dyn MpsOp>).into(),
                         msg: e.msg.clone(),
                     })),
                 }
@@ -91,7 +91,7 @@ impl SimpleSqlStatement {
         } else {
             Some(Err(RuntimeError {
                 line: 0,
-                op: Box::new(self.clone()),
+                op: (Box::new(self.clone()) as Box<dyn MpsOp>).into(),
                 msg: format!("Context error: rows is None").into(),
             }))
         }
@@ -134,16 +134,16 @@ impl Iterator for SimpleSqlStatement {
             let query_result = match self.mode {
                 QueryMode::Artist => ctx
                     .database
-                    .artist_like(&self.query, &mut move || Box::new(self_clone.clone())),
+                    .artist_like(&self.query, &mut move || (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()),
                 QueryMode::Album => ctx
                     .database
-                    .album_like(&self.query, &mut move || Box::new(self_clone.clone())),
+                    .album_like(&self.query, &mut move || (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()),
                 QueryMode::Song => ctx
                     .database
-                    .song_like(&self.query, &mut move || Box::new(self_clone.clone())),
+                    .song_like(&self.query, &mut move || (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()),
                 QueryMode::Genre => ctx
                     .database
-                    .genre_like(&self.query, &mut move || Box::new(self_clone.clone())),
+                    .genre_like(&self.query, &mut move || (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()),
             };
             match query_result {
                 Err(e) => return Some(Err(e)),

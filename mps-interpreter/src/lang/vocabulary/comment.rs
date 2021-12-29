@@ -6,15 +6,15 @@ use crate::MpsContext;
 use crate::MpsMusicItem;
 use crate::tokens::MpsToken;
 
-use super::{RuntimeError, SyntaxError};
-use super::{MpsOp, SimpleMpsOpFactory, MpsOpFactory, BoxedMpsOpFactory};
-use super::MpsLanguageDictionary;
-use super::utility::assert_token;
+use crate::lang::{RuntimeError, SyntaxError};
+use crate::lang::{MpsOp, SimpleMpsOpFactory, MpsOpFactory, BoxedMpsOpFactory};
+use crate::lang::MpsLanguageDictionary;
+use crate::lang::utility::assert_token;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct CommentStatement {
     comment: String,
-    context: Option<MpsContext>
+    context: Option<MpsContext>,
 }
 
 impl CommentStatement {
@@ -32,6 +32,15 @@ impl CommentStatement {
 impl Display for CommentStatement {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(f, "{}", self.comment)
+    }
+}
+
+impl std::clone::Clone for CommentStatement {
+    fn clone(&self) -> Self {
+        Self {
+            comment: self.comment.clone(),
+            context: None,
+        }
     }
 }
 

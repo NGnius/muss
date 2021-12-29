@@ -113,6 +113,8 @@ where
             let stmt = self.vocabulary.try_build_statement(&mut self.buffer);
             match stmt {
                 Ok(mut stmt) => {
+                    #[cfg(debug_assertions)]
+                    if self.buffer.len() != 0 {panic!("Token buffer was not emptied! (rem: {:?})", self.buffer)}
                     stmt.enter(self.context.take().unwrap_or_else(|| MpsContext::default()));
                     self.current_stmt = Some(stmt);
                     let next_item = self.current_stmt.as_mut().unwrap().next();
@@ -148,7 +150,14 @@ fn box_error_with_ctx<E: MpsLanguageError + 'static>(
 
 pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
     vocabulary
+        // high-priority vocabulary (low-priority may accept this, but will not execute as expected)
+        .add(crate::lang::vocabulary::filters::empty_filter())
+        .add(crate::lang::vocabulary::filters::field_filter())
+        // low-priority (more forgiving statements which may not parse complete statement)
         .add(crate::lang::vocabulary::SqlStatementFactory)
         .add(crate::lang::vocabulary::SimpleSqlStatementFactory)
-        .add(crate::lang::vocabulary::CommentStatementFactory);
+        .add(crate::lang::vocabulary::CommentStatementFactory)
+        .add(crate::lang::vocabulary::RepeatStatementFactory)
+        .add(crate::lang::vocabulary::AssignStatementFactory)
+        .add(crate::lang::vocabulary::SqlInitStatementFactory);
 }

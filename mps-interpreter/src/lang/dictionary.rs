@@ -19,6 +19,7 @@ impl MpsLanguageDictionary {
         &self,
         tokens: &mut VecDeque<MpsToken>,
     ) -> Result<Box<dyn MpsOp>, SyntaxError> {
+        //println!("try_build_statement with tokens {:?}", tokens);
         for factory in &self.vocabulary {
             if factory.is_op_boxed(tokens) {
                 return factory.build_op_boxed(tokens, self);

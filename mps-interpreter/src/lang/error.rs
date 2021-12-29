@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use super::MpsOp;
+use super::PseudoOp;
 use crate::tokens::MpsToken;
 
 #[derive(Debug)]
@@ -28,7 +28,7 @@ impl MpsLanguageError for SyntaxError {
 #[derive(Debug)]
 pub struct RuntimeError {
     pub line: usize,
-    pub op: Box<dyn MpsOp>,
+    pub op: PseudoOp,
     pub msg: String,
 }
 

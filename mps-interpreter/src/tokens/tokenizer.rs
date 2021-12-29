@@ -234,6 +234,7 @@ impl ReaderStateMachine {
             | Self::EndToken {}
             | Self::EndComment {}
             | Self::EndStatement {}
+            | Self::EndOfFile {}
             | Self::Invalid {..} => match input_char {
                 '\\' => Self::Escaped { inside: '_' },
                 '/' => Self::Slash { out: input },
@@ -243,7 +244,7 @@ impl ReaderStateMachine {
                 ' ' => Self::EndToken {},
                 '\n' | '\r' | ';' => Self::EndStatement {},
                 '\0' => Self::EndOfFile {},
-                '(' | ')' | ',' => Self::SingleCharToken { out: input },
+                '(' | ')' | ',' | '=' | '<' | '>' | '.' => Self::SingleCharToken { out: input },
                 _ => Self::Regular { out: input },
             },
             Self::Escaped { inside } => match inside {
@@ -278,7 +279,7 @@ impl ReaderStateMachine {
                 '\n' | '\r' | '\0' => Self::EndComment {},
                 _ => Self::Comment { out: input },
             },
-            Self::EndOfFile {} => Self::EndOfFile {},
+            //Self::EndOfFile {} => Self::EndOfFile {}, // For REPL, the end of the file is not necessarily the end forever
         }
     }
 

@@ -45,7 +45,7 @@ impl Tags {
             self.filename
                 .file_name()
                 .and_then(|file| file.to_str())
-                .and_then(|file| Some(file.replacen(extension, "", 1)))
+                .and_then(|file| Some(file.replacen(&format!(".{}", extension), "", 1)))
                 .unwrap_or("Unknown Title".into())
         };
         DbMusicItem {

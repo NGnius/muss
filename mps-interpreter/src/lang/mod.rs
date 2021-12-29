@@ -1,27 +1,28 @@
-mod comment;
 mod db_items;
 mod dictionary;
 mod error;
+mod filter;
 mod operation;
-mod sql_query;
-mod sql_simple_query;
+mod pseudo_op;
+mod repeated_meme;
 //mod statement;
+mod type_primitives;
 pub(crate) mod utility;
 
 pub use dictionary::MpsLanguageDictionary;
 pub use error::{MpsLanguageError, RuntimeError, SyntaxError};
+pub use filter::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatement, MpsFilterStatementFactory};
 pub use operation::{BoxedMpsOpFactory, MpsOp, MpsOpFactory, SimpleMpsOpFactory};
+pub use pseudo_op::PseudoOp;
+pub use repeated_meme::{RepeatedTokens, repeated_tokens};
 //pub(crate) use statement::MpsStatement;
+pub use type_primitives::MpsTypePrimitive;
 
-pub mod vocabulary {
-    pub use super::sql_query::{SqlStatement, SqlStatementFactory};
-    pub use super::sql_simple_query::{SimpleSqlStatement, SimpleSqlStatementFactory};
-    pub use super::comment::{CommentStatement, CommentStatementFactory};
-}
+pub mod vocabulary;
 
 pub mod db {
     pub use super::db_items::{
-        generate_default_db, DatabaseObj, DbAlbumItem, DbArtistItem, DbGenreItem, DbMetaItem,
+        generate_default_db, generate_db, DatabaseObj, DbAlbumItem, DbArtistItem, DbGenreItem, DbMetaItem,
         DbMusicItem, DEFAULT_SQLITE_FILEPATH,
     };
 }
