@@ -48,7 +48,7 @@ fn execute_single_line(line: &str, should_be_emtpy: bool, should_complete: bool)
             count += 1;
             if count > 100 {
                 if should_complete {
-                    continue;
+                    continue; // skip println, but still check for errors
                 } else {
                     println!("Got 100 items, stopping to avoid infinite loop");
                     break;

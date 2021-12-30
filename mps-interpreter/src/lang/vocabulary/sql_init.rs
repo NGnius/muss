@@ -8,9 +8,9 @@ use crate::MpsMusicItem;
 use crate::tokens::MpsToken;
 
 use crate::lang::{RuntimeError, SyntaxError};
-use crate::lang::{MpsOp, SimpleMpsOpFactory, MpsOpFactory, BoxedMpsOpFactory};
+use crate::lang::{MpsOp, MpsFunctionFactory, MpsFunctionStatementFactory};
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::utility::{assert_token_raw, check_name, assert_name, assert_token};
+use crate::lang::utility::{assert_token_raw, assert_token};
 use crate::lang::repeated_tokens;
 
 #[derive(Debug)]
@@ -62,21 +62,19 @@ impl MpsOp for SqlInitStatement {
     }
 }
 
-pub struct SqlInitStatementFactory;
+pub struct SqlInitFunctionFactory;
 
-impl SimpleMpsOpFactory<SqlInitStatement> for SqlInitStatementFactory {
-    fn is_op_simple(&self, tokens: &VecDeque<MpsToken>) -> bool {
-        tokens.len() >= 3
-        && check_name("sql_init", &tokens[0])
-        && tokens[1].is_open_bracket()
+impl MpsFunctionFactory<SqlInitStatement> for SqlInitFunctionFactory {
+    fn is_function(&self, name: &str) -> bool {
+        name == "sql_init"
     }
 
-    fn build_op_simple(
+    fn build_function_params(
         &self,
+        _name: String,
         tokens: &mut VecDeque<MpsToken>,
+        _dict: &MpsLanguageDictionary,
     ) -> Result<SqlInitStatement, SyntaxError> {
-        assert_name("sql_init", tokens)?;
-        assert_token_raw(MpsToken::OpenBracket, tokens)?;
         let ingest = |tokens2: &mut VecDeque<MpsToken>| {
             if tokens2.len() < 3 {return Ok(None);} // nothing wrong, nothing left to ingest
             let param_name = assert_token(|t| match t {
@@ -92,7 +90,6 @@ impl SimpleMpsOpFactory<SqlInitStatement> for SqlInitStatementFactory {
             Ok(Some((param_name, param_val))) // successfully ingested one phrase
         };
         let params = repeated_tokens(ingest, MpsToken::Comma).ingest_all(tokens)?;
-        assert_token_raw(MpsToken::CloseBracket, tokens)?;
         Ok(SqlInitStatement {
             context: None,
             params: HashMap::from_iter(params),
@@ -100,16 +97,9 @@ impl SimpleMpsOpFactory<SqlInitStatement> for SqlInitStatementFactory {
     }
 }
 
-impl BoxedMpsOpFactory for SqlInitStatementFactory {
-    fn build_op_boxed(
-        &self,
-        tokens: &mut VecDeque<MpsToken>,
-        dict: &MpsLanguageDictionary,
-    ) -> Result<Box<dyn MpsOp>, SyntaxError> {
-        self.build_box(tokens, dict)
-    }
+pub type SqlInitStatementFactory = MpsFunctionStatementFactory<SqlInitStatement, SqlInitFunctionFactory>;
 
-    fn is_op_boxed(&self, tokens: &VecDeque<MpsToken>) -> bool {
-        self.is_op(tokens)
-    }
+#[inline(always)]
+pub fn sql_init_function_factory() -> SqlInitStatementFactory {
+    SqlInitStatementFactory::new(SqlInitFunctionFactory)
 }

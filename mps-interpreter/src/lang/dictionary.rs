@@ -25,9 +25,18 @@ impl MpsLanguageDictionary {
                 return factory.build_op_boxed(tokens, self);
             }
         }
+        let result = match tokens.pop_front() {
+            Some(x) => Ok(x),
+            None => Err(SyntaxError {
+                line: 0,
+                token: MpsToken::Name("???".into()),
+                got: None,
+            })
+        }?;
         Err(SyntaxError {
             line: 0,
-            token: tokens.pop_front().unwrap(),
+            token: MpsToken::Name("???".into()),
+            got: Some(result),
         })
     }
 

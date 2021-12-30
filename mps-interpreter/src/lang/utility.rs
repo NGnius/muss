@@ -11,12 +11,21 @@ pub fn assert_token<T, F: FnOnce(MpsToken) -> Option<T>>(
     token: MpsToken,
     tokens: &mut VecDeque<MpsToken>,
 ) -> Result<T, SyntaxError> {
-    if let Some(out) = caster(tokens.pop_front().unwrap()) {
+    let result = match tokens.pop_front() {
+        Some(x) => Ok(x),
+        None => Err(SyntaxError {
+            line: 0,
+            token: token.clone(),
+            got: None,
+        })
+    }?;
+    if let Some(out) = caster(result.clone()) {
         Ok(out)
     } else {
         Err(SyntaxError {
             line: 0,
             token: token,
+            got: Some(result),
         })
     }
 }
@@ -25,13 +34,44 @@ pub fn assert_token_raw(
     token: MpsToken,
     tokens: &mut VecDeque<MpsToken>,
 ) -> Result<MpsToken, SyntaxError> {
-    let result = tokens.pop_front().unwrap();
+    let result = match tokens.pop_front() {
+        Some(x) => Ok(x),
+        None => Err(SyntaxError {
+            line: 0,
+            token: token.clone(),
+            got: None,
+        })
+    }?;
     if std::mem::discriminant(&token) == std::mem::discriminant(&result) {
         Ok(result)
     } else {
         Err(SyntaxError {
             line: 0,
             token: token,
+            got: Some(result),
+        })
+    }
+}
+
+pub fn assert_token_raw_back(
+    token: MpsToken,
+    tokens: &mut VecDeque<MpsToken>,
+) -> Result<MpsToken, SyntaxError> {
+    let result = match tokens.pop_back() {
+        Some(x) => Ok(x),
+        None => Err(SyntaxError {
+            line: 0,
+            token: token.clone(),
+            got: None,
+        })
+    }?;
+    if std::mem::discriminant(&token) == std::mem::discriminant(&result) {
+        Ok(result)
+    } else {
+        Err(SyntaxError {
+            line: 0,
+            token: token,
+            got: Some(result),
         })
     }
 }
@@ -43,8 +83,17 @@ pub fn check_token_raw(
     std::mem::discriminant(&token) == std::mem::discriminant(token_target)
 }
 
+#[allow(dead_code)]
 pub fn assert_name(name: &str, tokens: &mut VecDeque<MpsToken>) -> Result<String, SyntaxError> {
-    match tokens.pop_front().unwrap() {
+    let result = match tokens.pop_front() {
+        Some(x) => Ok(x),
+        None => Err(SyntaxError {
+            line: 0,
+            token: MpsToken::Name(name.to_owned()),
+            got: None,
+        })
+    }?;
+    match result {
         MpsToken::Name(n) => {
             if n == name {
                 Ok(n)
@@ -53,17 +102,20 @@ pub fn assert_name(name: &str, tokens: &mut VecDeque<MpsToken>) -> Result<String
                     SyntaxError {
                         line: 0,
                         token: MpsToken::Name(name.to_owned()),
+                        got: Some(MpsToken::Name(n)),
                     }
                 )
             }
         },
-        _token => Err(SyntaxError {
+        token => Err(SyntaxError {
             line: 0,
             token: MpsToken::Name(name.to_owned()),
+            got: Some(token),
         })
     }
 }
 
+#[allow(dead_code)]
 pub fn check_name(name: &str, token: &MpsToken) -> bool {
     match token {
         MpsToken::Name(n) => n == name,
@@ -85,7 +137,15 @@ pub fn check_is_type(token: &MpsToken) -> bool {
 }
 
 pub fn assert_type(tokens: &mut VecDeque<MpsToken>) -> Result<MpsTypePrimitive, SyntaxError> {
-    match tokens.pop_front().unwrap() {
+    let token = match tokens.pop_front() {
+        Some(x) => Ok(x),
+        None => Err(SyntaxError {
+            line: 0,
+            token: MpsToken::Name("Float | UInt | Int | Bool".into()),
+            got: None,
+        })
+    }?;
+    match token {
         MpsToken::Literal(s) => Ok(MpsTypePrimitive::String(s)),
         MpsToken::Name(s) => {
             if let Ok(f) = s.parse::<f64>() {
@@ -102,12 +162,14 @@ pub fn assert_type(tokens: &mut VecDeque<MpsToken>) -> Result<MpsTypePrimitive, 
                 Err(SyntaxError {
                     line: 0,
                     token: MpsToken::Name("Float | UInt | Int | Bool".into()),
+                    got: Some(MpsToken::Name(s))
                 })
             }
         },
-        _token => Err(SyntaxError {
+        token => Err(SyntaxError {
             line: 0,
             token: MpsToken::Name("Float | UInt | Int | Bool | \"String\"".into()),
+            got: Some(token)
         })
     }
 }

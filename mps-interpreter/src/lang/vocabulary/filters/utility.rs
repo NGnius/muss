@@ -30,6 +30,7 @@ pub fn assert_comparison_operator(tokens: &mut VecDeque<MpsToken>) -> Result<[i8
                 Err(SyntaxError {
                     line: 0,
                     token: MpsToken::Equals,
+                    got: if tokens.len() != 0 {Some(tokens[0].clone())} else {None},
                 })
             }
         },
@@ -52,6 +53,7 @@ pub fn assert_comparison_operator(tokens: &mut VecDeque<MpsToken>) -> Result<[i8
         _ => Err(SyntaxError {
             line: 0,
             token: MpsToken::Equals, // TODO this can be < > or =
+            got: Some(token1),
         })
     }
 }

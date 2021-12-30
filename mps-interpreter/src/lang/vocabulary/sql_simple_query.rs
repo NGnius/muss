@@ -2,8 +2,8 @@ use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
-use crate::lang::utility::{assert_token, assert_token_raw};
-use crate::lang::{BoxedMpsOpFactory, MpsLanguageDictionary, MpsOp, MpsOpFactory};
+use crate::lang::utility::assert_token;
+use crate::lang::{MpsLanguageDictionary, MpsOp, MpsFunctionFactory, MpsFunctionStatementFactory};
 use crate::lang::{RuntimeError, SyntaxError};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -26,7 +26,8 @@ impl QueryMode {
             "genre" => Ok(QueryMode::Genre),
             _ => Err(SyntaxError {
                 line: 0,
-                token: Self::tokenify(name),
+                token: MpsToken::Name("artist|album|song|genre".into()),
+                got: Some(Self::tokenify(name)),
             }),
         }
     }
@@ -162,43 +163,20 @@ impl Display for SimpleSqlStatement {
     }
 }
 
-pub struct SimpleSqlStatementFactory;
+pub struct SimpleSqlFunctionFactory;
 
-impl MpsOpFactory<SimpleSqlStatement> for SimpleSqlStatementFactory {
-    #[inline]
-    fn is_op(&self, tokens: &VecDeque<MpsToken>) -> bool {
-        tokens.len() > 3
-            && match &tokens[0] {
-                MpsToken::Name(name) => QueryMode::is_valid_name(name),
-                _ => false,
-            }
-            && tokens[1].is_open_bracket()
-            && tokens[2].is_literal()
-            && tokens[3].is_close_bracket()
+impl MpsFunctionFactory<SimpleSqlStatement> for SimpleSqlFunctionFactory {
+    fn is_function(&self, name: &str) -> bool {
+        QueryMode::is_valid_name(name)
     }
 
-    #[inline]
-    fn build_op(
+    fn build_function_params(
         &self,
+        mode_name: String,
         tokens: &mut VecDeque<MpsToken>,
         _dict: &MpsLanguageDictionary,
     ) -> Result<SimpleSqlStatement, SyntaxError> {
-        // artist|album|song|genre ( `like` )
-        let mode_name = assert_token(
-            |t| match t {
-                MpsToken::Name(name) => {
-                    if QueryMode::is_valid_name(&name) {
-                        Some(name)
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            },
-            MpsToken::Name("artist|album|song|genre".into()),
-            tokens,
-        )?;
-        assert_token_raw(MpsToken::OpenBracket, tokens)?;
+        // artist|album|song|genre ( `title_like` )
         let literal = assert_token(
             |t| match t {
                 MpsToken::Literal(query) => Some(query),
@@ -207,7 +185,6 @@ impl MpsOpFactory<SimpleSqlStatement> for SimpleSqlStatementFactory {
             MpsToken::Literal("literal".into()),
             tokens,
         )?;
-        assert_token_raw(MpsToken::CloseBracket, tokens)?;
         Ok(SimpleSqlStatement {
             query: literal,
             mode: QueryMode::from_name(mode_name)?,
@@ -218,16 +195,9 @@ impl MpsOpFactory<SimpleSqlStatement> for SimpleSqlStatementFactory {
     }
 }
 
-impl BoxedMpsOpFactory for SimpleSqlStatementFactory {
-    fn build_op_boxed(
-        &self,
-        tokens: &mut VecDeque<MpsToken>,
-        dict: &MpsLanguageDictionary,
-    ) -> Result<Box<dyn MpsOp>, SyntaxError> {
-        self.build_box(tokens, dict)
-    }
+pub type SimpleSqlStatementFactory = MpsFunctionStatementFactory<SimpleSqlStatement, SimpleSqlFunctionFactory>;
 
-    fn is_op_boxed(&self, tokens: &VecDeque<MpsToken>) -> bool {
-        self.is_op(tokens)
-    }
+#[inline(always)]
+pub fn simple_sql_function_factory() -> SimpleSqlStatementFactory {
+    SimpleSqlStatementFactory::new(SimpleSqlFunctionFactory)
 }

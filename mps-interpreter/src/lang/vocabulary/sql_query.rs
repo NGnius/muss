@@ -2,8 +2,8 @@ use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
-use crate::lang::utility::{assert_token, assert_token_raw, check_name, assert_name};
-use crate::lang::{BoxedMpsOpFactory, MpsLanguageDictionary, MpsOp, MpsOpFactory};
+use crate::lang::utility::assert_token;
+use crate::lang::{MpsLanguageDictionary, MpsOp, MpsFunctionFactory, MpsFunctionStatementFactory};
 use crate::lang::{RuntimeError, SyntaxError};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -102,28 +102,20 @@ impl Display for SqlStatement {
     }
 }
 
-pub struct SqlStatementFactory;
+pub struct SqlFunctionFactory;
 
-impl MpsOpFactory<SqlStatement> for SqlStatementFactory {
-    #[inline]
-    fn is_op(&self, tokens: &VecDeque<MpsToken>) -> bool {
-        tokens.len() > 3
-            && check_name("sql", &tokens[0])
-            && tokens[1].is_open_bracket()
-            && tokens[2].is_literal()
-            && tokens[3].is_close_bracket()
+impl MpsFunctionFactory<SqlStatement> for SqlFunctionFactory {
+    fn is_function(&self, name: &str) -> bool {
+        name == "sql"
     }
 
-    #[inline]
-    fn build_op(
+    fn build_function_params(
         &self,
+        _name: String,
         tokens: &mut VecDeque<MpsToken>,
         _dict: &MpsLanguageDictionary,
     ) -> Result<SqlStatement, SyntaxError> {
         // sql ( `some query` )
-        assert_name("sql", tokens)?;
-        //assert_token_raw(MpsToken::Sql, tokens)?;
-        assert_token_raw(MpsToken::OpenBracket, tokens)?;
         let literal = assert_token(
             |t| match t {
                 MpsToken::Literal(query) => Some(query),
@@ -132,7 +124,6 @@ impl MpsOpFactory<SqlStatement> for SqlStatementFactory {
             MpsToken::Literal("".into()),
             tokens,
         )?;
-        assert_token_raw(MpsToken::CloseBracket, tokens)?;
         Ok(SqlStatement {
             query: literal,
             context: None,
@@ -142,16 +133,9 @@ impl MpsOpFactory<SqlStatement> for SqlStatementFactory {
     }
 }
 
-impl BoxedMpsOpFactory for SqlStatementFactory {
-    fn build_op_boxed(
-        &self,
-        tokens: &mut VecDeque<MpsToken>,
-        dict: &MpsLanguageDictionary,
-    ) -> Result<Box<dyn MpsOp>, SyntaxError> {
-        self.build_box(tokens, dict)
-    }
+pub type SqlStatementFactory = MpsFunctionStatementFactory<SqlStatement, SqlFunctionFactory>;
 
-    fn is_op_boxed(&self, tokens: &VecDeque<MpsToken>) -> bool {
-        self.is_op(tokens)
-    }
+#[inline(always)]
+pub fn sql_function_factory() -> SqlStatementFactory {
+    SqlStatementFactory::new(SqlFunctionFactory)
 }

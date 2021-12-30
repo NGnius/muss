@@ -7,15 +7,23 @@ use crate::tokens::MpsToken;
 pub struct SyntaxError {
     pub line: usize,
     pub token: MpsToken,
+    pub got: Option<MpsToken>
 }
 
 impl Display for SyntaxError {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(
-            f,
-            "SyntaxError (line {}): Unexpected {}",
-            &self.line, &self.token
-        )
+        match &self.got {
+            Some(t) => write!(
+                f,
+                "SyntaxError (line {}): Expected {}, got {}",
+                &self.line, &self.token, t
+            ),
+            None => write!(
+                f,
+                "SyntaxError (line {}): Expected {}, got nothing",
+                &self.line, &self.token
+            ),
+        }
     }
 }
 
