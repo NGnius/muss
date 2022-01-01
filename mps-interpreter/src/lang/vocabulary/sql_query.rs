@@ -3,7 +3,7 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
 use crate::lang::utility::assert_token;
-use crate::lang::{MpsLanguageDictionary, MpsOp, MpsFunctionFactory, MpsFunctionStatementFactory};
+use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsLanguageDictionary, MpsOp};
 use crate::lang::{RuntimeError, SyntaxError};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -82,10 +82,9 @@ impl Iterator for SqlStatement {
             let self_clone = self.clone();
             let ctx = self.context.as_mut().unwrap();
             // query has not been executed yet
-            match ctx
-                .database
-                .raw(&self.query, &mut move || (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into())
-            {
+            match ctx.database.raw(&self.query, &mut move || {
+                (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()
+            }) {
                 Err(e) => return Some(Err(e)),
                 Ok(rows) => {
                     self.rows = Some(rows);

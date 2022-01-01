@@ -1,3 +1,4 @@
+mod filesystem;
 mod sql;
 mod variables;
 
@@ -8,5 +9,6 @@ pub mod database {
 }
 
 pub mod general {
-    pub use super::variables::{MpsVariableStorer, MpsOpStorage, MpsType};
+    pub use super::filesystem::{FileIter, MpsFilesystemExecutor, MpsFilesystemQuerier};
+    pub use super::variables::{MpsOpStorage, MpsType, MpsVariableStorer};
 }

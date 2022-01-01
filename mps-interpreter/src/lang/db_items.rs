@@ -11,14 +11,19 @@ pub trait DatabaseObj: Sized {
 }
 
 pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
-    generate_db(super::utility::music_folder(), DEFAULT_SQLITE_FILEPATH, true)
+    generate_db(
+        super::utility::music_folder(),
+        DEFAULT_SQLITE_FILEPATH,
+        true,
+    )
 }
 
 pub fn generate_db<P1: AsRef<Path>, P2: AsRef<Path>>(
     music_path: P1,
     sqlite_path: P2,
-    generate: bool
+    generate: bool,
 ) -> rusqlite::Result<rusqlite::Connection> {
+    #[allow(unused_variables)]
     let music_path = music_path.as_ref();
     let sqlite_path = sqlite_path.as_ref();
     let db_exists = std::path::Path::new(sqlite_path).exists();
@@ -73,18 +78,18 @@ pub fn generate_db<P1: AsRef<Path>, P2: AsRef<Path>>(
     // generate data and store in db
     #[cfg(feature = "music_library")]
     if generate {
-
         let mut lib = crate::music::MpsLibrary::new();
         if db_exists {
             crate::music::build_library_from_sqlite(&conn, &mut lib)?;
         }
         lib.clear_modified();
         match crate::music::build_library_from_files(&music_path, &mut lib) {
-            Ok(_) => if lib.is_modified() {
-                let transaction = conn.transaction()?;
-                {
-                let mut song_insert = transaction.prepare(
-                    "INSERT OR REPLACE INTO songs (
+            Ok(_) => {
+                if lib.is_modified() {
+                    let transaction = conn.transaction()?;
+                    {
+                        let mut song_insert = transaction.prepare(
+                            "INSERT OR REPLACE INTO songs (
                         song_id,
                         title,
                         artist,
@@ -93,13 +98,13 @@ pub fn generate_db<P1: AsRef<Path>, P2: AsRef<Path>>(
                         metadata,
                         genre
                     ) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                )?;
-                for song in lib.all_songs() {
-                    song_insert.execute(song.to_params().as_slice())?;
-                }
+                        )?;
+                        for song in lib.all_songs() {
+                            song_insert.execute(song.to_params().as_slice())?;
+                        }
 
-                let mut metadata_insert = transaction.prepare(
-                    "INSERT OR REPLACE INTO metadata (
+                        let mut metadata_insert = transaction.prepare(
+                            "INSERT OR REPLACE INTO metadata (
                         meta_id,
                         plays,
                         track,
@@ -107,47 +112,48 @@ pub fn generate_db<P1: AsRef<Path>, P2: AsRef<Path>>(
                         duration,
                         date
                     ) VALUES (?, ?, ?, ?, ?, ?)",
-                )?;
-                for meta in lib.all_metadata() {
-                    metadata_insert.execute(meta.to_params().as_slice())?;
-                }
+                        )?;
+                        for meta in lib.all_metadata() {
+                            metadata_insert.execute(meta.to_params().as_slice())?;
+                        }
 
-                let mut artist_insert = transaction.prepare(
-                    "INSERT OR REPLACE INTO artists (
+                        let mut artist_insert = transaction.prepare(
+                            "INSERT OR REPLACE INTO artists (
                         artist_id,
                         name,
                         genre
                     ) VALUES (?, ?, ?)",
-                )?;
-                for artist in lib.all_artists() {
-                    artist_insert.execute(artist.to_params().as_slice())?;
-                }
+                        )?;
+                        for artist in lib.all_artists() {
+                            artist_insert.execute(artist.to_params().as_slice())?;
+                        }
 
-                let mut album_insert = transaction.prepare(
-                    "INSERT OR REPLACE INTO albums (
+                        let mut album_insert = transaction.prepare(
+                            "INSERT OR REPLACE INTO albums (
                         album_id,
                         title,
                         metadata,
                         artist,
                         genre
                     ) VALUES (?, ?, ?, ?, ?)",
-                )?;
-                for album in lib.all_albums() {
-                    album_insert.execute(album.to_params().as_slice())?;
-                }
+                        )?;
+                        for album in lib.all_albums() {
+                            album_insert.execute(album.to_params().as_slice())?;
+                        }
 
-                let mut genre_insert = transaction.prepare(
-                    "INSERT OR REPLACE INTO genres (
+                        let mut genre_insert = transaction.prepare(
+                            "INSERT OR REPLACE INTO genres (
                         genre_id,
                         title
                     ) VALUES (?, ?)",
-                )?;
-                for genre in lib.all_genres() {
-                    genre_insert.execute(genre.to_params().as_slice())?;
+                        )?;
+                        for genre in lib.all_genres() {
+                            genre_insert.execute(genre.to_params().as_slice())?;
+                        }
+                    }
+                    transaction.commit()?;
                 }
-                }
-                transaction.commit()?;
-            },
+            }
             Err(e) => println!("Unable to load music from {}: {}", music_path.display(), e),
         }
     }

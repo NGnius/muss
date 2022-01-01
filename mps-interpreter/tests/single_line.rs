@@ -27,7 +27,11 @@ fn parse_line() -> Result<(), ParseError> {
     // validity tests
     assert_eq!(buf.len(), correct_tokens.len());
     for i in 0..buf.len() {
-        assert_eq!(buf[i], correct_tokens[i], "Tokens at position {} do not match ()", i);
+        assert_eq!(
+            buf[i], correct_tokens[i],
+            "Tokens at position {} do not match ()",
+            i
+        );
     }
 
     tokenizer.read_line(&mut buf)?; // this should immediately return
@@ -35,7 +39,11 @@ fn parse_line() -> Result<(), ParseError> {
 }
 
 #[inline(always)]
-fn execute_single_line(line: &str, should_be_emtpy: bool, should_complete: bool) -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_single_line(
+    line: &str,
+    should_be_emtpy: bool,
+    should_complete: bool,
+) -> Result<(), Box<dyn MpsLanguageError>> {
     println!("--- Executing MPS code: '{}' ---", line);
     let cursor = Cursor::new(line);
 
@@ -57,14 +65,25 @@ fn execute_single_line(line: &str, should_be_emtpy: bool, should_complete: bool)
             println!("Got song `{}` (file: `{}`)", item.title, item.filename);
         } else {
             println!("!!! Got error while iterating (executing) !!!");
+            eprintln!("{}", result.as_ref().err().unwrap());
             result?;
         }
     }
     if should_be_emtpy {
-        assert_eq!(count, 0, "{} music items found while iterating over line which should be None", count);
+        assert_eq!(
+            count, 0,
+            "{} music items found while iterating over line which should be None",
+            count
+        );
     } else {
-        println!("Got {} items, execution complete (no songs were harmed in the making of this test)", count);
-        assert_ne!(count, 0, "0 music items found while iterating over line which should have Some results"); // assumption: database is populated
+        println!(
+            "Got {} items, execution complete (no songs were harmed in the making of this test)",
+            count
+        );
+        assert_ne!(
+            count, 0,
+            "0 music items found while iterating over line which should have Some results"
+        ); // assumption: database is populated
     }
     Ok(())
 }
@@ -93,12 +112,20 @@ fn execute_repeat_line() -> Result<(), Box<dyn MpsLanguageError>> {
 
 #[test]
 fn execute_sql_init_line() -> Result<(), Box<dyn MpsLanguageError>> {
-    execute_single_line("sql_init(generate = no, folder = `/home/ngnius/Music`)", true, true)
+    execute_single_line(
+        "sql_init(generate = false, folder = `/home/ngnius/Music`)",
+        true,
+        true,
+    )
 }
 
 #[test]
 fn execute_assign_line() -> Result<(), Box<dyn MpsLanguageError>> {
-    execute_single_line("let some_var = repeat(song(`Christmas in L.A.`))", true, true)?;
+    execute_single_line(
+        "let some_var = repeat(song(`Christmas in L.A.`))",
+        true,
+        true,
+    )?;
     execute_single_line("let some_var2 = 1234", true, true)
 }
 
@@ -110,4 +137,13 @@ fn execute_emptyfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 #[test]
 fn execute_fieldfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
     execute_single_line("song(`lov`).(year >= 2020)", false, true)
+}
+
+#[test]
+fn execute_files_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        r"files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`, re=``, recursive=false)",
+        false,
+        true,
+    )
 }

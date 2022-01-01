@@ -30,7 +30,11 @@ pub trait MpsDatabaseQuerier: Debug {
     /// `"folder" = "path"` - path to root music directory
     /// `"database" = "uri"` - connection URI for database (for SQLite this is just a filepath)
     /// `"generate" = "true"|"yes"|"false"|"no"` - whether to populate the database using the music directory
-    fn init_with_params(&mut self, params: &HashMap<String, String>, op: &mut QueryOp) -> Result<(), RuntimeError>;
+    fn init_with_params(
+        &mut self,
+        params: &HashMap<String, String>,
+        op: &mut QueryOp,
+    ) -> Result<(), RuntimeError>;
 }
 
 #[derive(Default, Debug)]
@@ -113,8 +117,7 @@ impl MpsDatabaseQuerier for MpsSQLiteExecutor {
 
     fn artist_like(&mut self, query: &str, op: &mut QueryOp) -> QueryResult {
         let param = &format!("%{}%", query);
-        let query_stmt =
-            "SELECT songs.* FROM songs
+        let query_stmt = "SELECT songs.* FROM songs
                 JOIN artists ON songs.artist = artists.artist_id
                 JOIN metadata ON songs.metadata = metadata.meta_id
             WHERE artists.name like ? ORDER BY songs.album, metadata.track";
@@ -123,8 +126,7 @@ impl MpsDatabaseQuerier for MpsSQLiteExecutor {
 
     fn album_like(&mut self, query: &str, op: &mut QueryOp) -> QueryResult {
         let param = &format!("%{}%", query);
-        let query_stmt =
-            "SELECT songs.* FROM songs
+        let query_stmt = "SELECT songs.* FROM songs
                 JOIN albums ON songs.album = artists.album_id
                 JOIN metadata ON songs.metadata = metadata.meta_id
             WHERE albums.title like ? ORDER BY songs.album, metadata.track";
@@ -133,8 +135,7 @@ impl MpsDatabaseQuerier for MpsSQLiteExecutor {
 
     fn song_like(&mut self, query: &str, op: &mut QueryOp) -> QueryResult {
         let param = &format!("%{}%", query);
-        let query_stmt =
-            "SELECT songs.* FROM songs
+        let query_stmt = "SELECT songs.* FROM songs
                 JOIN metadata ON songs.metadata = metadata.meta_id
             WHERE songs.title like ? ORDER BY songs.album, metadata.track";
         self.music_query_single_param(query_stmt, param, op)
@@ -142,15 +143,18 @@ impl MpsDatabaseQuerier for MpsSQLiteExecutor {
 
     fn genre_like(&mut self, query: &str, op: &mut QueryOp) -> QueryResult {
         let param = &format!("%{}%", query);
-        let query_stmt =
-            "SELECT songs.* FROM songs
+        let query_stmt = "SELECT songs.* FROM songs
                 JOIN genres ON songs.genre = genres.genre_id
                 JOIN metadata ON songs.metadata = metadata.meta_id
             WHERE genres.title like ? ORDER BY songs.album, metadata.track";
         self.music_query_single_param(query_stmt, param, op)
     }
 
-    fn init_with_params(&mut self, params: &HashMap<String, String>, op: &mut QueryOp) -> Result<(), RuntimeError> {
+    fn init_with_params(
+        &mut self,
+        params: &HashMap<String, String>,
+        op: &mut QueryOp,
+    ) -> Result<(), RuntimeError> {
         // must be executed before connection is created
         if self.sqlite_connection.is_some() {
             Err(RuntimeError {
@@ -169,21 +173,24 @@ impl MpsDatabaseQuerier for MpsSQLiteExecutor {
                     "folder" | "dir" => {
                         match_found = true;
                         settings.music_path = Some(val.clone());
-                    },
+                    }
                     "database" | "db" => {
                         match_found = true;
                         settings.db_path = Some(val.clone());
-                    },
+                    }
                     "generate" | "gen" => {
                         match_found = true;
                         settings.auto_generate = match val as &str {
-                            "true" | "yes" => Ok(true),
-                            "false" | "no" => Ok(false),
-                            x => Err(RuntimeError{
+                            "true" => Ok(true),
+                            "false" => Ok(false),
+                            x => Err(RuntimeError {
                                 line: 0,
                                 op: op(),
-                                msg: format!("Unrecognised right hand side of param \"{}\" = \"{}\"", key, x),
-                            })
+                                msg: format!(
+                                    "Unrecognised right hand side of param \"{}\" = \"{}\"",
+                                    key, x
+                                ),
+                            }),
                         }?;
                     }
                     _ => {}
@@ -207,19 +214,14 @@ impl MpsDatabaseQuerier for MpsSQLiteExecutor {
                 return Err(RuntimeError {
                     line: 0,
                     op: op(),
-                    msg: format!("Unrecognised sql init parameter(s): {}", concat_keys)
-                })
+                    msg: format!("Unrecognised sql init parameter(s): {}", concat_keys),
+                });
             }
-            self.sqlite_connection = Some(
-                settings.try_into()
-                    .map_err(|e|
-                        RuntimeError {
-                            line: 0,
-                            op: op(),
-                            msg: format!("SQL connection error: {}", e)
-                        }
-                    )?
-            );
+            self.sqlite_connection = Some(settings.try_into().map_err(|e| RuntimeError {
+                line: 0,
+                op: op(),
+                msg: format!("SQL connection error: {}", e),
+            })?);
             Ok(())
         }
     }
@@ -236,7 +238,7 @@ impl std::default::Default for SqliteSettings {
         SqliteSettings {
             music_path: None,
             db_path: None,
-            auto_generate: true
+            auto_generate: true,
         }
     }
 }
@@ -245,34 +247,33 @@ impl std::convert::TryInto<rusqlite::Connection> for SqliteSettings {
     type Error = rusqlite::Error;
 
     fn try_into(self) -> Result<rusqlite::Connection, Self::Error> {
-        let music_path = self.music_path
-            .and_then(
-                |p| Some(std::path::PathBuf::from(p))
-            ).unwrap_or_else(
-                || crate::lang::utility::music_folder()
-            );
-        let sqlite_path = self.db_path.unwrap_or_else(|| crate::lang::db::DEFAULT_SQLITE_FILEPATH.to_string());
+        let music_path = self
+            .music_path
+            .and_then(|p| Some(std::path::PathBuf::from(p)))
+            .unwrap_or_else(|| crate::lang::utility::music_folder());
+        let sqlite_path = self
+            .db_path
+            .unwrap_or_else(|| crate::lang::db::DEFAULT_SQLITE_FILEPATH.to_string());
         crate::lang::db::generate_db(music_path, sqlite_path, self.auto_generate)
     }
 }
 
 #[inline(always)]
-fn build_mps_item(conn: &mut rusqlite::Connection, item: DbMusicItem) -> rusqlite::Result<MpsMusicItem> {
+fn build_mps_item(
+    conn: &mut rusqlite::Connection,
+    item: DbMusicItem,
+) -> rusqlite::Result<MpsMusicItem> {
     // query artist
-    let mut stmt = conn
-        .prepare_cached("SELECT * from artists WHERE artist_id = ?")?;
+    let mut stmt = conn.prepare_cached("SELECT * from artists WHERE artist_id = ?")?;
     let artist = stmt.query_row([item.artist], DbArtistItem::map_row)?;
     // query album
-    let mut stmt = conn
-        .prepare_cached("SELECT * from albums WHERE album_id = ?")?;
+    let mut stmt = conn.prepare_cached("SELECT * from albums WHERE album_id = ?")?;
     let album = stmt.query_row([item.album], DbAlbumItem::map_row)?;
     // query metadata
-    let mut stmt = conn
-        .prepare_cached("SELECT * from metadata WHERE meta_id = ?")?;
+    let mut stmt = conn.prepare_cached("SELECT * from metadata WHERE meta_id = ?")?;
     let meta = stmt.query_row([item.metadata], DbMetaItem::map_row)?;
     // query genre
-    let mut stmt = conn
-        .prepare_cached("SELECT * from genres WHERE genre_id = ?")?;
+    let mut stmt = conn.prepare_cached("SELECT * from genres WHERE genre_id = ?")?;
     let genre = stmt.query_row([item.genre], DbGenreItem::map_row)?;
 
     Ok(MpsMusicItem::merge(item, artist, album, meta, genre))
@@ -293,11 +294,10 @@ fn perform_query(
             .map_err(|e| format!("SQLite item mapping error: {}", e))?
             .collect();
     }
-    let iter2 = collection.into_iter()
-        .map(|item| match item {
-            Ok(item) => build_mps_item(conn, item),
-            Err(e) => Err(e)
-        });
+    let iter2 = collection.into_iter().map(|item| match item {
+        Ok(item) => build_mps_item(conn, item),
+        Err(e) => Err(e),
+    });
     Ok(iter2.collect())
 }
 
@@ -317,10 +317,9 @@ fn perform_single_param_query(
             .map_err(|e| format!("SQLite item mapping error: {}", e))?
             .collect();
     }
-    let iter2 = collection.into_iter()
-        .map(|item| match item {
-            Ok(item) => build_mps_item(conn, item),
-            Err(e) => Err(e)
-        });
+    let iter2 = collection.into_iter().map(|item| match item {
+        Ok(item) => build_mps_item(conn, item),
+        Err(e) => Err(e),
+    });
     Ok(iter2.collect())
 }

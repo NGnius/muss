@@ -7,7 +7,7 @@ use super::RuntimeError;
 #[derive(Debug)]
 pub enum PseudoOp {
     Real(Box<dyn MpsOp>),
-    Fake(String)
+    Fake(String),
 }
 
 impl PseudoOp {
@@ -18,7 +18,7 @@ impl PseudoOp {
                 line: 0,
                 op: self.clone(),
                 msg: "PseudoOp::Fake is not a real MpsOp".into(),
-            })
+            }),
         }
     }
 
@@ -27,12 +27,12 @@ impl PseudoOp {
             Self::Real(op) => {
                 let result = Ok(op);
                 result
-            },
+            }
             Self::Fake(_) => Err(RuntimeError {
                 line: 0,
                 op: self.clone(),
                 msg: "PseudoOp::Fake is not a real MpsOp".into(),
-            })
+            }),
         }
     }
 
@@ -57,7 +57,7 @@ impl Clone for PseudoOp {
     fn clone(&self) -> Self {
         match self {
             Self::Real(op) => Self::Fake(format!("{}", op)),
-            Self::Fake(s) => Self::Fake(s.clone())
+            Self::Fake(s) => Self::Fake(s.clone()),
         }
     }
 }
@@ -66,7 +66,7 @@ impl Display for PseudoOp {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match self {
             Self::Real(op) => write!(f, "{}", op),
-            Self::Fake(s) => write!(f, "{}", s)
+            Self::Fake(s) => write!(f, "{}", s),
         }
     }
 }

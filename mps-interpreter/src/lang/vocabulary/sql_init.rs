@@ -1,17 +1,17 @@
+use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
-use std::collections::HashMap;
 
+use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsMusicItem;
-use crate::tokens::MpsToken;
 
-use crate::lang::{RuntimeError, SyntaxError};
-use crate::lang::{MpsOp, MpsFunctionFactory, MpsFunctionStatementFactory};
-use crate::lang::MpsLanguageDictionary;
-use crate::lang::utility::{assert_token_raw, assert_token};
 use crate::lang::repeated_tokens;
+use crate::lang::utility::{assert_token, assert_token_raw};
+use crate::lang::MpsLanguageDictionary;
+use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsOp};
+use crate::lang::{RuntimeError, SyntaxError};
 
 #[derive(Debug)]
 pub struct SqlInitStatement {
@@ -44,10 +44,16 @@ impl Iterator for SqlInitStatement {
     fn next(&mut self) -> Option<Self::Item> {
         let pseudo_clone = self.clone();
         // execute
-        match self.context.as_mut().unwrap().database.init_with_params(&self.params,
-            &mut move || (Box::new(pseudo_clone.clone()) as Box<dyn MpsOp>).into()) {
+        match self
+            .context
+            .as_mut()
+            .unwrap()
+            .database
+            .init_with_params(&self.params, &mut move || {
+                (Box::new(pseudo_clone.clone()) as Box<dyn MpsOp>).into()
+            }) {
             Ok(_) => None,
-            Err(e) => Some(Err(e))
+            Err(e) => Some(Err(e)),
         }
     }
 }
@@ -76,17 +82,27 @@ impl MpsFunctionFactory<SqlInitStatement> for SqlInitFunctionFactory {
         _dict: &MpsLanguageDictionary,
     ) -> Result<SqlInitStatement, SyntaxError> {
         let ingest = |tokens2: &mut VecDeque<MpsToken>| {
-            if tokens2.len() < 3 {return Ok(None);} // nothing wrong, nothing left to ingest
-            let param_name = assert_token(|t| match t {
-                MpsToken::Name(s) => Some(s),
-                _ => None,
-            }, MpsToken::Name("param".into()), tokens2)?;
+            if tokens2.len() < 3 {
+                return Ok(None);
+            } // nothing wrong, nothing left to ingest
+            let param_name = assert_token(
+                |t| match t {
+                    MpsToken::Name(s) => Some(s),
+                    _ => None,
+                },
+                MpsToken::Name("param".into()),
+                tokens2,
+            )?;
             assert_token_raw(MpsToken::Equals, tokens2)?;
-            let param_val = assert_token(|t| match t {
-                MpsToken::Name(s) => Some(s),
-                MpsToken::Literal(s) => Some(s),
-                _ => None,
-            }, MpsToken::Name("value".into()), tokens2)?;
+            let param_val = assert_token(
+                |t| match t {
+                    MpsToken::Name(s) => Some(s),
+                    MpsToken::Literal(s) => Some(s),
+                    _ => None,
+                },
+                MpsToken::Name("value".into()),
+                tokens2,
+            )?;
             Ok(Some((param_name, param_val))) // successfully ingested one phrase
         };
         let params = repeated_tokens(ingest, MpsToken::Comma).ingest_all(tokens)?;
@@ -97,7 +113,8 @@ impl MpsFunctionFactory<SqlInitStatement> for SqlInitFunctionFactory {
     }
 }
 
-pub type SqlInitStatementFactory = MpsFunctionStatementFactory<SqlInitStatement, SqlInitFunctionFactory>;
+pub type SqlInitStatementFactory =
+    MpsFunctionStatementFactory<SqlInitStatement, SqlInitFunctionFactory>;
 
 #[inline(always)]
 pub fn sql_init_function_factory() -> SqlInitStatementFactory {

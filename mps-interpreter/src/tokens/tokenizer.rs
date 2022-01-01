@@ -8,10 +8,7 @@ pub trait MpsTokenReader {
 
     fn current_column(&self) -> usize;
 
-    fn next_statement(
-        &mut self,
-        token_buffer: &mut VecDeque<MpsToken>,
-    ) -> Result<(), ParseError>;
+    fn next_statement(&mut self, token_buffer: &mut VecDeque<MpsToken>) -> Result<(), ParseError>;
 
     fn end_of_file(&self) -> bool;
 }
@@ -67,15 +64,16 @@ where
                         .map_err(|e| self.error(format!("UTF-8 encoding error: {}", e)))?;
                     buf.push_back(MpsToken::Literal(literal));
                     bigger_buf.clear();
-                },
+                }
                 ReaderStateMachine::EndComment {} => {
                     let comment = String::from_utf8(bigger_buf.clone())
                         .map_err(|e| self.error(format!("UTF-8 encoding error: {}", e)))?;
                     buf.push_back(MpsToken::Comment(comment));
                     bigger_buf.clear();
-                },
+                }
                 ReaderStateMachine::EndToken {} => {
-                    if bigger_buf.len() != 0 { // ignore consecutive end tokens
+                    if bigger_buf.len() != 0 {
+                        // ignore consecutive end tokens
                         let token = String::from_utf8(bigger_buf.clone())
                             .map_err(|e| self.error(format!("UTF-8 encoding error: {}", e)))?;
                         buf.push_back(
@@ -84,7 +82,7 @@ where
                         );
                         bigger_buf.clear();
                     }
-                },
+                }
                 ReaderStateMachine::SingleCharToken { .. } => {
                     let out = bigger_buf.pop().unwrap(); // bracket or comma token
                     if bigger_buf.len() != 0 {
@@ -106,17 +104,17 @@ where
                             .map_err(|e| self.error(format!("Invalid token {}", e)))?,
                     );
                     bigger_buf.clear();
-                },
+                }
                 ReaderStateMachine::EndStatement {} => {
                     // unnecessary; loop will have already exited
-                },
+                }
                 ReaderStateMachine::EndOfFile {} => {
                     // unnecessary; loop will have already exited
-                },
+                }
                 ReaderStateMachine::Invalid { .. } => {
                     let invalid_char = bigger_buf.pop().unwrap(); // invalid single char
                     Err(self.error(format!("Unexpected character {}", invalid_char)))?;
-                },
+                }
                 _ => {}
             }
             if self
@@ -175,10 +173,7 @@ where
         self.column
     }
 
-    fn next_statement(
-        &mut self,
-        buf: &mut VecDeque<MpsToken>,
-    ) -> Result<(), ParseError> {
+    fn next_statement(&mut self, buf: &mut VecDeque<MpsToken>) -> Result<(), ParseError> {
         // read until buffer gets some tokens, in case multiple end of line tokens are at start of stream
         let original_size = buf.len();
         while original_size == buf.len() && !self.end_of_file() {
@@ -212,15 +207,23 @@ enum ReaderStateMachine {
     SingleCharToken {
         out: u8,
     },
-    Slash {out: u8},
-    Octothorpe {out: u8},
-    Comment {out: u8},
+    Slash {
+        out: u8,
+    },
+    Octothorpe {
+        out: u8,
+    },
+    Comment {
+        out: u8,
+    },
     EndLiteral {},
     EndToken {},
     EndComment {},
     EndStatement {},
     EndOfFile {},
-    Invalid { out: u8 },
+    Invalid {
+        out: u8,
+    },
 }
 
 impl ReaderStateMachine {
@@ -235,7 +238,7 @@ impl ReaderStateMachine {
             | Self::EndComment {}
             | Self::EndStatement {}
             | Self::EndOfFile {}
-            | Self::Invalid {..} => match input_char {
+            | Self::Invalid { .. } => match input_char {
                 '\\' => Self::Escaped { inside: '_' },
                 '/' => Self::Slash { out: input },
                 '#' => Self::Octothorpe { out: input },
@@ -264,18 +267,18 @@ impl ReaderStateMachine {
                 '\0' => Self::Invalid { out: input },
                 _ => Self::InsideQuoteLiteral { out: input },
             },
-            Self::Slash {..} => match input_char {
+            Self::Slash { .. } => match input_char {
                 '/' => Self::Comment { out: input },
                 ' ' => Self::EndToken {},
                 '\0' => Self::EndOfFile {},
                 '\n' | '\r' | ';' => Self::EndStatement {},
                 _ => Self::Regular { out: input },
             },
-            Self::Octothorpe {..} => match input_char {
+            Self::Octothorpe { .. } => match input_char {
                 '\n' | '\r' | '\0' => Self::EndComment {},
-                _ => Self::Comment { out: input }
+                _ => Self::Comment { out: input },
             },
-            Self::Comment {..} => match input_char {
+            Self::Comment { .. } => match input_char {
                 '\n' | '\r' | '\0' => Self::EndComment {},
                 _ => Self::Comment { out: input },
             },
@@ -304,7 +307,7 @@ impl ReaderStateMachine {
             | Self::InsideTickLiteral { out, .. }
             | Self::InsideQuoteLiteral { out, .. }
             | Self::Slash { out, .. }
-            | Self::Octothorpe { out, ..}
+            | Self::Octothorpe { out, .. }
             | Self::Comment { out, .. }
             | Self::Invalid { out, .. } => Some(*out),
             _ => None,

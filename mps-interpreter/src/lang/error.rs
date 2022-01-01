@@ -7,7 +7,7 @@ use crate::tokens::MpsToken;
 pub struct SyntaxError {
     pub line: usize,
     pub token: MpsToken,
-    pub got: Option<MpsToken>
+    pub got: Option<MpsToken>,
 }
 
 impl Display for SyntaxError {

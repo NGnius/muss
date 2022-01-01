@@ -3,7 +3,7 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
 use crate::lang::utility::assert_token;
-use crate::lang::{MpsLanguageDictionary, MpsOp, MpsFunctionFactory, MpsFunctionStatementFactory};
+use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsLanguageDictionary, MpsOp};
 use crate::lang::{RuntimeError, SyntaxError};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -133,18 +133,18 @@ impl Iterator for SimpleSqlStatement {
             let ctx = self.context.as_mut().unwrap();
             // query has not been executed yet
             let query_result = match self.mode {
-                QueryMode::Artist => ctx
-                    .database
-                    .artist_like(&self.query, &mut move || (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()),
-                QueryMode::Album => ctx
-                    .database
-                    .album_like(&self.query, &mut move || (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()),
-                QueryMode::Song => ctx
-                    .database
-                    .song_like(&self.query, &mut move || (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()),
-                QueryMode::Genre => ctx
-                    .database
-                    .genre_like(&self.query, &mut move || (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()),
+                QueryMode::Artist => ctx.database.artist_like(&self.query, &mut move || {
+                    (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()
+                }),
+                QueryMode::Album => ctx.database.album_like(&self.query, &mut move || {
+                    (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()
+                }),
+                QueryMode::Song => ctx.database.song_like(&self.query, &mut move || {
+                    (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()
+                }),
+                QueryMode::Genre => ctx.database.genre_like(&self.query, &mut move || {
+                    (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()
+                }),
             };
             match query_result {
                 Err(e) => return Some(Err(e)),
@@ -195,7 +195,8 @@ impl MpsFunctionFactory<SimpleSqlStatement> for SimpleSqlFunctionFactory {
     }
 }
 
-pub type SimpleSqlStatementFactory = MpsFunctionStatementFactory<SimpleSqlStatement, SimpleSqlFunctionFactory>;
+pub type SimpleSqlStatementFactory =
+    MpsFunctionStatementFactory<SimpleSqlStatement, SimpleSqlFunctionFactory>;
 
 #[inline(always)]
 pub fn simple_sql_function_factory() -> SimpleSqlStatementFactory {

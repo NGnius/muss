@@ -1,11 +1,14 @@
 use super::processing::database::{MpsDatabaseQuerier, MpsSQLiteExecutor};
-use super::processing::general::{MpsVariableStorer, MpsOpStorage};
+use super::processing::general::{
+    MpsFilesystemExecutor, MpsFilesystemQuerier, MpsOpStorage, MpsVariableStorer,
+};
 use std::fmt::{Debug, Display, Error, Formatter};
 
 #[derive(Debug)]
 pub struct MpsContext {
     pub database: Box<dyn MpsDatabaseQuerier>,
     pub variables: Box<dyn MpsVariableStorer>,
+    pub filesystem: Box<dyn MpsFilesystemQuerier>,
 }
 
 impl Default for MpsContext {
@@ -13,6 +16,7 @@ impl Default for MpsContext {
         Self {
             database: Box::new(MpsSQLiteExecutor::default()),
             variables: Box::new(MpsOpStorage::default()),
+            filesystem: Box::new(MpsFilesystemExecutor::default()),
         }
     }
 }

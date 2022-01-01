@@ -11,10 +11,7 @@ use crate::MpsMusicItem;
 pub trait SimpleMpsOpFactory<T: MpsOp + 'static> {
     fn is_op_simple(&self, tokens: &VecDeque<MpsToken>) -> bool;
 
-    fn build_op_simple(
-        &self,
-        tokens: &mut VecDeque<MpsToken>,
-    ) -> Result<T, SyntaxError>;
+    fn build_op_simple(&self, tokens: &mut VecDeque<MpsToken>) -> Result<T, SyntaxError>;
 }
 
 impl<T: MpsOp + 'static, X: SimpleMpsOpFactory<T> + 'static> MpsOpFactory<T> for X {

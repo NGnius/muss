@@ -2,14 +2,14 @@ use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
+use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsMusicItem;
-use crate::tokens::MpsToken;
 
-use crate::lang::{RuntimeError, SyntaxError};
-use crate::lang::{MpsOp, SimpleMpsOpFactory, MpsOpFactory, BoxedMpsOpFactory};
-use crate::lang::MpsLanguageDictionary;
 use crate::lang::utility::assert_token;
+use crate::lang::MpsLanguageDictionary;
+use crate::lang::{BoxedMpsOpFactory, MpsOp, MpsOpFactory, SimpleMpsOpFactory};
+use crate::lang::{RuntimeError, SyntaxError};
 
 #[derive(Debug)]
 pub struct CommentStatement {
@@ -66,21 +66,24 @@ pub struct CommentStatementFactory;
 
 impl SimpleMpsOpFactory<CommentStatement> for CommentStatementFactory {
     fn is_op_simple(&self, tokens: &VecDeque<MpsToken>) -> bool {
-        tokens.len() == 1
-        && tokens[0].is_comment()
+        tokens.len() == 1 && tokens[0].is_comment()
     }
 
     fn build_op_simple(
         &self,
         tokens: &mut VecDeque<MpsToken>,
     ) -> Result<CommentStatement, SyntaxError> {
-        let comment = assert_token(|t| match t {
-            MpsToken::Comment(c) => Some(c),
-            _ => None
-        }, MpsToken::Comment("comment".into()), tokens)?;
+        let comment = assert_token(
+            |t| match t {
+                MpsToken::Comment(c) => Some(c),
+                _ => None,
+            },
+            MpsToken::Comment("comment".into()),
+            tokens,
+        )?;
         Ok(CommentStatement {
             comment: comment,
-            context: None
+            context: None,
         })
     }
 }

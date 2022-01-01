@@ -15,62 +15,63 @@ impl MpsTypePrimitive {
     #[inline]
     pub fn compare(&self, other: &Self) -> Result<i8, String> {
         let result = match self {
-            Self::String(s1) => {
-                match other {
-                    Self::String(s2) => Some(map_ordering(s1.cmp(s2))),
-                    _ => None,
-                }
+            Self::String(s1) => match other {
+                Self::String(s2) => Some(map_ordering(s1.cmp(s2))),
+                _ => None,
             },
-            Self::Int(i1) => {
-                match other {
-                    Self::Int(i2) => Some(map_ordering(i1.cmp(i2))),
-                    Self::UInt(i2) => Some(map_ordering((*i1 as i128).cmp(&(*i2 as i128)))),
-                    Self::Float(i2) => Some(
-                        map_ordering((*i1 as f64).partial_cmp(&(*i2 as f64)).unwrap_or(std::cmp::Ordering::Less))
-                    ),
-                    _ => None,
-                }
+            Self::Int(i1) => match other {
+                Self::Int(i2) => Some(map_ordering(i1.cmp(i2))),
+                Self::UInt(i2) => Some(map_ordering((*i1 as i128).cmp(&(*i2 as i128)))),
+                Self::Float(i2) => Some(map_ordering(
+                    (*i1 as f64)
+                        .partial_cmp(&(*i2 as f64))
+                        .unwrap_or(std::cmp::Ordering::Less),
+                )),
+                _ => None,
             },
-            Self::UInt(u1) => {
-                match other {
-                    Self::UInt(u2) => Some(map_ordering(u1.cmp(u2))),
-                    Self::Int(u2) => Some(map_ordering((*u1 as i128).cmp(&(*u2 as i128)))),
-                    Self::Float(u2) => Some(
-                        map_ordering((*u1 as f64).partial_cmp(&(*u2 as f64)).unwrap_or(std::cmp::Ordering::Less))
-                    ),
-                    _ => None,
-                }
+            Self::UInt(u1) => match other {
+                Self::UInt(u2) => Some(map_ordering(u1.cmp(u2))),
+                Self::Int(u2) => Some(map_ordering((*u1 as i128).cmp(&(*u2 as i128)))),
+                Self::Float(u2) => Some(map_ordering(
+                    (*u1 as f64)
+                        .partial_cmp(&(*u2 as f64))
+                        .unwrap_or(std::cmp::Ordering::Less),
+                )),
+                _ => None,
             },
-            Self::Float(f1) => {
-                match other {
-                    Self::Float(f2) => Some(map_ordering(f1.partial_cmp(f2).unwrap_or(std::cmp::Ordering::Less))),
-                    Self::Int(f2) => Some(
-                        map_ordering(f1.partial_cmp(&(*f2 as f64)).unwrap_or(std::cmp::Ordering::Less))
-                    ),
-                    Self::UInt(f2) => Some(
-                        map_ordering(f1.partial_cmp(&(*f2 as f64)).unwrap_or(std::cmp::Ordering::Less))
-                    ),
-                    _ => None
-                }
+            Self::Float(f1) => match other {
+                Self::Float(f2) => Some(map_ordering(
+                    f1.partial_cmp(f2).unwrap_or(std::cmp::Ordering::Less),
+                )),
+                Self::Int(f2) => Some(map_ordering(
+                    f1.partial_cmp(&(*f2 as f64))
+                        .unwrap_or(std::cmp::Ordering::Less),
+                )),
+                Self::UInt(f2) => Some(map_ordering(
+                    f1.partial_cmp(&(*f2 as f64))
+                        .unwrap_or(std::cmp::Ordering::Less),
+                )),
+                _ => None,
             },
-            Self::Bool(b1) => {
-                match other {
-                    Self::Bool(b2) => {
-                        if *b2 == *b1 {
-                            Some(0)
-                        } else if *b1{
-                            Some(1)
-                        } else {
-                            Some(-1)
-                        }
-                    },
-                    _ => None
+            Self::Bool(b1) => match other {
+                Self::Bool(b2) => {
+                    if *b2 == *b1 {
+                        Some(0)
+                    } else if *b1 {
+                        Some(1)
+                    } else {
+                        Some(-1)
+                    }
                 }
-            }
+                _ => None,
+            },
         };
         match result {
             Some(x) => Ok(x),
-            None => Err(format!("Cannot compare {} to {}: incompatible types", self, other))
+            None => Err(format!(
+                "Cannot compare {} to {}: incompatible types",
+                self, other
+            )),
         }
     }
 }
@@ -95,4 +96,3 @@ fn map_ordering(ordering: std::cmp::Ordering) -> i8 {
         std::cmp::Ordering::Greater => 1,
     }
 }
-

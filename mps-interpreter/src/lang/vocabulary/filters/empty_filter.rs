@@ -1,13 +1,13 @@
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
+use crate::lang::MpsLanguageDictionary;
+use crate::lang::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatementFactory};
+use crate::lang::{RuntimeError, SyntaxError};
+use crate::processing::OpGetter;
+use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsMusicItem;
-use crate::tokens::MpsToken;
-use crate::lang::{MpsFilterPredicate, MpsFilterFactory, MpsFilterStatementFactory};
-use crate::lang::{SyntaxError, RuntimeError};
-use crate::lang::MpsLanguageDictionary;
-use crate::processing::OpGetter;
 
 #[derive(Debug, Clone)]
 pub struct EmptyFilter;
@@ -19,7 +19,12 @@ impl Display for EmptyFilter {
 }
 
 impl MpsFilterPredicate for EmptyFilter {
-    fn matches(&mut self, _item: &MpsMusicItem, _ctx: &mut MpsContext, _op: &mut OpGetter) -> Result<bool, RuntimeError> {
+    fn matches(
+        &mut self,
+        _item: &MpsMusicItem,
+        _ctx: &mut MpsContext,
+        _op: &mut OpGetter,
+    ) -> Result<bool, RuntimeError> {
         Ok(true)
     }
 }

@@ -28,6 +28,70 @@ impl Tags {
         self.data.len()
     }
 
+    #[inline]
+    pub fn track_title(&self) -> String {
+        self.data
+            .get("TITLE")
+            .unwrap_or(&TagType::Unknown)
+            .str()
+            .and_then(|s| Some(s.to_string()))
+            .unwrap_or_else(|| self.default_title())
+    }
+
+    #[inline]
+    fn default_title(&self) -> String {
+        let extension = self
+            .filename
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or("");
+        self.filename
+            .file_name()
+            .and_then(|file| file.to_str())
+            .and_then(|file| Some(file.replacen(&format!(".{}", extension), "", 1)))
+            .unwrap_or("Unknown Title".into())
+    }
+
+    #[inline]
+    pub fn artist_name(&self) -> Option<String> {
+        self.data
+            .get("ARTIST")
+            .unwrap_or(&TagType::Unknown)
+            .str()
+            .and_then(|s| Some(s.to_string()))
+    }
+
+    #[inline]
+    pub fn album_title(&self) -> Option<String> {
+        self.data
+            .get("ALBUM")
+            .unwrap_or(&TagType::Unknown)
+            .str()
+            .and_then(|s| Some(s.to_string()))
+    }
+
+    #[inline]
+    pub fn genre_title(&self) -> Option<String> {
+        self.data
+            .get("GENRE")
+            .unwrap_or(&TagType::Unknown)
+            .str()
+            .and_then(|s| Some(s.to_string()))
+    }
+
+    #[inline]
+    pub fn track_number(&self) -> Option<u64> {
+        self.data
+            .get("TRACKNUMBER")
+            .unwrap_or(&TagType::Unknown)
+            .uint()
+    }
+
+    #[inline]
+    pub fn track_date(&self) -> Option<u64> {
+        self.data.get("DATE").unwrap_or(&TagType::Unknown).uint()
+    }
+
     pub fn song(
         &self,
         id: u64,
@@ -36,27 +100,9 @@ impl Tags {
         meta_id: u64,
         genre_id: u64,
     ) -> DbMusicItem {
-        let default_title = || {
-            let extension = self
-                .filename
-                .extension()
-                .and_then(|ext| ext.to_str())
-                .unwrap_or("");
-            self.filename
-                .file_name()
-                .and_then(|file| file.to_str())
-                .and_then(|file| Some(file.replacen(&format!(".{}", extension), "", 1)))
-                .unwrap_or("Unknown Title".into())
-        };
         DbMusicItem {
             song_id: id,
-            title: self
-                .data
-                .get("TITLE")
-                .unwrap_or(&TagType::Unknown)
-                .str()
-                .and_then(|s| Some(s.to_string()))
-                .unwrap_or_else(default_title),
+            title: self.track_title(),
             artist: artist_id,
             album: album_id,
             filename: self.filename.to_str().unwrap_or("").into(),
@@ -74,12 +120,7 @@ impl Tags {
                 .unwrap_or(&TagType::Unknown)
                 .uint()
                 .unwrap_or(0),
-            track: self
-                .data
-                .get("TRACKNUMBER")
-                .unwrap_or(&TagType::Unknown)
-                .uint()
-                .unwrap_or(id),
+            track: self.track_number().unwrap_or(id),
             disc: self
                 .data
                 .get("DISCNUMBER")
@@ -92,25 +133,14 @@ impl Tags {
                 .unwrap_or(&TagType::Unknown)
                 .uint()
                 .unwrap_or(0),
-            date: self
-                .data
-                .get("DATE")
-                .unwrap_or(&TagType::Unknown)
-                .uint()
-                .unwrap_or(0),
+            date: self.track_date().unwrap_or(0),
         }
     }
 
     pub fn artist(&self, id: u64, genre_id: u64) -> DbArtistItem {
         DbArtistItem {
             artist_id: id,
-            name: self
-                .data
-                .get("ARTIST")
-                .unwrap_or(&TagType::Unknown)
-                .str()
-                .unwrap_or("Unknown Artist")
-                .into(),
+            name: self.artist_name().unwrap_or("Unknown Artist".into()),
             genre: genre_id,
         }
     }
@@ -132,13 +162,7 @@ impl Tags {
     pub fn album(&self, id: u64, meta_id: u64, artist_id: u64, genre_id: u64) -> DbAlbumItem {
         DbAlbumItem {
             album_id: id,
-            title: self
-                .data
-                .get("ALBUM")
-                .unwrap_or(&TagType::Unknown)
-                .str()
-                .unwrap_or("Unknown Album")
-                .into(),
+            title: self.album_title().unwrap_or("Unknown Album".into()),
             metadata: meta_id,
             artist: artist_id,
             genre: genre_id,
@@ -179,13 +203,7 @@ impl Tags {
     pub fn genre(&self, id: u64) -> DbGenreItem {
         DbGenreItem {
             genre_id: id,
-            title: self
-                .data
-                .get("GENRE")
-                .unwrap_or(&TagType::Unknown)
-                .str()
-                .unwrap_or("Unknown Genre")
-                .into(),
+            title: self.genre_title().unwrap_or("Unknown Genre".into()),
         }
     }
 }

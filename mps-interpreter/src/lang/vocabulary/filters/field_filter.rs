@@ -1,17 +1,17 @@
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::MpsContext;
-use crate::MpsMusicItem;
-use crate::tokens::MpsToken;
-use crate::lang::{MpsFilterPredicate, MpsFilterFactory, MpsFilterStatementFactory};
-use crate::lang::{SyntaxError, RuntimeError};
+use super::utility::{assert_comparison_operator, item_to_primitive_lut};
+use crate::lang::utility::{assert_token, assert_type, check_is_type};
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::MpsTypePrimitive;
-use crate::lang::utility::{assert_token, assert_type, check_is_type};
-use super::utility::{item_to_primitive_lut, assert_comparison_operator};
-use crate::processing::OpGetter;
+use crate::lang::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatementFactory};
+use crate::lang::{RuntimeError, SyntaxError};
 use crate::processing::general::MpsType;
+use crate::processing::OpGetter;
+use crate::tokens::MpsToken;
+use crate::MpsContext;
+use crate::MpsMusicItem;
 
 #[derive(Debug, Clone)]
 enum VariableOrValue {
@@ -23,7 +23,7 @@ enum VariableOrValue {
 pub struct FieldFilter {
     field_name: String,
     val: VariableOrValue,
-    comparison: [i8; 2]
+    comparison: [i8; 2],
 }
 
 impl Display for FieldFilter {
@@ -33,12 +33,16 @@ impl Display for FieldFilter {
             VariableOrValue::Variable(name) => write!(f, "{} == {}", self.field_name, name),
             VariableOrValue::Value(t) => write!(f, "{} == {}", self.field_name, t),
         }
-
     }
 }
 
 impl MpsFilterPredicate for FieldFilter {
-    fn matches(&mut self, item: &MpsMusicItem, ctx: &mut MpsContext, op: &mut OpGetter) -> Result<bool, RuntimeError> {
+    fn matches(
+        &mut self,
+        item: &MpsMusicItem,
+        ctx: &mut MpsContext,
+        op: &mut OpGetter,
+    ) -> Result<bool, RuntimeError> {
         let music_item_lut = item_to_primitive_lut(item.to_owned());
         let variable = match &self.val {
             VariableOrValue::Variable(name) => match ctx.variables.get(&name, op)? {
@@ -47,17 +51,16 @@ impl MpsFilterPredicate for FieldFilter {
                     line: 0,
                     op: op(),
                     msg: format!("Variable {} is not comparable", name),
-                })
+                }),
             },
-            VariableOrValue::Value(val) => Ok(val)
+            VariableOrValue::Value(val) => Ok(val),
         }?;
         if let Some(field) = music_item_lut.get(&self.field_name) {
-            let compare = field.compare(variable)
-                .map_err(|e| RuntimeError {
-                    line: 0,
-                    op: op(),
-                    msg: e,
-                })?;
+            let compare = field.compare(variable).map_err(|e| RuntimeError {
+                line: 0,
+                op: op(),
+                msg: e,
+            })?;
             let mut is_match = false;
             for comparator in self.comparison {
                 if comparator == compare {
@@ -73,7 +76,6 @@ impl MpsFilterPredicate for FieldFilter {
                 msg: format!("Field {} does not exist", &self.field_name),
             })
         }
-
     }
 }
 
@@ -85,14 +87,12 @@ impl MpsFilterFactory<FieldFilter> for FieldFilterFactory {
         (tokens_len == 3 // field > variable OR field < variable
             && tokens[0].is_name()
             && (tokens[1].is_open_angle_bracket() || tokens[1].is_close_angle_bracket())
-            && (tokens[2].is_name() || check_is_type(&tokens[2]))
-        )
-        || (tokens_len == 4 // field >= variable OR field <= variable
+            && (tokens[2].is_name() || check_is_type(&tokens[2])))
+            || (tokens_len == 4 // field >= variable OR field <= variable
             && tokens[0].is_name()
             && (tokens[1].is_open_angle_bracket() || tokens[1].is_close_angle_bracket() || tokens[1].is_equals())
             && tokens[2].is_equals()
-            && (tokens[3].is_name() || check_is_type(&tokens[3]))
-        )
+            && (tokens[3].is_name() || check_is_type(&tokens[3])))
     }
 
     fn build_filter(
@@ -100,26 +100,32 @@ impl MpsFilterFactory<FieldFilter> for FieldFilterFactory {
         tokens: &mut VecDeque<MpsToken>,
         _dict: &MpsLanguageDictionary,
     ) -> Result<FieldFilter, SyntaxError> {
-        let field = assert_token(|t| match t {
-            MpsToken::Name(n) => Some(n),
-            _ => None
-        }, MpsToken::Name("field_name".into()), tokens)?;
+        let field = assert_token(
+            |t| match t {
+                MpsToken::Name(n) => Some(n),
+                _ => None,
+            },
+            MpsToken::Name("field_name".into()),
+            tokens,
+        )?;
         let compare_operator = assert_comparison_operator(tokens)?;
         if check_is_type(&tokens[0]) {
             let value = VariableOrValue::Value(assert_type(tokens)?);
-            Ok(FieldFilter{
+            Ok(FieldFilter {
                 field_name: field,
                 val: value,
                 comparison: compare_operator,
             })
         } else {
-            let variable = VariableOrValue::Variable(
-                assert_token(|t| match t {
+            let variable = VariableOrValue::Variable(assert_token(
+                |t| match t {
                     MpsToken::Name(n) => Some(n),
-                    _ => None
-                }, MpsToken::Name("variable_name".into()), tokens)?
-            );
-            Ok(FieldFilter{
+                    _ => None,
+                },
+                MpsToken::Name("variable_name".into()),
+                tokens,
+            )?);
+            Ok(FieldFilter {
                 field_name: field,
                 val: variable,
                 comparison: compare_operator,

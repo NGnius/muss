@@ -1,4 +1,6 @@
-use super::lang::db::{DatabaseObj, DbMusicItem, DbArtistItem, DbAlbumItem, DbMetaItem, DbGenreItem};
+use super::lang::db::{
+    DatabaseObj, DbAlbumItem, DbArtistItem, DbGenreItem, DbMetaItem, DbMusicItem,
+};
 
 #[derive(Clone, Debug)]
 pub struct MpsMusicItem {
@@ -30,7 +32,7 @@ impl MpsMusicItem {
         artist: DbArtistItem,
         album: DbAlbumItem,
         meta: DbMetaItem,
-        genre: DbGenreItem
+        genre: DbGenreItem,
     ) -> Self {
         Self {
             title: music.title,

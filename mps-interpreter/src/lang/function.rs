@@ -2,11 +2,11 @@ use std::collections::VecDeque;
 //use std::fmt::{Debug, Display, Error, Formatter};
 use std::marker::PhantomData;
 
-use crate::tokens::MpsToken;
-use crate::lang::{MpsOp, BoxedMpsOpFactory};
-use crate::lang::SyntaxError;
+use crate::lang::utility::{assert_token, assert_token_raw, assert_token_raw_back};
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::utility::{assert_token_raw, assert_token_raw_back, assert_token};
+use crate::lang::SyntaxError;
+use crate::lang::{BoxedMpsOpFactory, MpsOp};
+use crate::tokens::MpsToken;
 
 pub trait MpsFunctionFactory<Op: MpsOp + 'static> {
     fn is_function(&self, name: &str) -> bool;
@@ -33,10 +33,8 @@ impl<Op: MpsOp + 'static, F: MpsFunctionFactory<Op> + 'static> MpsFunctionStatem
     }
 }
 
-impl<Op: MpsOp + 'static, F: MpsFunctionFactory<Op> + 'static>
-BoxedMpsOpFactory
-for
-MpsFunctionStatementFactory<Op, F>
+impl<Op: MpsOp + 'static, F: MpsFunctionFactory<Op> + 'static> BoxedMpsOpFactory
+    for MpsFunctionStatementFactory<Op, F>
 {
     fn is_op_boxed(&self, tokens: &VecDeque<MpsToken>) -> bool {
         let tokens_len = tokens.len();
@@ -44,10 +42,12 @@ MpsFunctionStatementFactory<Op, F>
             false
         } else {
             match &tokens[0] {
-                MpsToken::Name(n) => self.op_factory.is_function(n)
-                    && tokens[1].is_open_bracket()
-                    && tokens[tokens_len - 1].is_close_bracket(),
-                _ => false
+                MpsToken::Name(n) => {
+                    self.op_factory.is_function(n)
+                        && tokens[1].is_open_bracket()
+                        && tokens[tokens_len - 1].is_close_bracket()
+                }
+                _ => false,
             }
         }
     }
@@ -57,12 +57,18 @@ MpsFunctionStatementFactory<Op, F>
         tokens: &mut VecDeque<MpsToken>,
         dict: &MpsLanguageDictionary,
     ) -> Result<Box<dyn MpsOp>, SyntaxError> {
-        let name = assert_token(|t| match t {
-            MpsToken::Name(n) => Some(n),
-            _ => None
-        }, MpsToken::Name("function_name".into()), tokens)?;
+        let name = assert_token(
+            |t| match t {
+                MpsToken::Name(n) => Some(n),
+                _ => None,
+            },
+            MpsToken::Name("function_name".into()),
+            tokens,
+        )?;
         assert_token_raw(MpsToken::OpenBracket, tokens)?;
         assert_token_raw_back(MpsToken::CloseBracket, tokens)?;
-        Ok(Box::new(self.op_factory.build_function_params(name, tokens, dict)?))
+        Ok(Box::new(
+            self.op_factory.build_function_params(name, tokens, dict)?,
+        ))
     }
 }

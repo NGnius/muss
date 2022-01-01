@@ -2,23 +2,23 @@ use std::fmt::{Debug, Display, Error, Formatter};
 
 use std::collections::HashMap;
 
-use crate::lang::RuntimeError;
 use crate::lang::MpsOp;
 use crate::lang::MpsTypePrimitive;
+use crate::lang::RuntimeError;
 
 use super::OpGetter;
 
 #[derive(Debug)]
 pub enum MpsType {
     Op(Box<dyn MpsOp>),
-    Primitive(MpsTypePrimitive)
+    Primitive(MpsTypePrimitive),
 }
 
 impl Display for MpsType {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match self {
             Self::Op(op) => write!(f, "Op({})", op),
-            Self::Primitive(p) => write!(f, "{}", p)
+            Self::Primitive(p) => write!(f, "{}", p),
         }
     }
 }
@@ -28,9 +28,15 @@ pub trait MpsVariableStorer: Debug {
 
     fn get_mut(&mut self, name: &str, op: &mut OpGetter) -> Result<&mut MpsType, RuntimeError>;
 
-    fn assign(&mut self, name: &str, value: MpsType, op: &mut OpGetter) -> Result<(), RuntimeError>;
+    fn assign(&mut self, name: &str, value: MpsType, op: &mut OpGetter)
+        -> Result<(), RuntimeError>;
 
-    fn declare(&mut self, name: &str, value: MpsType, op: &mut OpGetter) -> Result<(), RuntimeError>;
+    fn declare(
+        &mut self,
+        name: &str,
+        value: MpsType,
+        op: &mut OpGetter,
+    ) -> Result<(), RuntimeError>;
 
     fn remove(&mut self, name: &str, op: &mut OpGetter) -> Result<MpsType, RuntimeError>;
 }
@@ -48,7 +54,7 @@ impl MpsVariableStorer for MpsOpStorage {
                 line: 0,
                 op: op(),
                 msg: format!("Variable {} not found", key),
-            })
+            }),
         }
     }
 
@@ -59,7 +65,7 @@ impl MpsVariableStorer for MpsOpStorage {
                 line: 0,
                 op: op(),
                 msg: format!("Variable {} not found", key),
-            })
+            }),
         }
     }
 

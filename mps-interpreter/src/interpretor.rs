@@ -114,7 +114,9 @@ where
             match stmt {
                 Ok(mut stmt) => {
                     #[cfg(debug_assertions)]
-                    if self.buffer.len() != 0 {panic!("Token buffer was not emptied! (rem: {:?})", self.buffer)}
+                    if self.buffer.len() != 0 {
+                        panic!("Token buffer was not emptied! (rem: {:?})", self.buffer)
+                    }
                     stmt.enter(self.context.take().unwrap_or_else(|| MpsContext::default()));
                     self.current_stmt = Some(stmt);
                     let next_item = self.current_stmt.as_mut().unwrap().next();
@@ -157,5 +159,6 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
         .add(crate::lang::vocabulary::CommentStatementFactory)
         .add(crate::lang::vocabulary::repeat_function_factory())
         .add(crate::lang::vocabulary::AssignStatementFactory)
-        .add(crate::lang::vocabulary::sql_init_function_factory());
+        .add(crate::lang::vocabulary::sql_init_function_factory())
+        .add(crate::lang::vocabulary::files_function_factory());
 }

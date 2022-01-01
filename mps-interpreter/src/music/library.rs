@@ -84,7 +84,8 @@ impl MpsLibrary {
     #[inline]
     pub fn add_artist(&mut self, artist: DbArtistItem) {
         self.modify();
-        self.artists.insert(Self::sanitise_key(&artist.name), artist);
+        self.artists
+            .insert(Self::sanitise_key(&artist.name), artist);
     }
 
     pub fn all_albums<'a>(&'a self) -> Vec<&'a DbAlbumItem> {
@@ -109,7 +110,9 @@ impl MpsLibrary {
 
     pub fn read_path<P: AsRef<Path>>(&mut self, path: P, depth: usize) -> std::io::Result<()> {
         let path = path.as_ref();
-        if self.contains_path(path) { return Ok(()); } // skip existing entries
+        if self.contains_path(path) {
+            return Ok(());
+        } // skip existing entries
         if path.is_dir() && depth != 0 {
             for entry in path.read_dir()? {
                 self.read_path(entry?.path(), depth - 1)?;
@@ -118,6 +121,38 @@ impl MpsLibrary {
             self.read_file(path)?;
         }
         Ok(())
+    }
+
+    pub fn read_media_tags<P: AsRef<Path>>(path: P) -> std::io::Result<Tags> {
+        let path = path.as_ref();
+        let file = Box::new(std::fs::File::open(path)?);
+        // use symphonia to get metadata
+        let mss = MediaSourceStream::new(file, Default::default() /* options */);
+        let probed = symphonia::default::get_probe().format(
+            &Hint::new(),
+            mss,
+            &Default::default(),
+            &Default::default(),
+        );
+        let mut tags = Tags::new(path);
+        if let Ok(mut probed) = probed {
+            // collect metadata
+            if let Some(metadata) = probed.metadata.get() {
+                if let Some(rev) = metadata.current() {
+                    for tag in rev.tags() {
+                        //println!("(pre) metadata tag ({},{})", tag.key, tag.value);
+                        tags.add(tag.key.clone(), &tag.value);
+                    }
+                }
+            }
+            if let Some(rev) = probed.format.metadata().current() {
+                for tag in rev.tags() {
+                    //println!("(post) metadata tag ({},{})", tag.key, tag.value);
+                    tags.add(tag.key.clone(), &tag.value);
+                }
+            }
+        }
+        Ok(tags)
     }
 
     fn read_file<P: AsRef<Path>>(&mut self, path: P) -> std::io::Result<()> {
@@ -162,7 +197,7 @@ impl MpsLibrary {
         let song_id = self.songs.len() as u64; // guaranteed to be created
         let meta_id = self.metadata.len() as u64; // guaranteed to be created
         self.add_metadata(tags.meta(meta_id)); // definitely necessary
-                                                           // genre has no links to others, so find that first
+                                               // genre has no links to others, so find that first
         let mut genre = tags.genre(0);
         genre.genre_id = Self::find_or_gen_id(&self.genres, &genre.title);
         if genre.genre_id == self.genres.len() as u64 {
@@ -191,15 +226,13 @@ impl MpsLibrary {
         }
         //let meta_album_id = self.metadata.len() as u64;
         //let album = tags.album(album_id, meta_album_id);
-        self.add_song(
-            tags.song(
-                song_id,
-                artist.artist_id,
-                Some(album.album_id),
-                meta_id,
-                genre.genre_id,
-            ),
-        );
+        self.add_song(tags.song(
+            song_id,
+            artist.artist_id,
+            Some(album.album_id),
+            meta_id,
+            genre.genre_id,
+        ));
     }
 
     #[inline]

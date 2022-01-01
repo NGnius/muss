@@ -2,14 +2,14 @@ use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
+use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsMusicItem;
-use crate::tokens::MpsToken;
 
-use crate::lang::{RuntimeError, SyntaxError};
-use crate::lang::{MpsOp, PseudoOp, MpsFunctionFactory, MpsFunctionStatementFactory};
+use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::utility::{assert_token_raw, assert_token};
+use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsOp, PseudoOp};
+use crate::lang::{RuntimeError, SyntaxError};
 
 #[derive(Debug)]
 pub struct RepeatStatement {
@@ -49,7 +49,7 @@ impl Iterator for RepeatStatement {
         if !self.inner_done {
             let real_op = match self.inner_statement.try_real() {
                 Err(e) => return Some(Err(e)),
-                Ok(real) => real
+                Ok(real) => real,
             };
             if self.context.is_some() {
                 let ctx = self.context.take().unwrap();
@@ -62,14 +62,14 @@ impl Iterator for RepeatStatement {
                         Ok(music) => {
                             self.cache.push(music.clone());
                             Some(Ok(music))
-                        },
-                        Err(e) => Some(Err(e))
+                        }
+                        Err(e) => Some(Err(e)),
                     }
-                },
+                }
                 None => {
                     self.inner_done = true;
                     self.context = Some(real_op.escape());
-                },
+                }
             }
         }
         // inner is done
@@ -78,10 +78,10 @@ impl Iterator for RepeatStatement {
         } else {
             if self.cache.len() == 0 {
                 if self.loop_forever {
-                        Some(Err(RuntimeError {
+                    Some(Err(RuntimeError {
                         line: 0,
                         op: (Box::new(self.clone()) as Box<dyn MpsOp>).into(),
-                        msg: "Cannot repeat nothing".into()
+                        msg: "Cannot repeat nothing".into(),
                     }))
                 } else {
                     None
@@ -90,7 +90,9 @@ impl Iterator for RepeatStatement {
                 let music_item = self.cache[self.cache_position].clone();
                 self.cache_position += 1;
                 if self.cache_position == self.cache.len() {
-                    if self.repetitions != 0 { self.repetitions -= 1; }
+                    if self.repetitions != 0 {
+                        self.repetitions -= 1;
+                    }
                     self.cache_position = 0;
                 }
                 Some(Ok(music_item))
@@ -131,12 +133,17 @@ impl MpsFunctionFactory<RepeatStatement> for RepeatFunctionFactory {
         let inner_statement = dict.try_build_statement(tokens)?;
         tokens.extend(end_tokens);
         let mut count: Option<usize> = None;
-        if tokens.len() != 0 { // repititions specified
+        if tokens.len() != 0 {
+            // repititions specified
             assert_token_raw(MpsToken::Comma, tokens)?;
-            count = Some(assert_token(|t| match t {
-                MpsToken::Name(n) => n.parse::<usize>().map(|d| d - 1).ok(),
-                _ => None
-            }, MpsToken::Name("usize".into()), tokens)?);
+            count = Some(assert_token(
+                |t| match t {
+                    MpsToken::Name(n) => n.parse::<usize>().map(|d| d - 1).ok(),
+                    _ => None,
+                },
+                MpsToken::Name("usize".into()),
+                tokens,
+            )?);
         }
         Ok(RepeatStatement {
             inner_statement: inner_statement.into(),
@@ -145,7 +152,7 @@ impl MpsFunctionFactory<RepeatStatement> for RepeatFunctionFactory {
             cache: Vec::new(),
             cache_position: 0,
             repetitions: count.unwrap_or(0),
-            loop_forever: count.is_none()
+            loop_forever: count.is_none(),
         })
     }
 }
@@ -159,7 +166,8 @@ fn next_comma(tokens: &VecDeque<MpsToken>) -> usize {
     tokens.len()
 }
 
-pub type RepeatStatementFactory = MpsFunctionStatementFactory<RepeatStatement, RepeatFunctionFactory>;
+pub type RepeatStatementFactory =
+    MpsFunctionStatementFactory<RepeatStatement, RepeatFunctionFactory>;
 
 #[inline(always)]
 pub fn repeat_function_factory() -> RepeatStatementFactory {

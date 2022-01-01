@@ -31,7 +31,7 @@ impl MpsLanguageDictionary {
                 line: 0,
                 token: MpsToken::Name("???".into()),
                 got: None,
-            })
+            }),
         }?;
         Err(SyntaxError {
             line: 0,

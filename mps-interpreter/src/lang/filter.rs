@@ -3,18 +3,23 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 use std::marker::PhantomData;
 
+use crate::lang::utility::{assert_token, assert_token_raw};
+use crate::lang::MpsLanguageDictionary;
+use crate::lang::{BoxedMpsOpFactory, MpsOp, PseudoOp};
+use crate::lang::{RuntimeError, SyntaxError};
+use crate::processing::general::MpsType;
+use crate::processing::OpGetter;
+use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsMusicItem;
-use crate::tokens::MpsToken;
-use crate::lang::{MpsOp, PseudoOp, BoxedMpsOpFactory};
-use crate::lang::{RuntimeError, SyntaxError};
-use crate::lang::MpsLanguageDictionary;
-use crate::processing::general::MpsType;
-use crate::lang::utility::{assert_token_raw, assert_token};
-use crate::processing::OpGetter;
 
 pub trait MpsFilterPredicate: Clone + Debug + Display {
-    fn matches(&mut self, item: &MpsMusicItem, ctx: &mut MpsContext, op: &mut OpGetter) -> Result<bool, RuntimeError>;
+    fn matches(
+        &mut self,
+        item: &MpsMusicItem,
+        ctx: &mut MpsContext,
+        op: &mut OpGetter,
+    ) -> Result<bool, RuntimeError>;
 }
 
 pub trait MpsFilterFactory<P: MpsFilterPredicate + 'static> {
@@ -37,7 +42,7 @@ impl Display for VariableOrOp {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match self {
             Self::Variable(s) => write!(f, "{}", s),
-            Self::Op(op) => write!(f, "{}", op)
+            Self::Op(op) => write!(f, "{}", op),
         }
     }
 }
@@ -84,60 +89,68 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
         let mut op_getter = move || (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into();
         //let ctx = self.context.as_mut().unwrap();
         match &mut self.iterable {
-            VariableOrOp::Op(op) =>
-                match op.try_real() {
-                    Ok(real_op) => {
-                        let ctx = self.context.take().unwrap();
-                        real_op.enter(ctx);
-                        let mut maybe_result = None;
-                        while let Some(item) = real_op.next() {
-                            let mut ctx = real_op.escape();
-                            match item {
-                                Err(e) => {
-                                    //self.context = Some(op.escape());
-                                    maybe_result = Some(Err(e));
-                                    self.context = Some(ctx);
-                                    break;
-                                },
-                                Ok(item) => {
-                                    let matches_result = self.predicate.matches(&item, &mut ctx, &mut op_getter);
-                                    let matches = match matches_result {
-                                        Err(e) => {
-                                            maybe_result = Some(Err(e));
-                                            self.context = Some(ctx);
-                                            break;
-                                        },
-                                        Ok(b) => b,
-                                    };
-                                    if matches {
-                                        //self.context = Some(op.escape());
-                                        maybe_result = Some(Ok(item));
+            VariableOrOp::Op(op) => match op.try_real() {
+                Ok(real_op) => {
+                    let ctx = self.context.take().unwrap();
+                    real_op.enter(ctx);
+                    let mut maybe_result = None;
+                    while let Some(item) = real_op.next() {
+                        let mut ctx = real_op.escape();
+                        match item {
+                            Err(e) => {
+                                //self.context = Some(op.escape());
+                                maybe_result = Some(Err(e));
+                                self.context = Some(ctx);
+                                break;
+                            }
+                            Ok(item) => {
+                                let matches_result =
+                                    self.predicate.matches(&item, &mut ctx, &mut op_getter);
+                                let matches = match matches_result {
+                                    Err(e) => {
+                                        maybe_result = Some(Err(e));
                                         self.context = Some(ctx);
                                         break;
                                     }
+                                    Ok(b) => b,
+                                };
+                                if matches {
+                                    //self.context = Some(op.escape());
+                                    maybe_result = Some(Ok(item));
+                                    self.context = Some(ctx);
+                                    break;
                                 }
                             }
-                            real_op.enter(ctx);
                         }
-                        if self.context.is_none() {
-                            self.context = Some(real_op.escape());
-                        }
-                        maybe_result
-                    },
-                    Err(e) => return Some(Err(e)),
-                },
+                        real_op.enter(ctx);
+                    }
+                    if self.context.is_none() {
+                        self.context = Some(real_op.escape());
+                    }
+                    maybe_result
+                }
+                Err(e) => return Some(Err(e)),
+            },
             VariableOrOp::Variable(variable_name) => {
-                let mut variable = match self.context.as_mut().unwrap().variables.remove(
-                    &variable_name,
-                    &mut op_getter
-                ) {
+                let mut variable = match self
+                    .context
+                    .as_mut()
+                    .unwrap()
+                    .variables
+                    .remove(&variable_name, &mut op_getter)
+                {
                     Ok(MpsType::Op(op)) => op,
-                    Ok(x) => return Some(Err(RuntimeError {
-                        line: 0,
-                        op: (Box::new(self_clone2.clone()) as Box<dyn MpsOp>).into(),
-                        msg: format!("Expected operation/iterable type in variable {}, got {}", &variable_name, x)
-                    })),
-                    Err(e) => return Some(Err(e))
+                    Ok(x) => {
+                        return Some(Err(RuntimeError {
+                            line: 0,
+                            op: (Box::new(self_clone2.clone()) as Box<dyn MpsOp>).into(),
+                            msg: format!(
+                                "Expected operation/iterable type in variable {}, got {}",
+                                &variable_name, x
+                            ),
+                        }))
+                    }
+                    Err(e) => return Some(Err(e)),
                 };
                 let mut maybe_result = None;
                 let ctx = self.context.take().unwrap();
@@ -146,18 +159,19 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                     let mut ctx = variable.escape();
                     match item {
                         Err(e) => {
-                           maybe_result = Some(Err(e));
-                           self.context = Some(ctx);
-                           break;
-                        },
+                            maybe_result = Some(Err(e));
+                            self.context = Some(ctx);
+                            break;
+                        }
                         Ok(item) => {
-                            let matches_result = self.predicate.matches(&item, &mut ctx, &mut op_getter);
+                            let matches_result =
+                                self.predicate.matches(&item, &mut ctx, &mut op_getter);
                             let matches = match matches_result {
                                 Err(e) => {
                                     maybe_result = Some(Err(e));
                                     self.context = Some(ctx);
                                     break;
-                                },
+                                }
                                 Ok(b) => b,
                             };
                             if matches {
@@ -175,21 +189,27 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                 match self.context.as_mut().unwrap().variables.declare(
                     &variable_name,
                     MpsType::Op(variable),
-                    &mut op_getter) {
+                    &mut op_getter,
+                ) {
                     Err(e) => return Some(Err(e)),
-                    Ok(_) => maybe_result
+                    Ok(_) => maybe_result,
                 }
             }
         }
     }
 }
 
-pub struct MpsFilterStatementFactory<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> {
+pub struct MpsFilterStatementFactory<
+    P: MpsFilterPredicate + 'static,
+    F: MpsFilterFactory<P> + 'static,
+> {
     filter_factory: F,
     idc: PhantomData<P>,
 }
 
-impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> MpsFilterStatementFactory<P, F> {
+impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static>
+    MpsFilterStatementFactory<P, F>
+{
     pub fn new(factory: F) -> Self {
         Self {
             filter_factory: factory,
@@ -198,7 +218,9 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> MpsFilte
     }
 }
 
-impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMpsOpFactory for MpsFilterStatementFactory<P, F> {
+impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMpsOpFactory
+    for MpsFilterStatementFactory<P, F>
+{
     fn is_op_boxed(&self, tokens: &VecDeque<MpsToken>) -> bool {
         let tokens_len = tokens.len();
         if last_open_bracket_is_after_dot(tokens) {
@@ -206,7 +228,8 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
             if start_of_predicate > tokens_len - 1 {
                 false
             } else {
-                let tokens2: VecDeque<&MpsToken> = VecDeque::from_iter(tokens.range(start_of_predicate..tokens_len-1));
+                let tokens2: VecDeque<&MpsToken> =
+                    VecDeque::from_iter(tokens.range(start_of_predicate..tokens_len - 1));
                 self.filter_factory.is_filter(&tokens2)
             }
         } else {
@@ -223,10 +246,14 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
         let op;
         if start_of_op == 1 && tokens[0].is_name() {
             // variable_name.(predicate)
-            let variable_name = assert_token(|t| match t {
-                MpsToken::Name(s) => Some(s),
-                _ => None
-            }, MpsToken::Name("variable_name".into()), tokens)?;
+            let variable_name = assert_token(
+                |t| match t {
+                    MpsToken::Name(s) => Some(s),
+                    _ => None,
+                },
+                MpsToken::Name("variable_name".into()),
+                tokens,
+            )?;
             op = VariableOrOp::Variable(variable_name);
         } else {
             // <some other op>.(predicate)
@@ -255,9 +282,9 @@ fn last_open_bracket_is_after_dot(tokens: &VecDeque<MpsToken>) -> bool {
             open_bracket_found = true;
         } else if open_bracket_found {
             if tokens[i].is_dot() {
-                return true
+                return true;
             } else {
-                return false
+                return false;
             }
         }
     }
@@ -271,9 +298,9 @@ fn last_dot_before_open_bracket(tokens: &VecDeque<MpsToken>) -> usize {
             open_bracket_found = true;
         } else if open_bracket_found {
             if tokens[i].is_dot() {
-                return i
+                return i;
             } else {
-                return 0
+                return 0;
             }
         }
     }
