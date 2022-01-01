@@ -1,3 +1,8 @@
+//! An MPS program which plays music.
+//! This doesn't do much yet, since mps-interpreter is still under construction.
+//!
+//! Future home of a MPS REPL for playing music ergonomically through a CLI.
+//!
 use std::io;
 use mps_interpreter::MpsRunner;
 use mps_player::{MpsPlayer, PlaybackError, MpsController};

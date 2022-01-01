@@ -1,3 +1,6 @@
+//! An MPS playback library with support for Linux media controls (D-Bus).
+//!
+
 mod controller;
 mod errors;
 pub(crate) mod os_controls;
