@@ -83,6 +83,7 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
             items_left -= 1;
             if items_left == 0 { break; }
         }
+        //println!("Enqueued {} items", count - items_left);
         Ok(())
     }
 

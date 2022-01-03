@@ -17,13 +17,29 @@ pub struct MpsController {
 
 impl MpsController {
     pub fn create<F: FnOnce() -> MpsPlayer<T> + Send + 'static, T: MpsTokenReader>(
-        player_gen: F
+        player_gen: F,
     ) -> Self {
         let (control_tx, control_rx) = channel();
         let (event_tx, event_rx) = channel();
         let mut sys_ctrl = SystemControlWrapper::new(control_tx.clone());
         sys_ctrl.init();
-        let handle = MpsPlayerServer::spawn(player_gen, control_tx.clone(), control_rx, event_tx);
+        let handle = MpsPlayerServer::spawn(player_gen, control_tx.clone(), control_rx, event_tx, false);
+        Self {
+            control: control_tx,
+            event: event_rx,
+            handle: handle,
+            sys_ctrl: sys_ctrl,
+        }
+    }
+
+    pub fn create_repl<F: FnOnce() -> MpsPlayer<T> + Send + 'static, T: MpsTokenReader>(
+        player_gen: F,
+    ) -> Self {
+        let (control_tx, control_rx) = channel();
+        let (event_tx, event_rx) = channel();
+        let mut sys_ctrl = SystemControlWrapper::new(control_tx.clone());
+        sys_ctrl.init();
+        let handle = MpsPlayerServer::spawn(player_gen, control_tx.clone(), control_rx, event_tx, true);
         Self {
             control: control_tx,
             event: event_rx,
@@ -58,7 +74,8 @@ impl MpsController {
         match event {
             PlayerAction::Acknowledge(_) => Ok(()),
             PlayerAction::Exception(e) => Err(e),
-            PlayerAction::End => Ok(())
+            PlayerAction::End => Ok(()),
+            PlayerAction::Empty => Ok(()),
         }
     }
 
@@ -111,5 +128,56 @@ impl MpsController {
             }
         }
         Ok(())
+    }
+
+    pub fn wait_for_empty(&self) -> Result<(), PlaybackError> {
+        for msg in self.event.try_iter() {
+            Self::handle_event(msg)?;
+        }
+        self.control.send(ControlAction::CheckEmpty{ack: true}).map_err(PlaybackError::from_err)?;
+        loop {
+            let msg = self.event.recv().map_err(PlaybackError::from_err)?;
+            if let PlayerAction::Empty = msg {
+                break;
+            } else {
+                Self::handle_event(msg)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Check for any errors in the event queue.
+    /// This is non-blocking, so it only handles events sent since the last time events were handled.
+    pub fn check(&self) -> Vec<PlaybackError> {
+        let mut result = Vec::new();
+        for msg in self.event.try_iter() {
+            if let Err(e) = Self::handle_event(msg) {
+                result.push(e);
+            }
+        }
+        result
+    }
+
+    /// Like check(), but it also waits for an acknowledgement to ensure it gets the latest events.
+    pub fn check_ack(&self) -> Vec<PlaybackError> {
+        let mut result = Vec::new();
+        let to_send = ControlAction::NoOp{ack: true};
+        if let Err(e) = self.control.send(to_send.clone()).map_err(PlaybackError::from_err) {
+            result.push(e);
+        }
+        for msg in self.event.iter() {
+            if let PlayerAction::Acknowledge(action) = msg {
+                if action == to_send {
+                    break;
+                } else {
+                    result.push(PlaybackError {
+                        msg: "Incorrect acknowledgement received for MpsController control action".into()
+                    });
+                }
+            } else if let Err(e) = Self::handle_event(msg) {
+                result.push(e);
+            }
+        }
+        result
     }
 }

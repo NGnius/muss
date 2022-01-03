@@ -11,6 +11,10 @@ impl PlaybackError {
             msg: format!("{}", err),
         }
     }
+
+    pub fn message(&self) -> &'_ str {
+        &self.msg
+    }
 }
 
 impl Display for PlaybackError {

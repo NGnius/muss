@@ -4,7 +4,9 @@
 //! Future home of a MPS REPL for playing music ergonomically through a CLI.
 //!
 
+mod channel_io;
 mod cli;
+mod repl;
 
 use std::io;
 use std::path::PathBuf;
@@ -61,8 +63,9 @@ fn main() {
         }
     } else {
         // start REPL
-        // TODO
-        eprintln!("Abort: Cannot start REPL because it is not implemented yet :(");
+        println!("Welcome to MPS interactive mode!");
+        println!("End a statement with ; to execute it.");
+        repl::repl(args)
     }
 }
 

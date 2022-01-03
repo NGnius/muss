@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 //use std::fmt::{Debug, Display, Error, Formatter};
 use std::marker::PhantomData;
 
-use crate::lang::utility::{assert_token, assert_token_raw, assert_token_raw_back};
+use crate::lang::utility::{assert_token, assert_token_raw, assert_token_raw_back, assert_empty};
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::SyntaxError;
 use crate::lang::{BoxedMpsOpFactory, MpsOp};
@@ -67,8 +67,8 @@ impl<Op: MpsOp + 'static, F: MpsFunctionFactory<Op> + 'static> BoxedMpsOpFactory
         )?;
         assert_token_raw(MpsToken::OpenBracket, tokens)?;
         assert_token_raw_back(MpsToken::CloseBracket, tokens)?;
-        Ok(Box::new(
-            self.op_factory.build_function_params(name, tokens, dict)?,
-        ))
+        let func = self.op_factory.build_function_params(name, tokens, dict)?;
+        assert_empty(tokens)?;
+        Ok(Box::new(func))
     }
 }

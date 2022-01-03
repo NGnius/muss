@@ -49,6 +49,7 @@ where
         {
             byte_buf[0] = 0; // clear to null char (nothing read is assumed to mean end of file)
         }
+        //println!("tokenizer read char: {}", byte_buf[0]);
         self.do_tracking(byte_buf[0]);
         self.fsm = self.fsm.next_state(byte_buf[0]);
         let mut bigger_buf: Vec<u8> = Vec::new();
@@ -176,6 +177,7 @@ where
     fn next_statement(&mut self, buf: &mut VecDeque<MpsToken>) -> Result<(), ParseError> {
         // read until buffer gets some tokens, in case multiple end of line tokens are at start of stream
         let original_size = buf.len();
+        self.read_line(buf)?; // always try once, even if at end of file
         while original_size == buf.len() && !self.end_of_file() {
             self.read_line(buf)?;
         }

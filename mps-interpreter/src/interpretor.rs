@@ -95,9 +95,10 @@ where
                 None => None,
             }
         } else {
-            if self.tokenizer.end_of_file() {
+            /*if self.tokenizer.end_of_file() {
                 return None;
-            }
+            }*/
+            //println!("try get next statement");
             // build new statement
             let token_result = self
                 .tokenizer

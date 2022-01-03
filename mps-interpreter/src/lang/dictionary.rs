@@ -29,13 +29,13 @@ impl MpsLanguageDictionary {
             Some(x) => Ok(x),
             None => Err(SyntaxError {
                 line: 0,
-                token: MpsToken::Name("???".into()),
+                token: MpsToken::Name("{something}".into()),
                 got: None,
             }),
         }?;
         Err(SyntaxError {
             line: 0,
-            token: MpsToken::Name("???".into()),
+            token: MpsToken::Name("{any of many}".into()),
             got: Some(result),
         })
     }

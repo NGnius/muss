@@ -9,6 +9,9 @@ pub struct CliArgs {
     /// Generate m3u8 playlist
     #[clap(short, long)]
     pub playlist: Option<String>,
+    /// In REPL mode, wait for all music in the queue to complete
+    #[clap(short, long)]
+    pub wait: bool,
 }
 
 pub fn parse() -> CliArgs {

@@ -169,6 +169,17 @@ pub fn assert_type(tokens: &mut VecDeque<MpsToken>) -> Result<MpsTypePrimitive, 
     }
 }
 
+pub fn assert_empty(tokens: &mut VecDeque<MpsToken>) -> Result<(), SyntaxError> {
+    match tokens.pop_front() {
+        None => Ok(()),
+        Some(t) => Err(SyntaxError {
+            line: 0,
+            token: MpsToken::Name("{nothing}".into()),
+            got: Some(t),
+        }),
+    }
+}
+
 pub fn music_folder() -> PathBuf {
     dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("./"))

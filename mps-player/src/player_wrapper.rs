@@ -10,14 +10,16 @@ pub struct MpsPlayerServer<T: MpsTokenReader> {
     player: MpsPlayer<T>,
     control: Receiver<ControlAction>,
     event: Sender<PlayerAction>,
+    keep_alive: bool,
 }
 
 impl<T: MpsTokenReader> MpsPlayerServer<T> {
-    pub fn new(player: MpsPlayer<T>, ctrl: Receiver<ControlAction>, event: Sender<PlayerAction>) -> Self {
+    pub fn new(player: MpsPlayer<T>, ctrl: Receiver<ControlAction>, event: Sender<PlayerAction>, keep_alive: bool) -> Self {
         Self {
             player: player,
             control: ctrl,
             event: event,
+            keep_alive: keep_alive,
         }
     }
 
@@ -27,10 +29,13 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
         if let Err(e) = self.player.enqueue(1) {
             self.event.send(PlayerAction::Exception(e)).unwrap();
         }
+        let mut is_empty = self.player.queue_len() == 0;
         loop {
             let command = self.control.recv().unwrap();
 
             let mut is_exiting = false;
+
+            let mut check_empty = false;
 
             // process command
             match command {
@@ -66,6 +71,9 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
                 ControlAction::NoOp{..} => {}, // empty by design
                 ControlAction::SetVolume{volume,..} => {
                     self.player.set_volume((volume as f32) / (u32::MAX as f32));
+                },
+                ControlAction::CheckEmpty{..} => {
+                    check_empty = true;
                 }
             }
 
@@ -75,7 +83,7 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
                     self.event.send(PlayerAction::Exception(e)).unwrap();
                 }
                 if self.player.queue_len() == 0  { // no more music to add
-                    is_exiting = true;
+                    is_exiting = !self.keep_alive || is_exiting;
                 }
             }
 
@@ -83,8 +91,21 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
                 self.event.send(PlayerAction::Acknowledge(command)).unwrap();
             }
 
+            // always check for empty state change
+            if self.player.queue_len() == 0 && !is_empty { // just became empty
+                is_empty = true;
+                self.event.send(PlayerAction::Empty).unwrap();
+            } else if self.player.queue_len() != 0 && is_empty { // just got filled
+                is_empty = false;
+            }
+
+            if is_empty && check_empty {
+                self.event.send(PlayerAction::Empty).unwrap();
+            }
+
             if is_exiting { break; }
         }
+        println!("Exiting playback server");
         self.event.send(PlayerAction::End).unwrap();
     }
 
@@ -92,12 +113,13 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
         factory: F,
         ctrl_tx: Sender<ControlAction>,
         ctrl_rx: Receiver<ControlAction>,
-        event: Sender<PlayerAction>
+        event: Sender<PlayerAction>,
+        keep_alive: bool
     ) -> JoinHandle<()> {
         thread::spawn(move || Self::unblocking_timer_loop(ctrl_tx, 50));
         thread::spawn(move || {
             let player = factory();
-            let mut server_obj = Self::new(player, ctrl_rx, event);
+            let mut server_obj = Self::new(player, ctrl_rx, event, keep_alive);
             server_obj.run_loop();
         })
     }
@@ -126,7 +148,8 @@ pub enum ControlAction {
     Exit{ack: bool},
     Enqueue {amount: usize, ack: bool},
     NoOp{ack: bool},
-    SetVolume{ack: bool, volume: u32}
+    SetVolume{ack: bool, volume: u32},
+    CheckEmpty{ack: bool},
 }
 
 impl ControlAction {
@@ -142,6 +165,7 @@ impl ControlAction {
             Self::Enqueue{ack,..} => ack,
             Self::NoOp{ack,..} => ack,
             Self::SetVolume{ack,..} => ack,
+            Self::CheckEmpty{ack} => ack,
         }
     }
 }
@@ -152,6 +176,7 @@ pub enum PlayerAction {
     Acknowledge(ControlAction),
     Exception(PlaybackError),
     End,
+    Empty,
 }
 
 impl PlayerAction {
