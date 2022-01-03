@@ -3,7 +3,6 @@ name = "mps-player"
 version = "0.1.0"
 edition = "2021"
 license = "LGPL-2.1-only OR GPL-2.0-or-later"
-license-file = "LICENSE"
 readme = "README.md"
 
 [dependencies]
