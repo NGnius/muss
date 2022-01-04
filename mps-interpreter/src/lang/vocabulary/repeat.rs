@@ -133,12 +133,20 @@ impl MpsFunctionFactory<RepeatStatement> for RepeatFunctionFactory {
         let inner_statement = dict.try_build_statement(tokens)?;
         tokens.extend(end_tokens);
         let mut count: Option<usize> = None;
+        let mut inner_done = false;
         if tokens.len() != 0 {
             // repititions specified
             assert_token_raw(MpsToken::Comma, tokens)?;
             count = Some(assert_token(
                 |t| match t {
-                    MpsToken::Name(n) => n.parse::<usize>().map(|d| d - 1).ok(),
+                    MpsToken::Name(n) => n.parse::<usize>().map(
+                        |d| if d == 0 {
+                                inner_done = true;
+                                0
+                            } else {
+                                d-1
+                            }
+                    ).ok(),
                     _ => None,
                 },
                 MpsToken::Name("usize".into()),
@@ -147,7 +155,7 @@ impl MpsFunctionFactory<RepeatStatement> for RepeatFunctionFactory {
         }
         Ok(RepeatStatement {
             inner_statement: inner_statement.into(),
-            inner_done: false,
+            inner_done: inner_done,
             context: None,
             cache: Vec::new(),
             cache_position: 0,

@@ -68,7 +68,7 @@ fn main() {
         // start REPL
         println!("Welcome to MPS interactive mode!");
         println!("Run ?help for usage instructions.");
-        println!("End a statement with ; to execute it.");
+        //println!("End a statement with ; to execute it.");
         repl::repl(args)
     }
 }

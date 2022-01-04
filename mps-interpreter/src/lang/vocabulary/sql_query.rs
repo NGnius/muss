@@ -85,7 +85,10 @@ impl Iterator for SqlStatement {
             match ctx.database.raw(&self.query, &mut move || {
                 (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()
             }) {
-                Err(e) => return Some(Err(e)),
+                Err(e) => {
+                    self.rows = Some(Vec::with_capacity(0));
+                    return Some(Err(e));
+                },
                 Ok(rows) => {
                     self.rows = Some(rows);
                     self.get_item(false)

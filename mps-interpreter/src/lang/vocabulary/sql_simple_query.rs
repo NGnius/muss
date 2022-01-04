@@ -147,7 +147,10 @@ impl Iterator for SimpleSqlStatement {
                 }),
             };
             match query_result {
-                Err(e) => return Some(Err(e)),
+                Err(e) => {
+                    self.rows = Some(Vec::with_capacity(0));
+                    return Some(Err(e));
+                },
                 Ok(rows) => {
                     self.rows = Some(rows);
                     self.get_item(false)

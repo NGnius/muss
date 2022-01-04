@@ -114,7 +114,13 @@ where
                 }
                 ReaderStateMachine::Invalid { .. } => {
                     let invalid_char = bigger_buf.pop().unwrap(); // invalid single char
-                    Err(self.error(format!("Unexpected character {}", invalid_char)))?;
+                    // clear everything, to avoid further errors
+                    bigger_buf.clear();
+                    buf.clear();
+                    return match invalid_char {
+                        0 => Err(self.error(format!("EOF"))),
+                        _ => Err(self.error(format!("character {:?} ({})", invalid_char as char, invalid_char)))
+                    };
                 }
                 _ => {}
             }
@@ -137,7 +143,7 @@ where
                 .map_err(|e| self.error(format!("UTF-8 encoding error: {}", e)))?;
             buf.push_back(
                 MpsToken::parse_from_string(token)
-                    .map_err(|e| self.error(format!("Invalid token {}", e)))?,
+                    .map_err(|e| self.error(format!("invalid token {}", e)))?,
             );
             bigger_buf.clear();
         }
@@ -148,8 +154,10 @@ where
     fn do_tracking(&mut self, input: u8) {
         if input as char == '\n' {
             self.line += 1;
+            self.column = 0;
+        } else {
+            self.column += 1; // TODO correctly track columns with utf-8 characters longer than one byte
         }
-        self.column += 1; // TODO correctly track columns with utf-8 characters longer than one byte
     }
 
     /// error factory (for ergonomics/DRY)
@@ -247,7 +255,7 @@ impl ReaderStateMachine {
                 '`' => Self::StartTickLiteral {},
                 '"' => Self::StartQuoteLiteral {},
                 ' ' => Self::EndToken {},
-                '\n' | '\r' | ';' => Self::EndStatement {},
+                '\n' | ';' => Self::EndStatement {},
                 '\0' => Self::EndOfFile {},
                 '(' | ')' | ',' | '=' | '<' | '>' | '.' => Self::SingleCharToken { out: input },
                 _ => Self::Regular { out: input },
@@ -273,7 +281,7 @@ impl ReaderStateMachine {
                 '/' => Self::Comment { out: input },
                 ' ' => Self::EndToken {},
                 '\0' => Self::EndOfFile {},
-                '\n' | '\r' | ';' => Self::EndStatement {},
+                '\n' | ';' => Self::EndStatement {},
                 _ => Self::Regular { out: input },
             },
             Self::Octothorpe { .. } => match input_char {

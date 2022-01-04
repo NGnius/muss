@@ -43,7 +43,13 @@ pub fn repl(args: CliArgs) {
         read_loop(&args, &mut state, || {
             match player.save_m3u8(&mut playlist_writer) {
                 Ok(_) => {}
-                Err(e) => eprintln!("{}", e.message()),
+                Err(e) => {
+                    eprintln!("{}", e.message());
+                    // consume any further errors (this shouldn't actually write anything)
+                    while let Err(e) = player.save_m3u8(&mut playlist_writer) {
+                        eprintln!("{}", e.message());
+                    }
+                },
             }
             playlist_writer
                 .flush()
@@ -59,8 +65,15 @@ pub fn repl(args: CliArgs) {
                     Err(e) => eprintln!("{}", e.message()),
                 }
             } else {
-                for e in ctrl.check_ack() {
-                    eprintln!("{}", e.message());
+                // consume all incoming errors
+                let mut had_err = true;
+                while had_err {
+                    let mut new_had_err = false;
+                    for e in ctrl.check_ack() {
+                        eprintln!("{}", e.message());
+                        new_had_err = true;
+                    }
+                    had_err = new_had_err;
                 }
             }
         });
@@ -85,7 +98,6 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                 let statement_result = std::str::from_utf8(state.statement_buf.as_slice());
                 if statement_result.is_ok() && statement_result.unwrap().starts_with("?") {
                     repl_commands(statement_result.unwrap());
-                    state.writer.write(&[';' as u8]).unwrap_or(0);
                 } else {
                     state
                         .writer
