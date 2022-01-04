@@ -111,9 +111,9 @@ fn prompt(line: &mut usize, args: &CliArgs) {
 fn repl_commands(command_str: &str) {
     let words: Vec<&str> = command_str.split(" ").map(|s| s.trim()).collect();
     match words[0] {
-        "?help" => println!("{}", super::help::help()),
-        "?function" | "?functions" => println!("{}", super::help::functions()),
-        "?filter" | "?filters" => println!("{}", super::help::filters()),
+        "?help" => println!("{}", super::help::HELP_STRING),
+        "?function" | "?functions" => println!("{}", super::help::FUNCTIONS),
+        "?filter" | "?filters" => println!("{}", super::help::FILTERS),
         _ => println!("Unknown command, try ?help"),
     }
 }
