@@ -1,14 +1,16 @@
-use std::io;
 use std::fs;
+use std::io;
 
-use rodio::{decoder::Decoder, OutputStream, Sink, OutputStreamHandle};
+use rodio::{decoder::Decoder, OutputStream, OutputStreamHandle, Sink};
 
 use m3u8_rs::{MediaPlaylist, MediaSegment};
 
-use mps_interpreter::{MpsRunner, tokens::MpsTokenReader};
+use mps_interpreter::{tokens::MpsTokenReader, MpsRunner};
 
 use super::PlaybackError;
 
+/// Playback functionality for a script.
+/// This takes the output of the runner and plays or saves it.
 pub struct MpsPlayer<T: MpsTokenReader> {
     runner: MpsRunner<T>,
     sink: Sink,
@@ -19,12 +21,13 @@ pub struct MpsPlayer<T: MpsTokenReader> {
 
 impl<T: MpsTokenReader> MpsPlayer<T> {
     pub fn new(runner: MpsRunner<T>) -> Result<Self, PlaybackError> {
-        let (stream, output_handle) = OutputStream::try_default().map_err(PlaybackError::from_err)?;
-        Ok(Self{
+        let (stream, output_handle) =
+            OutputStream::try_default().map_err(PlaybackError::from_err)?;
+        Ok(Self {
             runner: runner,
             sink: Sink::try_new(&output_handle).map_err(PlaybackError::from_err)?,
             output_stream: stream,
-            output_handle: output_handle
+            output_handle: output_handle,
         })
     }
 
@@ -39,8 +42,8 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
                     self.sink.append(source);
                     //self.sink.play(); // idk if this is necessary
                     Ok(())
-                },
-                Err(e) => Err(PlaybackError::from_err(e))
+                }
+                Err(e) => Err(PlaybackError::from_err(e)),
             }?;
         }
         self.sink.sleep_until_end();
@@ -57,8 +60,8 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
                     self.sink.append(source);
                     //self.sink.play(); // idk if this is necessary
                     Ok(())
-                },
-                Err(e) => Err(PlaybackError::from_err(e))
+                }
+                Err(e) => Err(PlaybackError::from_err(e)),
             }?;
         }
         Ok(())
@@ -66,7 +69,9 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
 
     pub fn enqueue(&mut self, count: usize) -> Result<(), PlaybackError> {
         let mut items_left = count;
-        if items_left == 0 { return Ok(()); }
+        if items_left == 0 {
+            return Ok(());
+        }
         for item in &mut self.runner {
             match item {
                 Ok(music) => {
@@ -77,11 +82,13 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
                     self.sink.append(source);
                     //self.sink.play(); // idk if this is necessary
                     Ok(())
-                },
-                Err(e) => Err(PlaybackError::from_err(e))
+                }
+                Err(e) => Err(PlaybackError::from_err(e)),
             }?;
             items_left -= 1;
-            if items_left == 0 { break; }
+            if items_left == 0 {
+                break;
+            }
         }
         //println!("Enqueued {} items", count - items_left);
         Ok(())
@@ -120,16 +127,14 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
         for item in &mut self.runner {
             match item {
                 Ok(music) => {
-                    playlist.segments.push(
-                        MediaSegment {
-                            uri: music.filename,
-                            title: Some(music.title),
-                            ..Default::default()
-                        }
-                    );
+                    playlist.segments.push(MediaSegment {
+                        uri: music.filename,
+                        title: Some(music.title),
+                        ..Default::default()
+                    });
                     Ok(())
-                },
-                Err(e) => Err(PlaybackError::from_err(e))
+                }
+                Err(e) => Err(PlaybackError::from_err(e)),
             }?;
         }
         playlist.write_to(w).map_err(PlaybackError::from_err)
@@ -160,9 +165,9 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
 
 #[cfg(test)]
 mod tests {
-    use std::io;
-    use mps_interpreter::MpsRunner;
     use super::*;
+    use mps_interpreter::MpsRunner;
+    use std::io;
 
     #[allow(dead_code)]
     #[test]

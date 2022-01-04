@@ -1,5 +1,5 @@
 #[cfg(unix)]
-use std::sync::mpsc::{Sender, channel};
+use std::sync::mpsc::{channel, Sender};
 #[cfg(unix)]
 use std::thread::JoinHandle;
 
@@ -9,10 +9,12 @@ use mpris_player::{MprisPlayer, PlaybackStatus};
 //use super::MpsController;
 use super::player_wrapper::ControlAction;
 
+/// OS-specific APIs for media controls.
+/// Currently only Linux (dbus) is supported.
 pub struct SystemControlWrapper {
     control: Sender<ControlAction>,
     #[cfg(target_os = "linux")]
-    dbus_handle: Option<JoinHandle<()>>,//std::sync::Arc<MprisPlayer>,
+    dbus_handle: Option<JoinHandle<()>>, //std::sync::Arc<MprisPlayer>,
     #[cfg(target_os = "linux")]
     dbus_die: Option<Sender<()>>,
 }
@@ -22,7 +24,7 @@ impl SystemControlWrapper {
     pub fn new(control: Sender<ControlAction>) -> Self {
         Self {
             control: control,
-            dbus_handle: None,//MprisPlayer::new("mps".into(), "mps".into(), "null".into())
+            dbus_handle: None, //MprisPlayer::new("mps".into(), "mps".into(), "null".into())
             dbus_die: None,
         }
     }
@@ -44,58 +46,67 @@ impl SystemControlWrapper {
             dbus_conn.set_can_go_next(true);
 
             let control_clone = control_clone1.clone();
-            dbus_conn.connect_next(
-                move || {
-                    //println!("Got next signal");
-                    control_clone.send(ControlAction::Next{ack: false}).unwrap_or(())
-                }
-            );
+            dbus_conn.connect_next(move || {
+                //println!("Got next signal");
+                control_clone
+                    .send(ControlAction::Next { ack: false })
+                    .unwrap_or(())
+            });
 
             let control_clone = control_clone1.clone();
-            dbus_conn.connect_previous(
-                move || control_clone.send(ControlAction::Previous{ack: false}).unwrap_or(())
-            );
+            dbus_conn.connect_previous(move || {
+                control_clone
+                    .send(ControlAction::Previous { ack: false })
+                    .unwrap_or(())
+            });
 
             let control_clone = control_clone1.clone();
             let dbus_conn_clone = dbus_conn.clone();
-            dbus_conn.connect_pause(
-                move || {
-                    //println!("Got pause signal");
+            dbus_conn.connect_pause(move || {
+                //println!("Got pause signal");
+                dbus_conn_clone.set_playback_status(PlaybackStatus::Paused);
+                control_clone
+                    .send(ControlAction::Pause { ack: false })
+                    .unwrap_or(());
+            });
+
+            let control_clone = control_clone1.clone();
+            let dbus_conn_clone = dbus_conn.clone();
+            dbus_conn.connect_play(move || {
+                //println!("Got play signal");
+                dbus_conn_clone.set_playback_status(PlaybackStatus::Playing);
+                control_clone
+                    .send(ControlAction::Play { ack: false })
+                    .unwrap_or(())
+            });
+
+            let control_clone = control_clone1.clone();
+            let dbus_conn_clone = dbus_conn.clone();
+            dbus_conn.connect_play_pause(move || {
+                //println!("Got play_pause signal (was playing? {})", is_playing);
+                if is_playing {
                     dbus_conn_clone.set_playback_status(PlaybackStatus::Paused);
-                    control_clone.send(ControlAction::Pause{ack: false}).unwrap_or(());
-                }
-            );
-
-            let control_clone = control_clone1.clone();
-            let dbus_conn_clone = dbus_conn.clone();
-            dbus_conn.connect_play(
-                move || {
-                    //println!("Got play signal");
+                    control_clone
+                        .send(ControlAction::Pause { ack: false })
+                        .unwrap_or(());
+                } else {
                     dbus_conn_clone.set_playback_status(PlaybackStatus::Playing);
-                    control_clone.send(ControlAction::Play{ack: false}).unwrap_or(())
+                    control_clone
+                        .send(ControlAction::Play { ack: false })
+                        .unwrap_or(());
                 }
-            );
+                is_playing = !is_playing;
+            });
 
             let control_clone = control_clone1.clone();
-            let dbus_conn_clone = dbus_conn.clone();
-            dbus_conn.connect_play_pause(
-                move || {
-                    //println!("Got play_pause signal (was playing? {})", is_playing);
-                    if is_playing {
-                        dbus_conn_clone.set_playback_status(PlaybackStatus::Paused);
-                        control_clone.send(ControlAction::Pause{ack: false}).unwrap_or(());
-                    } else {
-                        dbus_conn_clone.set_playback_status(PlaybackStatus::Playing);
-                        control_clone.send(ControlAction::Play{ack: false}).unwrap_or(());
-                    }
-                    is_playing = !is_playing;
-                }
-            );
-
-            let control_clone = control_clone1.clone();
-            dbus_conn.connect_volume(
-                move |v| control_clone.send(ControlAction::SetVolume{ack: false, volume: (v * (u32::MAX as f64)) as _}).unwrap_or(())
-            );
+            dbus_conn.connect_volume(move |v| {
+                control_clone
+                    .send(ControlAction::SetVolume {
+                        ack: false,
+                        volume: (v * (u32::MAX as f64)) as _,
+                    })
+                    .unwrap_or(())
+            });
 
             // poll loop, using my custom mpris lib because original did it wrong
             loop {
@@ -120,9 +131,7 @@ impl SystemControlWrapper {
 #[cfg(not(any(target_os = "linux")))]
 impl SystemControlWrapper {
     pub fn new(control: Sender<ControlAction>) -> Self {
-        Self {
-            control: control,
-        }
+        Self { control: control }
     }
 
     pub fn init(&mut self) {}

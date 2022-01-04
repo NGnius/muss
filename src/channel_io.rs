@@ -1,5 +1,5 @@
-use std::sync::mpsc::{channel, Sender, Receiver};
-use std::io::{Read, Write, self};
+use std::io::{self, Read, Write};
+use std::sync::mpsc::{channel, Receiver, Sender};
 
 pub struct ChannelWriter {
     tx: Sender<u8>,
@@ -29,34 +29,36 @@ pub struct ChannelReader {
 }
 
 impl Read for ChannelReader {
-     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let mut count = 0;
         if self.blocking {
             for b in self.rx.iter() {
                 buf[count] = b;
                 count += 1;
-                if count >= buf.len() {break;}
+                if count >= buf.len() {
+                    break;
+                }
             }
         } else {
             for b in self.rx.try_iter() {
                 buf[count] = b;
                 count += 1;
-                if count >= buf.len() {break;}
+                if count >= buf.len() {
+                    break;
+                }
             }
         }
         Ok(count)
-     }
+    }
 }
 
 pub fn channel_io() -> (ChannelWriter, ChannelReader) {
     let (sender, receiver) = channel();
     (
-        ChannelWriter {
-            tx: sender,
-        },
+        ChannelWriter { tx: sender },
         ChannelReader {
             rx: receiver,
             blocking: false,
-        }
+        },
     )
 }

@@ -1,4 +1,4 @@
-use clap::{Parser};
+use clap::Parser;
 
 #[derive(Parser)]
 #[clap(author, version)]
@@ -17,7 +17,7 @@ pub struct CliArgs {
 
     /// In REPL mode, the prompt to display
     #[clap(long, default_value_t = String::from("|"))]
-    pub prompt: String
+    pub prompt: String,
 }
 
 pub fn parse() -> CliArgs {

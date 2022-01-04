@@ -1,8 +1,8 @@
-use std::fmt::{Debug, Display, Formatter, Error};
+use std::fmt::{Debug, Display, Error, Formatter};
 
 #[derive(Debug, Clone)]
 pub struct PlaybackError {
-    pub(crate) msg: String
+    pub(crate) msg: String,
 }
 
 impl PlaybackError {

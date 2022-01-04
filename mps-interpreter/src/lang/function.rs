@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 //use std::fmt::{Debug, Display, Error, Formatter};
 use std::marker::PhantomData;
 
-use crate::lang::utility::{assert_token, assert_token_raw, assert_token_raw_back, assert_empty};
+use crate::lang::utility::{assert_empty, assert_token, assert_token_raw, assert_token_raw_back};
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::SyntaxError;
 use crate::lang::{BoxedMpsOpFactory, MpsOp};

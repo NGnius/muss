@@ -8,6 +8,8 @@ use super::tokens::MpsToken;
 use super::MpsContext;
 use super::MpsMusicItem;
 
+/// The script interpreter.
+/// Use MpsRunner for a better interface.
 pub struct MpsInterpretor<T>
 where
     T: crate::tokens::MpsTokenReader,
@@ -151,6 +153,7 @@ fn box_error_with_ctx<E: MpsLanguageError + 'static>(
     Box::new(error) as Box<dyn MpsLanguageError>
 }
 
+/// Builder function to add the standard statements of MPS.
 pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
     vocabulary
         .add(crate::lang::vocabulary::filters::empty_filter())

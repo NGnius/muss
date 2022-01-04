@@ -1,18 +1,20 @@
-use std::sync::mpsc::{Sender, Receiver, channel};
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread::JoinHandle;
 
 use mps_interpreter::tokens::MpsTokenReader;
 
+use super::os_controls::SystemControlWrapper;
+use super::player_wrapper::{ControlAction, MpsPlayerServer, PlayerAction};
 use super::MpsPlayer;
 use super::PlaybackError;
-use super::player_wrapper::{ControlAction, PlayerAction, MpsPlayerServer};
-use super::os_controls::SystemControlWrapper;
 
+/// A controller for a MpsPlayer running on another thread.
+/// This receives and sends events like media buttons and script errors for the MpsPlayer.
 pub struct MpsController {
     control: Sender<ControlAction>,
     event: Receiver<PlayerAction>,
     handle: JoinHandle<()>,
-    sys_ctrl: SystemControlWrapper
+    sys_ctrl: SystemControlWrapper,
 }
 
 impl MpsController {
@@ -23,7 +25,8 @@ impl MpsController {
         let (event_tx, event_rx) = channel();
         let mut sys_ctrl = SystemControlWrapper::new(control_tx.clone());
         sys_ctrl.init();
-        let handle = MpsPlayerServer::spawn(player_gen, control_tx.clone(), control_rx, event_tx, false);
+        let handle =
+            MpsPlayerServer::spawn(player_gen, control_tx.clone(), control_rx, event_tx, false);
         Self {
             control: control_tx,
             event: event_rx,
@@ -39,7 +42,8 @@ impl MpsController {
         let (event_tx, event_rx) = channel();
         let mut sys_ctrl = SystemControlWrapper::new(control_tx.clone());
         sys_ctrl.init();
-        let handle = MpsPlayerServer::spawn(player_gen, control_tx.clone(), control_rx, event_tx, true);
+        let handle =
+            MpsPlayerServer::spawn(player_gen, control_tx.clone(), control_rx, event_tx, true);
         Self {
             control: control_tx,
             event: event_rx,
@@ -49,7 +53,9 @@ impl MpsController {
     }
 
     fn send_confirm(&self, to_send: ControlAction) -> Result<(), PlaybackError> {
-        self.control.send(to_send.clone()).map_err(PlaybackError::from_err)?;
+        self.control
+            .send(to_send.clone())
+            .map_err(PlaybackError::from_err)?;
         let mut response = self.event.recv().map_err(PlaybackError::from_err)?;
         while !response.is_acknowledgement() {
             Self::handle_event(response)?;
@@ -60,12 +66,13 @@ impl MpsController {
                 Ok(())
             } else {
                 Err(PlaybackError {
-                    msg: "Incorrect acknowledgement received for MpsController control action".into()
+                    msg: "Incorrect acknowledgement received for MpsController control action"
+                        .into(),
                 })
             }
         } else {
             Err(PlaybackError {
-                msg: "Invalid acknowledgement received for MpsController control action".into()
+                msg: "Invalid acknowledgement received for MpsController control action".into(),
             })
         }
     }
@@ -80,41 +87,44 @@ impl MpsController {
     }
 
     pub fn next(&self) -> Result<(), PlaybackError> {
-        self.send_confirm(ControlAction::Next{ack: true})
+        self.send_confirm(ControlAction::Next { ack: true })
     }
 
     pub fn previous(&self) -> Result<(), PlaybackError> {
-        self.send_confirm(ControlAction::Previous{ack: true})
+        self.send_confirm(ControlAction::Previous { ack: true })
     }
 
     pub fn play(&self) -> Result<(), PlaybackError> {
-        self.send_confirm(ControlAction::Play{ack: true})
+        self.send_confirm(ControlAction::Play { ack: true })
     }
 
     pub fn pause(&self) -> Result<(), PlaybackError> {
-        self.send_confirm(ControlAction::Pause{ack: true})
+        self.send_confirm(ControlAction::Pause { ack: true })
     }
 
     pub fn stop(&self) -> Result<(), PlaybackError> {
-        self.send_confirm(ControlAction::Stop{ack: true})
+        self.send_confirm(ControlAction::Stop { ack: true })
     }
 
     pub fn enqueue(&self, count: usize) -> Result<(), PlaybackError> {
-        self.send_confirm(ControlAction::Enqueue{amount: count, ack: true})
+        self.send_confirm(ControlAction::Enqueue {
+            amount: count,
+            ack: true,
+        })
     }
 
     pub fn ping(&self) -> Result<(), PlaybackError> {
-        self.send_confirm(ControlAction::NoOp{ack: true})
+        self.send_confirm(ControlAction::NoOp { ack: true })
     }
 
     pub fn exit(self) -> Result<(), PlaybackError> {
-        self.send_confirm(ControlAction::Exit{ack: true})?;
+        self.send_confirm(ControlAction::Exit { ack: true })?;
         self.sys_ctrl.exit();
         match self.handle.join() {
             Ok(x) => Ok(x),
             Err(_) => Err(PlaybackError {
-                msg: "MpsPlayerServer did not exit correctly".into()
-            })
+                msg: "MpsPlayerServer did not exit correctly".into(),
+            }),
         }
     }
 
@@ -134,7 +144,9 @@ impl MpsController {
         for msg in self.event.try_iter() {
             Self::handle_event(msg)?;
         }
-        self.control.send(ControlAction::CheckEmpty{ack: true}).map_err(PlaybackError::from_err)?;
+        self.control
+            .send(ControlAction::CheckEmpty { ack: true })
+            .map_err(PlaybackError::from_err)?;
         loop {
             let msg = self.event.recv().map_err(PlaybackError::from_err)?;
             if let PlayerAction::Empty = msg {
@@ -161,8 +173,12 @@ impl MpsController {
     /// Like check(), but it also waits for an acknowledgement to ensure it gets the latest events.
     pub fn check_ack(&self) -> Vec<PlaybackError> {
         let mut result = Vec::new();
-        let to_send = ControlAction::NoOp{ack: true};
-        if let Err(e) = self.control.send(to_send.clone()).map_err(PlaybackError::from_err) {
+        let to_send = ControlAction::NoOp { ack: true };
+        if let Err(e) = self
+            .control
+            .send(to_send.clone())
+            .map_err(PlaybackError::from_err)
+        {
             result.push(e);
         }
         for msg in self.event.iter() {
@@ -171,7 +187,8 @@ impl MpsController {
                     break;
                 } else {
                     result.push(PlaybackError {
-                        msg: "Incorrect acknowledgement received for MpsController control action".into()
+                        msg: "Incorrect acknowledgement received for MpsController control action"
+                            .into(),
                     });
                 }
             } else if let Err(e) = Self::handle_event(msg) {

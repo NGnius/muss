@@ -1,6 +1,6 @@
 [package]
 name = "mps"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["NGnius (Graham) <ngniusness@gmail.com>"]
 description = "Music Playlist Scripting language (MPS)"
@@ -15,7 +15,7 @@ members = [
 
 [dependencies]
 # local
-mps-interpreter = { version = "0.1.0", path = "./mps-interpreter" }
-mps-player = { version = "0.1.0", path = "./mps-player" }
+mps-interpreter = { version = "0.2.0", path = "./mps-interpreter" }
+mps-player = { version = "0.2.0", path = "./mps-player" }
 # external
 clap = { version = "3.0", features = ["derive"] }

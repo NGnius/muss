@@ -1,6 +1,6 @@
 [package]
 name = "mps-player"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "LGPL-2.1-only OR GPL-2.0-or-later"
 readme = "README.md"
@@ -10,7 +10,7 @@ rodio = { version = "^0.14"}
 m3u8-rs = { version = "^3.0.0" }
 
 # local
-mps-interpreter = { path = "../mps-interpreter" }
+mps-interpreter = { path = "../mps-interpreter", version = "0.2.0" }
 
 [target.'cfg(unix)'.dependencies]
 #dbus = { version = "^0.9" }

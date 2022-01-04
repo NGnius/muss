@@ -23,6 +23,7 @@ impl<T: MpsTokenReader> MpsRunnerSettings<T> {
     }
 }
 
+/// A wrapper around MpsInterpretor which provides a simpler (and more powerful) interface.
 pub struct MpsRunner<T: MpsTokenReader> {
     interpretor: MpsInterpretor<T>,
     new_statement: bool,
