@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Display, Error, Formatter};
-use std::fs::ReadDir;
+use std::fs::{ReadDir, DirEntry};
 use std::iter::Iterator;
 use std::path::{Path, PathBuf};
 
@@ -18,8 +18,47 @@ pub struct FileIter {
     root: PathBuf,
     pattern: Regex,
     recursive: bool,
-    dir_iters: Vec<ReadDir>,
+    dir_iters: Vec<SortedReadDir>,
     is_complete: bool,
+}
+
+#[derive(Debug)]
+struct SortedReadDir {
+    dir_iter: ReadDir,
+    dir_iter_complete: bool,
+    cache: Vec<DirEntry>,
+}
+
+impl Iterator for SortedReadDir {
+    type Item = std::io::Result<DirEntry>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.dir_iter_complete {
+            while let Some(dir) = self.dir_iter.next() {
+                match dir {
+                    Ok(f) => self.cache.push(f),
+                    Err(e) => return Some(Err(e)),
+                }
+            }
+            self.dir_iter_complete = true;
+            self.cache.sort_by(|a, b| b.path().cmp(&a.path()));
+        }
+        if self.cache.is_empty() {
+            None
+        } else {
+            Some(Ok(self.cache.pop().unwrap()))
+        }
+    }
+}
+
+impl std::convert::From<ReadDir> for SortedReadDir {
+    fn from(item: ReadDir) -> Self {
+        Self {
+            dir_iter: item,
+            dir_iter_complete: false,
+            cache: Vec::new(),
+        }
+    }
 }
 
 impl Display for FileIter {
@@ -51,7 +90,7 @@ impl FileIter {
                 line: 0,
                 op: op(),
                 msg: format!("Directory read error: {}", e),
-            })?);
+            })?.into());
             vec
         } else {
             Vec::with_capacity(DEFAULT_VEC_CACHE_SIZE)
@@ -73,7 +112,7 @@ impl FileIter {
         let root_path = crate::lang::utility::music_folder();
         let read_dir = root_path.read_dir().unwrap();
         let mut dir_vec = Vec::with_capacity(DEFAULT_VEC_CACHE_SIZE);
-        dir_vec.push(read_dir);
+        dir_vec.push(read_dir.into());
         Self {
             root: root_path,
             pattern: Regex::new(DEFAULT_REGEX).unwrap(),
@@ -215,7 +254,7 @@ impl Iterator for FileIter {
                 } else {
                     // should be impossible to get here
                     self.dir_iters.push(match self.root.read_dir() {
-                        Ok(x) => x,
+                        Ok(x) => x.into(),
                         Err(e) => return Some(Err(format!("Directory read error: {}", e))),
                     });
                     return self.next();
@@ -230,7 +269,7 @@ impl Iterator for FileIter {
                                     if self.recursive {
                                         self.dir_iters.push(dir_iter);
                                         self.dir_iters.push(match dir_entry.path().read_dir() {
-                                            Ok(x) => x,
+                                            Ok(x) => x.into(),
                                             Err(e) => {
                                                 return Some(Err(format!(
                                                     "Directory read error: {}",
