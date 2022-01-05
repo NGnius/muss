@@ -22,6 +22,7 @@ pub struct FilesStatement {
     recursive: Option<bool>,
     // state
     file_iter: Option<FileIter>,
+    has_tried: bool,
 }
 
 impl Display for FilesStatement {
@@ -29,7 +30,7 @@ impl Display for FilesStatement {
         write!(f, "files(")?;
         let mut preceding = false;
         if let Some(folder) = &self.folder {
-            write!(f, "folder={}", folder)?;
+            write!(f, "folder=`{}`", folder)?;
             preceding = true;
         }
         if let Some(regex) = &self.regex {
@@ -38,7 +39,7 @@ impl Display for FilesStatement {
             } else {
                 preceding = true;
             }
-            write!(f, "regex={}", regex)?;
+            write!(f, "regex=`{}`", regex)?;
         }
         if let Some(recursive) = self.recursive {
             if preceding {
@@ -58,6 +59,7 @@ impl std::clone::Clone for FilesStatement {
             regex: self.regex.clone(),
             recursive: self.recursive.clone(),
             file_iter: None,
+            has_tried: self.has_tried,
         }
     }
 }
@@ -67,6 +69,11 @@ impl Iterator for FilesStatement {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.file_iter.is_none() {
+            if self.has_tried {
+                return None;
+            } else {
+                self.has_tried = true;
+            }
             let self_clone = self.clone();
             let iter = self.context.as_mut().unwrap().filesystem.raw(
                 self.folder.as_deref(),
@@ -218,6 +225,7 @@ impl MpsFunctionFactory<FilesStatement> for FilesFunctionFactory {
             regex: pattern,
             recursive: recursive,
             file_iter: None,
+            has_tried: false,
         })
     }
 }

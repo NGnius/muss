@@ -252,10 +252,12 @@ impl Iterator for FileIter {
                         Some(item) => Some(Ok(item)),
                     }
                 } else {
-                    // should be impossible to get here
                     self.dir_iters.push(match self.root.read_dir() {
                         Ok(x) => x.into(),
-                        Err(e) => return Some(Err(format!("Directory read error: {}", e))),
+                        Err(e) => {
+                            self.is_complete = true;
+                            return Some(Err(format!("Directory read error: {}", e)));
+                        },
                     });
                     return self.next();
                 }
