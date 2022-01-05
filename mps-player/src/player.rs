@@ -5,7 +5,7 @@ use rodio::{decoder::Decoder, OutputStream, OutputStreamHandle, Sink};
 
 use m3u8_rs::{MediaPlaylist, MediaSegment};
 
-use mps_interpreter::{tokens::MpsTokenReader, MpsRunner};
+use mps_interpreter::{tokens::MpsTokenReader, MpsRunner, MpsMusicItem};
 
 use super::PlaybackError;
 
@@ -50,10 +50,12 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
         Ok(())
     }
 
-    pub fn enqueue_all(&mut self) -> Result<(), PlaybackError> {
+    pub fn enqueue_all(&mut self) -> Result<Vec<MpsMusicItem>, PlaybackError> {
+        let mut enqueued = Vec::new();
         for item in &mut self.runner {
             match item {
                 Ok(music) => {
+                    enqueued.push(music.clone());
                     let file = fs::File::open(music.filename).map_err(PlaybackError::from_err)?;
                     let stream = io::BufReader::new(file);
                     let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
@@ -64,18 +66,19 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
                 Err(e) => Err(PlaybackError::from_err(e)),
             }?;
         }
-        Ok(())
+        Ok(enqueued)
     }
 
-    pub fn enqueue(&mut self, count: usize) -> Result<(), PlaybackError> {
+    pub fn enqueue(&mut self, count: usize) -> Result<Vec<MpsMusicItem>, PlaybackError> {
         let mut items_left = count;
+        let mut enqueued = Vec::with_capacity(count);
         if items_left == 0 {
-            return Ok(());
+            return Ok(enqueued);
         }
         for item in &mut self.runner {
             match item {
                 Ok(music) => {
-                    //println!("Enqueuing {}", music.filename);
+                    enqueued.push(music.clone());
                     let file = fs::File::open(music.filename).map_err(PlaybackError::from_err)?;
                     let stream = io::BufReader::new(file);
                     let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
@@ -91,7 +94,7 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
             }
         }
         //println!("Enqueued {} items", count - items_left);
-        Ok(())
+        Ok(enqueued)
     }
 
     pub fn resume(&self) {
@@ -114,7 +117,7 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
         self.sink.len()
     }
 
-    pub fn empty(&self) -> bool {
+    pub fn queue_empty(&self) -> bool {
         self.sink.empty()
     }
 

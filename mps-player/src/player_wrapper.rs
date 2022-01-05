@@ -2,18 +2,20 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::{thread, thread::JoinHandle};
 
 use mps_interpreter::tokens::MpsTokenReader;
+use mps_interpreter::MpsMusicItem;
 
 use super::MpsPlayer;
 use super::PlaybackError;
 
 /// A wrapper around MpsPlayer so that playback can occur on a different thread.
-/// This allows for message passing between the threads.
+/// This allows for message passing between the player and controller.
 ///
 /// You will probably never directly interact with this, instead using MpsController to communicate.
 pub struct MpsPlayerServer<T: MpsTokenReader> {
     player: MpsPlayer<T>,
     control: Receiver<ControlAction>,
     event: Sender<PlayerAction>,
+    playback: Sender<PlaybackAction>,
     keep_alive: bool,
 }
 
@@ -22,22 +24,42 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
         player: MpsPlayer<T>,
         ctrl: Receiver<ControlAction>,
         event: Sender<PlayerAction>,
+        playback: Sender<PlaybackAction>,
         keep_alive: bool,
     ) -> Self {
         Self {
             player: player,
             control: ctrl,
             event: event,
+            playback: playback,
             keep_alive: keep_alive,
         }
     }
 
+    fn enqeue_some(&mut self, count: usize) {
+        //println!("Enqueuing up to {} items", count);
+        match self.player.enqueue(count) {
+            Err(e) => self.event.send(PlayerAction::Exception(e)).unwrap(),
+            Ok(items) => for item in items { // notify of new items that have been enqueued
+                self.playback.send(PlaybackAction::Enqueued(item)).unwrap();
+            },
+        }
+    }
+
+    fn on_empty(&self) {
+        self.event.send(PlayerAction::Empty).unwrap();
+        self.playback.send(PlaybackAction::Empty).unwrap();
+    }
+
+    fn on_end(&self) {
+        self.event.send(PlayerAction::End).unwrap();
+        self.playback.send(PlaybackAction::Exit).unwrap();
+    }
+
     fn run_loop(&mut self) {
         // this can panic since it's not on the main thread
-        // initial queue full
-        if let Err(e) = self.player.enqueue(1) {
-            self.event.send(PlayerAction::Exception(e)).unwrap();
-        }
+        // initial queue fill
+        self.enqeue_some(1);
         let mut is_empty = self.player.queue_len() == 0;
         loop {
             let command = self.control.recv().unwrap();
@@ -54,7 +76,7 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
                         self.event.send(PlayerAction::Exception(e)).unwrap();
                     }
                     if !self.player.is_paused() {
-                        self.player.enqueue(1).unwrap();
+                        self.enqeue_some(1);
                     }
                 }
                 ControlAction::Previous { .. } => {} // TODO
@@ -73,9 +95,7 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
                     is_exiting = true;
                 }
                 ControlAction::Enqueue { amount, .. } => {
-                    if let Err(e) = self.player.enqueue(amount) {
-                        self.event.send(PlayerAction::Exception(e)).unwrap();
-                    }
+                    self.enqeue_some(amount);
                 }
                 ControlAction::NoOp { .. } => {} // empty by design
                 ControlAction::SetVolume { volume, .. } => {
@@ -88,9 +108,7 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
 
             // keep queue full (while playing music)
             if self.player.queue_len() == 0 && !self.player.is_paused() && !is_exiting {
-                if let Err(e) = self.player.enqueue(1) {
-                    self.event.send(PlayerAction::Exception(e)).unwrap();
-                }
+                self.enqeue_some(1);
                 if self.player.queue_len() == 0 {
                     // no more music to add
                     is_exiting = !self.keep_alive || is_exiting;
@@ -105,22 +123,22 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
             if self.player.queue_len() == 0 && !is_empty {
                 // just became empty
                 is_empty = true;
-                self.event.send(PlayerAction::Empty).unwrap();
+                self.on_empty();
             } else if self.player.queue_len() != 0 && is_empty {
                 // just got filled
                 is_empty = false;
             }
 
             if is_empty && check_empty {
-                self.event.send(PlayerAction::Empty).unwrap();
+                self.on_empty();
             }
 
             if is_exiting {
                 break;
             }
         }
-        println!("Exiting playback server");
-        self.event.send(PlayerAction::End).unwrap();
+        //println!("Exiting playback server");
+        self.on_end();
     }
 
     pub fn spawn<F: FnOnce() -> MpsPlayer<T> + Send + 'static>(
@@ -128,12 +146,13 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
         ctrl_tx: Sender<ControlAction>,
         ctrl_rx: Receiver<ControlAction>,
         event: Sender<PlayerAction>,
+        playback: Sender<PlaybackAction>,
         keep_alive: bool,
     ) -> JoinHandle<()> {
         thread::spawn(move || Self::unblocking_timer_loop(ctrl_tx, 50));
         thread::spawn(move || {
             let player = factory();
-            let mut server_obj = Self::new(player, ctrl_rx, event, keep_alive);
+            let mut server_obj = Self::new(player, ctrl_rx, event, playback, keep_alive);
             server_obj.run_loop();
         })
     }
@@ -191,6 +210,13 @@ pub enum PlayerAction {
     Exception(PlaybackError),
     End,
     Empty,
+}
+
+#[derive(Clone, Debug)]
+pub enum PlaybackAction {
+    Empty,
+    Enqueued(MpsMusicItem),
+    Exit,
 }
 
 impl PlayerAction {

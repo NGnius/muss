@@ -23,10 +23,11 @@ impl MpsController {
     ) -> Self {
         let (control_tx, control_rx) = channel();
         let (event_tx, event_rx) = channel();
+        let (playback_tx, playback_rx) = channel();
         let mut sys_ctrl = SystemControlWrapper::new(control_tx.clone());
-        sys_ctrl.init();
+        sys_ctrl.init(playback_rx);
         let handle =
-            MpsPlayerServer::spawn(player_gen, control_tx.clone(), control_rx, event_tx, false);
+            MpsPlayerServer::spawn(player_gen, control_tx.clone(), control_rx, event_tx, playback_tx, false);
         Self {
             control: control_tx,
             event: event_rx,
@@ -40,10 +41,11 @@ impl MpsController {
     ) -> Self {
         let (control_tx, control_rx) = channel();
         let (event_tx, event_rx) = channel();
+        let (playback_tx, playback_rx) = channel();
         let mut sys_ctrl = SystemControlWrapper::new(control_tx.clone());
-        sys_ctrl.init();
+        sys_ctrl.init(playback_rx);
         let handle =
-            MpsPlayerServer::spawn(player_gen, control_tx.clone(), control_rx, event_tx, true);
+            MpsPlayerServer::spawn(player_gen, control_tx.clone(), control_rx, event_tx, playback_tx, true);
         Self {
             control: control_tx,
             event: event_rx,
@@ -58,7 +60,7 @@ impl MpsController {
             .map_err(PlaybackError::from_err)?;
         let mut response = self.event.recv().map_err(PlaybackError::from_err)?;
         while !response.is_acknowledgement() {
-            Self::handle_event(response)?;
+            self.handle_event(response)?;
             response = self.event.recv().map_err(PlaybackError::from_err)?;
         }
         if let PlayerAction::Acknowledge(action) = response {
@@ -77,12 +79,13 @@ impl MpsController {
         }
     }
 
-    fn handle_event(event: PlayerAction) -> Result<(), PlaybackError> {
+    fn handle_event(&self, event: PlayerAction) -> Result<(), PlaybackError> {
         match event {
             PlayerAction::Acknowledge(_) => Ok(()),
             PlayerAction::Exception(e) => Err(e),
             PlayerAction::End => Ok(()),
             PlayerAction::Empty => Ok(()),
+            //PlayerAction::Enqueued(item) => Ok(()),
         }
     }
 
@@ -134,7 +137,7 @@ impl MpsController {
             if let PlayerAction::End = msg {
                 break;
             } else {
-                Self::handle_event(msg)?;
+                self.handle_event(msg)?;
             }
         }
         Ok(())
@@ -142,7 +145,7 @@ impl MpsController {
 
     pub fn wait_for_empty(&self) -> Result<(), PlaybackError> {
         for msg in self.event.try_iter() {
-            Self::handle_event(msg)?;
+            self.handle_event(msg)?;
         }
         self.control
             .send(ControlAction::CheckEmpty { ack: true })
@@ -152,7 +155,7 @@ impl MpsController {
             if let PlayerAction::Empty = msg {
                 break;
             } else {
-                Self::handle_event(msg)?;
+                self.handle_event(msg)?;
             }
         }
         Ok(())
@@ -163,7 +166,7 @@ impl MpsController {
     pub fn check(&self) -> Vec<PlaybackError> {
         let mut result = Vec::new();
         for msg in self.event.try_iter() {
-            if let Err(e) = Self::handle_event(msg) {
+            if let Err(e) = self.handle_event(msg) {
                 result.push(e);
             }
         }
@@ -172,7 +175,7 @@ impl MpsController {
 
     /// Like check(), but it also waits for an acknowledgement to ensure it gets the latest events.
     pub fn check_ack(&self) -> Vec<PlaybackError> {
-        let mut result = Vec::new();
+        let mut result = self.check(); // clear existing messages first
         let to_send = ControlAction::NoOp { ack: true };
         if let Err(e) = self
             .control
@@ -191,7 +194,7 @@ impl MpsController {
                             .into(),
                     });
                 }
-            } else if let Err(e) = Self::handle_event(msg) {
+            } else if let Err(e) = self.handle_event(msg) {
                 result.push(e);
             }
         }
