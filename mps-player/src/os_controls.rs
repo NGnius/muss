@@ -1,11 +1,12 @@
-#[cfg(unix)]
+#[allow(unused_imports)]
 use std::sync::mpsc::{channel, Sender, Receiver};
-#[cfg(unix)]
+#[cfg(all(target_os = "linux", feature = "os-controls"))]
 use std::thread::JoinHandle;
 
-#[cfg(unix)]
+#[cfg(all(target_os = "linux", feature = "os-controls"))]
 use mpris_player::{MprisPlayer, PlaybackStatus, Metadata};
 
+#[cfg(all(target_os = "linux", feature = "os-controls"))]
 use mps_interpreter::MpsMusicItem;
 
 //use super::MpsController;
@@ -13,25 +14,32 @@ use super::player_wrapper::{ControlAction, PlaybackAction};
 
 /// OS-specific APIs for media controls.
 /// Currently only Linux (dbus) is supported.
+#[cfg(all(target_os = "linux", feature = "os-controls"))]
 pub struct SystemControlWrapper {
     control: Sender<ControlAction>,
-    #[cfg(target_os = "linux")]
     dbus_handle: Option<JoinHandle<()>>, //std::sync::Arc<MprisPlayer>,
-    #[cfg(target_os = "linux")]
     dbus_ctrl: Option<Sender<DbusControl>>,
-    #[cfg(target_os = "linux")]
     playback_event_handler: Option<JoinHandle<()>>,
-    #[cfg(target_os = "linux")]
     playback_event_handler_killer: Option<Sender<()>>,
+
 }
 
-#[cfg(target_os = "linux")]
+/// OS-specific APIs for media controls.
+/// Currently only Linux (dbus) is supported.
+#[cfg(not(feature = "os-controls"))]
+pub struct SystemControlWrapper {
+    #[allow(dead_code)]
+    control: Sender<ControlAction>,
+    playback_receiver: Option<Receiver<PlaybackAction>>,
+}
+
+#[cfg(all(target_os = "linux", feature = "os-controls"))]
 enum DbusControl {
     Die,
     SetMetadata(Metadata),
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", feature = "os-controls"))]
 impl SystemControlWrapper {
     pub fn new(control: Sender<ControlAction>) -> Self {
         Self {
@@ -203,13 +211,18 @@ impl SystemControlWrapper {
     }
 }
 
-#[cfg(not(any(target_os = "linux")))]
+#[cfg(not(feature = "os-controls"))]
 impl SystemControlWrapper {
     pub fn new(control: Sender<ControlAction>) -> Self {
-        Self { control: control }
+        Self {
+            control: control,
+            playback_receiver: None
+        }
     }
 
-    pub fn init(&mut self, _playback: Receiver<PlaybackAction>) {}
+    pub fn init(&mut self, playback: Receiver<PlaybackAction>) {
+        self.playback_receiver = Some(playback);
+    }
 
     pub fn exit(self) {}
 }

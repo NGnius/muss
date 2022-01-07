@@ -12,6 +12,19 @@ m3u8-rs = { version = "^3.0.0" }
 # local
 mps-interpreter = { path = "../mps-interpreter", version = "0.2.0" }
 
-[target.'cfg(unix)'.dependencies]
+[target.'cfg(target_os = "linux")'.dependencies]
 #dbus = { version = "^0.9" }
-mpris-player = { version = "^0.6.1", path = "../mpris-player" }
+mpris-player = { version = "^0.6.1", path = "../mpris-player", optional = true }
+
+[features]
+default = ["os-controls"]
+os-controls = []
+
+# I wish this worked...
+#[target.'cfg(not(target_os = "linux"))'.features]
+#default = ["os-controls"]
+#os-controls = []
+
+#[target.'cfg(target_os = "linux")'.features]
+#default = ["os-controls"]
+#os-controls = ["mpris-player"]

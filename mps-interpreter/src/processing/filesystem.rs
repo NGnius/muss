@@ -9,7 +9,7 @@ use super::OpGetter;
 use crate::lang::RuntimeError;
 use crate::MpsMusicItem;
 
-const DEFAULT_REGEX: &str = r"/(?P<artist>[^/]+)/(?P<album>[^/]+)/(?:(?:(?P<disc>\d+)\s+)?(?P<track>\d+)\.?\s+)?(?P<title>[^/]+)\.[a-zA-Z0-9]+$";
+const DEFAULT_REGEX: &str = r"/(?P<artist>[^/]+)/(?P<album>[^/]+)/(?:(?:(?P<disc>\d+)\s+)?(?P<track>\d+)\.?\s+)?(?P<title>[^/]+)\.(?P<format>(?:mp3)|(?:wav)|(?:ogg)|(?:flac)|(?:mp4)|(?:aac))$";
 
 const DEFAULT_VEC_CACHE_SIZE: usize = 4;
 
