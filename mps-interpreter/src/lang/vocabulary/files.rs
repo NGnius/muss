@@ -125,21 +125,21 @@ impl MpsFunctionFactory<FilesStatement> for FilesFunctionFactory {
         let mut root_path = None;
         let mut pattern = None;
         let mut recursive = None;
-        if tokens[0].is_literal() {
-            // folder is specified without keyword
-            root_path = Some(assert_token(
-                |t| match t {
-                    MpsToken::Literal(s) => Some(s),
-                    _ => None,
-                },
-                MpsToken::Literal("/path/to/music/folder".into()),
-                tokens,
-            )?);
-            if tokens.len() > 1 && tokens[0].is_comma() {
-                assert_token_raw(MpsToken::Comma, tokens)?;
-            }
-        }
         if tokens.len() != 0 {
+            if tokens[0].is_literal() {
+                // folder is specified without keyword
+                root_path = Some(assert_token(
+                    |t| match t {
+                        MpsToken::Literal(s) => Some(s),
+                        _ => None,
+                    },
+                    MpsToken::Literal("/path/to/music/folder".into()),
+                    tokens,
+                )?);
+                if tokens.len() > 1 && tokens[0].is_comma() {
+                    assert_token_raw(MpsToken::Comma, tokens)?;
+                }
+            }
             // parse keyword function parameters
             let ingest = |tokens2: &mut VecDeque<MpsToken>| {
                 if tokens2.len() < 3 {
