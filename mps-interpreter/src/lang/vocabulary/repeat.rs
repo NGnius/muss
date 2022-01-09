@@ -46,56 +46,94 @@ impl Iterator for RepeatStatement {
     type Item = Result<MpsMusicItem, RuntimeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if !self.inner_done {
-            let real_op = match self.inner_statement.try_real() {
-                Err(e) => return Some(Err(e)),
-                Ok(real) => real,
-            };
+        let real_op = match self.inner_statement.try_real() {
+            Err(e) => return Some(Err(e)),
+            Ok(real) => real,
+        };
+        if real_op.is_resetable() {
+            // give context to inner (should only occur on first run)
             if self.context.is_some() {
                 let ctx = self.context.take().unwrap();
                 real_op.enter(ctx);
             }
-            let inner_item = real_op.next();
-            match inner_item {
-                Some(x) => {
-                    return match x {
-                        Ok(music) => {
-                            self.cache.push(music.clone());
-                            Some(Ok(music))
-                        }
-                        Err(e) => Some(Err(e)),
-                    }
+            while self.loop_forever || !self.inner_done {
+                while let Some(item) = real_op.next() {
+                    return Some(item);
                 }
-                None => {
-                    self.inner_done = true;
-                    self.context = Some(real_op.escape());
+                if !self.loop_forever {
+                    if self.repetitions == 0 {
+                        self.inner_done = true;
+                        // take context from inner (should only occur when inner is no longer needed)
+                        self.context = Some(real_op.escape());
+                    } else {
+                        self.repetitions -= 1;
+                        match real_op.reset() {
+                            Err(e) => return Some(Err(e)),
+                            Ok(_) => {},
+                        }
+                    }
+                } else {
+                    // always reset in infinite loop mode
+                    match real_op.reset() {
+                        Err(e) => return Some(Err(e)),
+                        Ok(_) => {},
+                    }
                 }
             }
-        }
-        // inner is done
-        if self.repetitions == 0 && !self.loop_forever {
+            if self.context.is_none() {
+                self.context = Some(real_op.escape());
+            }
             None
         } else {
-            if self.cache.len() == 0 {
-                if self.loop_forever {
-                    Some(Err(RuntimeError {
-                        line: 0,
-                        op: (Box::new(self.clone()) as Box<dyn MpsOp>).into(),
-                        msg: "Cannot repeat nothing".into(),
-                    }))
-                } else {
-                    None
+            // cache items in RepeatStatement since inner_statement cannot be reset
+            if !self.inner_done {
+                if self.context.is_some() {
+                    let ctx = self.context.take().unwrap();
+                    real_op.enter(ctx);
                 }
-            } else {
-                let music_item = self.cache[self.cache_position].clone();
-                self.cache_position += 1;
-                if self.cache_position == self.cache.len() {
-                    if self.repetitions != 0 {
-                        self.repetitions -= 1;
+                let inner_item = real_op.next();
+                match inner_item {
+                    Some(x) => {
+                        return match x {
+                            Ok(music) => {
+                                self.cache.push(music.clone());
+                                Some(Ok(music))
+                            }
+                            Err(e) => Some(Err(e)),
+                        }
                     }
-                    self.cache_position = 0;
+                    None => {
+                        // inner has completed it's only run
+                        self.inner_done = true;
+                        self.context = Some(real_op.escape());
+                    }
                 }
-                Some(Ok(music_item))
+            }
+            // inner is done
+            if self.repetitions == 0 && !self.loop_forever {
+                None
+            } else {
+                if self.cache.len() == 0 {
+                    if self.loop_forever {
+                        Some(Err(RuntimeError {
+                            line: 0,
+                            op: (Box::new(self.clone()) as Box<dyn MpsOp>).into(),
+                            msg: "Cannot repeat nothing".into(),
+                        }))
+                    } else {
+                        None
+                    }
+                } else {
+                    let music_item = self.cache[self.cache_position].clone();
+                    self.cache_position += 1;
+                    if self.cache_position == self.cache.len() {
+                        if self.repetitions != 0 {
+                            self.repetitions -= 1;
+                        }
+                        self.cache_position = 0;
+                    }
+                    Some(Ok(music_item))
+                }
             }
         }
     }

@@ -78,6 +78,45 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
     fn escape(&mut self) -> MpsContext {
         self.context.take().unwrap()
     }
+
+    fn is_resetable(&self) -> bool {
+        match &self.iterable {
+            VariableOrOp::Variable(s) => {
+                let var = self.context.as_ref().unwrap().variables.get_opt(s);
+                if let Some(MpsType::Op(var)) = var {
+                    var.is_resetable()
+                } else {
+                    false
+                }
+            },
+            VariableOrOp::Op(PseudoOp::Real(op)) => op.is_resetable(),
+            VariableOrOp::Op(PseudoOp::Fake(_)) => false,
+        }
+    }
+
+    fn reset(&mut self) -> Result<(), RuntimeError> {
+        let fake = PseudoOp::Fake(format!("{}", self));
+        match &mut self.iterable {
+            VariableOrOp::Variable(s) => {
+                let fake_getter = &mut move || fake.clone();
+                if let MpsType::Op(var) = self.context.as_mut().unwrap().variables.get_mut(s, fake_getter)? {
+                    var.reset()
+                } else {
+                    Err(RuntimeError {
+                        line: 0,
+                        op: PseudoOp::Fake(format!("{}", self)),
+                        msg: "Cannot reset non-iterable filter variable".to_string(),
+                    })
+                }
+            },
+            VariableOrOp::Op(PseudoOp::Real(op)) => op.reset(),
+            VariableOrOp::Op(PseudoOp::Fake(_)) => Err(RuntimeError {
+                        line: 0,
+                        op: fake,
+                        msg: "Cannot reset fake filter".to_string(),
+                    }),
+        }
+    }
 }
 
 impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {

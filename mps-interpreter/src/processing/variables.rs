@@ -24,9 +24,31 @@ impl Display for MpsType {
 }
 
 pub trait MpsVariableStorer: Debug {
-    fn get(&self, name: &str, op: &mut OpGetter) -> Result<&MpsType, RuntimeError>;
+    fn get(&self, name: &str, op: &mut OpGetter) -> Result<&MpsType, RuntimeError> {
+        match self.get_opt(name) {
+            Some(item) => Ok(item),
+            None => Err(RuntimeError {
+                line: 0,
+                op: op(),
+                msg: format!("Variable {} not found", name),
+            }),
+        }
+    }
 
-    fn get_mut(&mut self, name: &str, op: &mut OpGetter) -> Result<&mut MpsType, RuntimeError>;
+    fn get_opt(&self, name: &str) -> Option<&MpsType>;
+
+    fn get_mut(&mut self, name: &str, op: &mut OpGetter) -> Result<&mut MpsType, RuntimeError> {
+        match self.get_mut_opt(name) {
+            Some(item) => Ok(item),
+            None => Err(RuntimeError {
+                line: 0,
+                op: op(),
+                msg: format!("Variable {} not found", name),
+            }),
+        }
+    }
+
+    fn get_mut_opt(&mut self, name: &str) -> Option<&mut MpsType>;
 
     fn assign(&mut self, name: &str, value: MpsType, op: &mut OpGetter)
         -> Result<(), RuntimeError>;
@@ -47,26 +69,13 @@ pub struct MpsOpStorage {
 }
 
 impl MpsVariableStorer for MpsOpStorage {
-    fn get(&self, key: &str, op: &mut OpGetter) -> Result<&MpsType, RuntimeError> {
-        match self.storage.get(key) {
-            Some(item) => Ok(item),
-            None => Err(RuntimeError {
-                line: 0,
-                op: op(),
-                msg: format!("Variable {} not found", key),
-            }),
-        }
+
+    fn get_opt(&self, key: &str) -> Option<&MpsType> {
+        self.storage.get(key)
     }
 
-    fn get_mut(&mut self, key: &str, op: &mut OpGetter) -> Result<&mut MpsType, RuntimeError> {
-        match self.storage.get_mut(key) {
-            Some(item) => Ok(item),
-            None => Err(RuntimeError {
-                line: 0,
-                op: op(),
-                msg: format!("Variable {} not found", key),
-            }),
-        }
+    fn get_mut_opt(&mut self, key: &str) -> Option<&mut MpsType> {
+        self.storage.get_mut(key)
     }
 
     fn assign(&mut self, key: &str, item: MpsType, op: &mut OpGetter) -> Result<(), RuntimeError> {
