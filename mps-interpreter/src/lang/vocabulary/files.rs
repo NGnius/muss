@@ -106,6 +106,16 @@ impl MpsOp for FilesStatement {
     fn escape(&mut self) -> MpsContext {
         self.context.take().unwrap()
     }
+
+    fn is_resetable(&self) -> bool {
+        true
+    }
+
+    fn reset(&mut self) -> Result<(), RuntimeError> {
+        self.has_tried = false;
+        self.file_iter = None;
+        Ok(())
+    }
 }
 
 pub struct FilesFunctionFactory;

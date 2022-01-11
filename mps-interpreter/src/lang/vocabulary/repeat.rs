@@ -20,6 +20,7 @@ pub struct RepeatStatement {
     cache_position: usize,
     repetitions: usize,
     loop_forever: bool,
+    original_repetitions: usize,
 }
 
 impl Display for RepeatStatement {
@@ -38,6 +39,7 @@ impl std::clone::Clone for RepeatStatement {
             cache_position: self.cache_position,
             repetitions: self.repetitions,
             loop_forever: self.loop_forever,
+            original_repetitions: self.original_repetitions,
         }
     }
 }
@@ -50,12 +52,12 @@ impl Iterator for RepeatStatement {
             Err(e) => return Some(Err(e)),
             Ok(real) => real,
         };
+        // give context to inner (should only occur on first run)
+        if self.context.is_some() {
+            let ctx = self.context.take().unwrap();
+            real_op.enter(ctx);
+        }
         if real_op.is_resetable() {
-            // give context to inner (should only occur on first run)
-            if self.context.is_some() {
-                let ctx = self.context.take().unwrap();
-                real_op.enter(ctx);
-            }
             while self.loop_forever || !self.inner_done {
                 while let Some(item) = real_op.next() {
                     return Some(item);
@@ -69,14 +71,14 @@ impl Iterator for RepeatStatement {
                         self.repetitions -= 1;
                         match real_op.reset() {
                             Err(e) => return Some(Err(e)),
-                            Ok(_) => {},
+                            Ok(_) => {}
                         }
                     }
                 } else {
                     // always reset in infinite loop mode
                     match real_op.reset() {
                         Err(e) => return Some(Err(e)),
-                        Ok(_) => {},
+                        Ok(_) => {}
                     }
                 }
             }
@@ -151,6 +153,42 @@ impl MpsOp for RepeatStatement {
             self.inner_statement.try_real().unwrap().escape()
         }
     }
+
+    fn is_resetable(&self) -> bool {
+        true
+    }
+
+    fn reset(&mut self) -> Result<(), RuntimeError> {
+        let real_op = self.inner_statement.try_real()?;
+        if self.context.is_some() {
+            let ctx = self.context.take().unwrap();
+            real_op.enter(ctx);
+        }
+        if real_op.is_resetable() {
+            real_op.reset()?;
+            if self.original_repetitions == 0 {
+                self.repetitions = 0;
+                self.inner_done = true;
+            } else {
+                self.repetitions = self.original_repetitions - 1;
+                self.inner_done = false;
+            }
+        } else {
+            if self.inner_done {
+                self.repetitions = self.original_repetitions;
+                self.cache_position = 0;
+            } else {
+                return Err(RuntimeError {
+                    line: 0,
+                    op: PseudoOp::from_printable(self),
+                    msg:
+                        "Cannot reset part way through repeat when inner statement is not resetable"
+                            .to_string(),
+                });
+            }
+        }
+        Ok(())
+    }
 }
 
 pub struct RepeatFunctionFactory;
@@ -177,14 +215,17 @@ impl MpsFunctionFactory<RepeatStatement> for RepeatFunctionFactory {
             assert_token_raw(MpsToken::Comma, tokens)?;
             count = Some(assert_token(
                 |t| match t {
-                    MpsToken::Name(n) => n.parse::<usize>().map(
-                        |d| if d == 0 {
+                    MpsToken::Name(n) => n
+                        .parse::<usize>()
+                        .map(|d| {
+                            if d == 0 {
                                 inner_done = true;
                                 0
                             } else {
-                                d-1
+                                d - 1
                             }
-                    ).ok(),
+                        })
+                        .ok(),
                     _ => None,
                 },
                 MpsToken::Name("usize".into()),
@@ -199,6 +240,7 @@ impl MpsFunctionFactory<RepeatStatement> for RepeatFunctionFactory {
             cache_position: 0,
             repetitions: count.unwrap_or(0),
             loop_forever: count.is_none(),
+            original_repetitions: count.and_then(|c| Some(c + 1)).unwrap_or(0),
         })
     }
 }

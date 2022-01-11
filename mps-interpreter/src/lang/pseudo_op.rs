@@ -51,6 +51,10 @@ impl PseudoOp {
             _ => false,
         }
     }
+
+    pub fn from_printable<D: Display + Debug>(item: &D) -> Self {
+        Self::Fake(format!("{}", item))
+    }
 }
 
 impl Clone for PseudoOp {

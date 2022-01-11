@@ -114,12 +114,15 @@ where
                 }
                 ReaderStateMachine::Invalid { .. } => {
                     let invalid_char = bigger_buf.pop().unwrap(); // invalid single char
-                    // clear everything, to avoid further errors
+                                                                  // clear everything, to avoid further errors
                     bigger_buf.clear();
                     buf.clear();
                     return match invalid_char {
                         0 => Err(self.error(format!("EOF"))),
-                        _ => Err(self.error(format!("character {:?} ({})", invalid_char as char, invalid_char)))
+                        _ => Err(self.error(format!(
+                            "character {:?} ({})",
+                            invalid_char as char, invalid_char
+                        ))),
                     };
                 }
                 _ => {}

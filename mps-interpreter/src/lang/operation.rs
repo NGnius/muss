@@ -3,8 +3,8 @@ use std::fmt::{Debug, Display};
 use std::iter::Iterator;
 
 use super::MpsLanguageDictionary;
-use super::{RuntimeError, SyntaxError};
 use super::PseudoOp;
+use super::{RuntimeError, SyntaxError};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsMusicItem;
@@ -63,12 +63,17 @@ pub trait MpsOp: Iterator<Item = Result<MpsMusicItem, RuntimeError>> + Debug + D
 
     fn escape(&mut self) -> MpsContext;
 
-    fn is_resetable(&self) -> bool {false}
+    fn is_resetable(&self) -> bool {
+        false
+    }
 
     fn reset(&mut self) -> Result<(), RuntimeError> {
         #[cfg(debug_assertions)]
         if self.is_resetable() {
-            panic!("MpsOp reported that it can be reset but did not implement reset (op: {})", self)
+            panic!(
+                "MpsOp reported that it can be reset but did not implement reset (op: {})",
+                self
+            )
         }
         Err(RuntimeError {
             line: 0,

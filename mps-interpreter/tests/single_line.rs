@@ -136,14 +136,24 @@ fn execute_emptyfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 
 #[test]
 fn execute_fieldfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
-    execute_single_line("song(`lov`).(year >= 2020)", false, true)
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year >= 2000)",
+        false,
+        true,
+    )
 }
 
 #[test]
 fn execute_files_line() -> Result<(), Box<dyn MpsLanguageError>> {
     execute_single_line(
-        r"files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`, re=``, recursive=false)",
+        r"files(folder=`~/Music/MusicFlac/Bruno Mars/24K Magic/`, re=``, recursive=false)",
         false,
         true,
-    )
+    )?;
+    execute_single_line(
+        r"files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)",
+        false,
+        true,
+    )?;
+    execute_single_line(r"files()", false, true)
 }

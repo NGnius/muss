@@ -107,6 +107,16 @@ impl MpsOp for SimpleSqlStatement {
     fn escape(&mut self) -> MpsContext {
         self.context.take().unwrap()
     }
+
+    fn is_resetable(&self) -> bool {
+        true
+    }
+
+    fn reset(&mut self) -> Result<(), RuntimeError> {
+        self.rows = None;
+        self.current = 0;
+        Ok(())
+    }
 }
 
 impl std::clone::Clone for SimpleSqlStatement {
@@ -150,7 +160,7 @@ impl Iterator for SimpleSqlStatement {
                 Err(e) => {
                     self.rows = Some(Vec::with_capacity(0));
                     return Some(Err(e));
-                },
+                }
                 Ok(rows) => {
                     self.rows = Some(rows);
                     self.get_item(false)

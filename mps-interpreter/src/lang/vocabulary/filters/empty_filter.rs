@@ -27,6 +27,14 @@ impl MpsFilterPredicate for EmptyFilter {
     ) -> Result<bool, RuntimeError> {
         Ok(true)
     }
+
+    fn is_complete(&self) -> bool {
+        false
+    }
+
+    fn reset(&mut self) -> Result<(), RuntimeError> {
+        Ok(())
+    }
 }
 
 pub struct EmptyFilterFactory;

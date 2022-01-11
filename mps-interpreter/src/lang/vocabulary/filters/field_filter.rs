@@ -77,6 +77,14 @@ impl MpsFilterPredicate for FieldFilter {
             })
         }
     }
+
+    fn is_complete(&self) -> bool {
+        false
+    }
+
+    fn reset(&mut self) -> Result<(), RuntimeError> {
+        Ok(())
+    }
 }
 
 pub struct FieldFilterFactory;
@@ -88,9 +96,9 @@ impl MpsFilterFactory<FieldFilter> for FieldFilterFactory {
             && tokens[0].is_name()
             && (tokens[1].is_open_angle_bracket() || tokens[1].is_close_angle_bracket())
             && (tokens[2].is_name() || check_is_type(&tokens[2])))
-            || (tokens_len == 4 // field >= variable OR field <= variable
+            || (tokens_len == 4 // field >= variable OR field <= variable OR field != variable
             && tokens[0].is_name()
-            && (tokens[1].is_open_angle_bracket() || tokens[1].is_close_angle_bracket() || tokens[1].is_equals())
+            && (tokens[1].is_open_angle_bracket() || tokens[1].is_close_angle_bracket() || tokens[1].is_equals() || tokens[1].is_exclamation())
             && tokens[2].is_equals()
             && (tokens[3].is_name() || check_is_type(&tokens[3])))
     }

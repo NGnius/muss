@@ -69,7 +69,6 @@ pub struct MpsOpStorage {
 }
 
 impl MpsVariableStorer for MpsOpStorage {
-
     fn get_opt(&self, key: &str) -> Option<&MpsType> {
         self.storage.get(key)
     }

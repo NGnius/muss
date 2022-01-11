@@ -74,6 +74,10 @@ pub fn assert_comparison_operator(tokens: &mut VecDeque<MpsToken>) -> Result<[i8
                 Ok([1, 1])
             }
         }
+        MpsToken::Exclamation => {
+            assert_token_raw(MpsToken::Equals, tokens)?;
+            Ok([-1, 1])
+        }
         _ => Err(SyntaxError {
             line: 0,
             token: MpsToken::Equals, // TODO this can be < > or =

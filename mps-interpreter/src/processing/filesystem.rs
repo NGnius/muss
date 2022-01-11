@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Display, Error, Formatter};
-use std::fs::{ReadDir, DirEntry};
+use std::fs::{DirEntry, ReadDir};
 use std::iter::Iterator;
 use std::path::{Path, PathBuf};
 
@@ -86,11 +86,16 @@ impl FileIter {
         };
         let dir_vec = if root_path.is_dir() {
             let mut vec = Vec::with_capacity(DEFAULT_VEC_CACHE_SIZE);
-            vec.push(root_path.read_dir().map_err(|e| RuntimeError {
-                line: 0,
-                op: op(),
-                msg: format!("Directory read error: {}", e),
-            })?.into());
+            vec.push(
+                root_path
+                    .read_dir()
+                    .map_err(|e| RuntimeError {
+                        line: 0,
+                        op: op(),
+                        msg: format!("Directory read error: {}", e),
+                    })?
+                    .into(),
+            );
             vec
         } else {
             Vec::with_capacity(DEFAULT_VEC_CACHE_SIZE)
@@ -257,7 +262,7 @@ impl Iterator for FileIter {
                         Err(e) => {
                             self.is_complete = true;
                             return Some(Err(format!("Directory read error: {}", e)));
-                        },
+                        }
                     });
                     return self.next();
                 }

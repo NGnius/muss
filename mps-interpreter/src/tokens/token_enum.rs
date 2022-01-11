@@ -15,6 +15,8 @@ pub enum MpsToken {
     OpenAngleBracket,
     CloseAngleBracket,
     Dot,
+    Exclamation,
+    Interrogation,
 }
 
 impl MpsToken {
@@ -30,6 +32,8 @@ impl MpsToken {
             "<" => Ok(Self::OpenAngleBracket),
             ">" => Ok(Self::CloseAngleBracket),
             "." => Ok(Self::Dot),
+            "!" => Ok(Self::Exclamation),
+            "?" => Ok(Self::Interrogation),
             _ => {
                 // name validation
                 let mut ok = true;
@@ -138,6 +142,20 @@ impl MpsToken {
             _ => false,
         }
     }
+
+    pub fn is_exclamation(&self) -> bool {
+        match self {
+            Self::Exclamation => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_interrogation(&self) -> bool {
+        match self {
+            Self::Interrogation => true,
+            _ => false,
+        }
+    }
 }
 
 impl Display for MpsToken {
@@ -156,6 +174,8 @@ impl Display for MpsToken {
             Self::OpenAngleBracket => write!(f, "<"),
             Self::CloseAngleBracket => write!(f, ">"),
             Self::Dot => write!(f, "."),
+            Self::Exclamation => write!(f, "!"),
+            Self::Interrogation => write!(f, "?"),
         }
     }
 }

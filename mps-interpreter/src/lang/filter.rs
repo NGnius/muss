@@ -20,6 +20,10 @@ pub trait MpsFilterPredicate: Clone + Debug + Display {
         ctx: &mut MpsContext,
         op: &mut OpGetter,
     ) -> Result<bool, RuntimeError>;
+
+    fn is_complete(&self) -> bool;
+
+    fn reset(&mut self) -> Result<(), RuntimeError>;
 }
 
 pub trait MpsFilterFactory<P: MpsFilterPredicate + 'static> {
@@ -88,7 +92,7 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
                 } else {
                     false
                 }
-            },
+            }
             VariableOrOp::Op(PseudoOp::Real(op)) => op.is_resetable(),
             VariableOrOp::Op(PseudoOp::Fake(_)) => false,
         }
@@ -96,10 +100,17 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
 
     fn reset(&mut self) -> Result<(), RuntimeError> {
         let fake = PseudoOp::Fake(format!("{}", self));
+        self.predicate.reset()?;
         match &mut self.iterable {
             VariableOrOp::Variable(s) => {
                 let fake_getter = &mut move || fake.clone();
-                if let MpsType::Op(var) = self.context.as_mut().unwrap().variables.get_mut(s, fake_getter)? {
+                if let MpsType::Op(var) = self
+                    .context
+                    .as_mut()
+                    .unwrap()
+                    .variables
+                    .get_mut(s, fake_getter)?
+                {
                     var.reset()
                 } else {
                     Err(RuntimeError {
@@ -108,13 +119,13 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
                         msg: "Cannot reset non-iterable filter variable".to_string(),
                     })
                 }
-            },
+            }
             VariableOrOp::Op(PseudoOp::Real(op)) => op.reset(),
             VariableOrOp::Op(PseudoOp::Fake(_)) => Err(RuntimeError {
-                        line: 0,
-                        op: fake,
-                        msg: "Cannot reset fake filter".to_string(),
-                    }),
+                line: 0,
+                op: fake,
+                msg: "Cannot reset PseudoOp::Fake filter".to_string(),
+            }),
         }
     }
 }
@@ -123,6 +134,9 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
     type Item = Result<MpsMusicItem, RuntimeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.predicate.is_complete() {
+            return None;
+        }
         let self_clone = self.clone();
         let self_clone2 = self_clone.clone();
         let mut op_getter = move || (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into();
