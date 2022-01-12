@@ -197,3 +197,22 @@ fn execute_files_line() -> Result<(), Box<dyn MpsLanguageError>> {
     )?;
     execute_single_line(r"files()", false, true)
 }
+
+#[test]
+fn execute_indexfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(2)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(0)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(200)",
+        true,
+        true,
+    )
+}

@@ -3,6 +3,7 @@ mod dictionary;
 mod error;
 mod filter;
 mod function;
+mod lookup;
 mod operation;
 mod pseudo_op;
 mod repeated_meme;
@@ -16,6 +17,7 @@ pub use filter::{
     MpsFilterFactory, MpsFilterPredicate, MpsFilterStatement, MpsFilterStatementFactory,
 };
 pub use function::{MpsFunctionFactory, MpsFunctionStatementFactory};
+pub use lookup::Lookup;
 pub use operation::{BoxedMpsOpFactory, MpsOp, MpsOpFactory, SimpleMpsOpFactory};
 pub use pseudo_op::PseudoOp;
 pub use repeated_meme::{repeated_tokens, RepeatedTokens};
