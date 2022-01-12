@@ -158,6 +158,7 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
     vocabulary
         .add(crate::lang::vocabulary::filters::empty_filter())
         .add(crate::lang::vocabulary::filters::field_filter())
+        .add(crate::lang::vocabulary::filters::field_filter_maybe())
         .add(crate::lang::vocabulary::sql_function_factory())
         .add(crate::lang::vocabulary::simple_sql_function_factory())
         .add(crate::lang::vocabulary::CommentStatementFactory)

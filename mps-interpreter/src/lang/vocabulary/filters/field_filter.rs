@@ -14,24 +14,46 @@ use crate::MpsContext;
 use crate::MpsMusicItem;
 
 #[derive(Debug, Clone)]
-enum VariableOrValue {
+pub(super) enum VariableOrValue {
     Variable(String),
     Value(MpsTypePrimitive),
 }
 
 #[derive(Debug, Clone)]
 pub struct FieldFilter {
-    field_name: String,
-    val: VariableOrValue,
-    comparison: [i8; 2],
+    pub(super) field_name: String,
+    pub(super) field_errors: FieldFilterErrorHandling,
+    pub(super) comparison_errors: FieldFilterErrorHandling,
+    pub(super) val: VariableOrValue,
+    pub(super) comparison: [i8; 2],
+}
+
+#[derive(Debug, Clone)]
+pub enum FieldFilterErrorHandling {
+    Error, // return error
+    Ignore, // return Ok(false) when error encountered
+    Include, // return Ok(true) when error encountered
+}
+
+#[inline(always)]
+fn comparison_op(c: &[i8; 2]) -> &str {
+    match c {
+        [-1, -1] => "<",
+        [0, 0] => "==",
+        [1, 1] => ">",
+        [0, -1] => "<=",
+        [0, 1] => ">=",
+        [-1, 1] => "!=",
+        _ => "??"
+    }
 }
 
 impl Display for FieldFilter {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        // TODO display other comparison operators correctly
+        let comp_op = comparison_op(&self.comparison);
         match &self.val {
-            VariableOrValue::Variable(name) => write!(f, "{} == {}", self.field_name, name),
-            VariableOrValue::Value(t) => write!(f, "{} == {}", self.field_name, t),
+            VariableOrValue::Variable(name) => write!(f, "{} {} {}", self.field_name, comp_op, name),
+            VariableOrValue::Value(t) => write!(f, "{} {} {}", self.field_name, comp_op, t),
         }
     }
 }
@@ -56,25 +78,38 @@ impl MpsFilterPredicate for FieldFilter {
             VariableOrValue::Value(val) => Ok(val),
         }?;
         if let Some(field) = music_item_lut.get(&self.field_name) {
-            let compare = field.compare(variable).map_err(|e| RuntimeError {
-                line: 0,
-                op: op(),
-                msg: e,
-            })?;
-            let mut is_match = false;
-            for comparator in self.comparison {
-                if comparator == compare {
-                    is_match = true;
-                    break;
+            let compare_res = field.compare(variable);
+            if let Err(e) = compare_res {
+                match self.comparison_errors {
+                    FieldFilterErrorHandling::Error => Err(RuntimeError {
+                        line: 0,
+                        op: op(),
+                        msg: e,
+                    }),
+                    FieldFilterErrorHandling::Ignore => Ok(false),
+                    FieldFilterErrorHandling::Include => Ok(true),
                 }
+            } else {
+                let compare = compare_res.unwrap();
+                let mut is_match = false;
+                for comparator in self.comparison {
+                    if comparator == compare {
+                        is_match = true;
+                        break;
+                    }
+                }
+                Ok(is_match)
             }
-            Ok(is_match)
         } else {
-            Err(RuntimeError {
-                line: 0,
-                op: op(),
-                msg: format!("Field {} does not exist", &self.field_name),
-            })
+            match self.field_errors {
+                FieldFilterErrorHandling::Error => Err(RuntimeError {
+                    line: 0,
+                    op: op(),
+                    msg: format!("Field {} does not exist", &self.field_name),
+                }),
+                FieldFilterErrorHandling::Ignore => Ok(false),
+                FieldFilterErrorHandling::Include => Ok(true),
+            }
         }
     }
 
@@ -121,6 +156,8 @@ impl MpsFilterFactory<FieldFilter> for FieldFilterFactory {
             let value = VariableOrValue::Value(assert_type(tokens)?);
             Ok(FieldFilter {
                 field_name: field,
+                field_errors: FieldFilterErrorHandling::Error,
+                comparison_errors: FieldFilterErrorHandling::Error,
                 val: value,
                 comparison: compare_operator,
             })
@@ -135,6 +172,8 @@ impl MpsFilterFactory<FieldFilter> for FieldFilterFactory {
             )?);
             Ok(FieldFilter {
                 field_name: field,
+                field_errors: FieldFilterErrorHandling::Error,
+                comparison_errors: FieldFilterErrorHandling::Error,
                 val: variable,
                 comparison: compare_operator,
             })

@@ -160,6 +160,30 @@ fn execute_fieldfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
+fn execute_fieldfiltermaybe_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year? >= 2000)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year? <= 2020)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year! == 2016)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year! != `test`)",
+        false,
+        true,
+    )
+}
+
+#[test]
 fn execute_files_line() -> Result<(), Box<dyn MpsLanguageError>> {
     execute_single_line(
         r"files(folder=`~/Music/MusicFlac/Bruno Mars/24K Magic/`, re=``, recursive=false)",
