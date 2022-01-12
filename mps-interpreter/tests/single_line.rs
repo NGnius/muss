@@ -216,3 +216,27 @@ fn execute_indexfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
         true,
     )
 }
+
+#[test]
+fn execute_rangefilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(..)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(0..=4)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(..=4)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(0..5)",
+        false,
+        true,
+    )
+}

@@ -311,15 +311,16 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
         } else {
             // <some other op>.(predicate)
             //let mut new_tokens = tokens.range(0..start_of_op).map(|x| x.to_owned()).collect();
-            let end_tokens = tokens.split_off(start_of_op);
+            let end_tokens = tokens.split_off(start_of_op); // don't parse filter in inner statement
             let inner_op = dict.try_build_statement(tokens)?;
             tokens.extend(end_tokens);
             op = VariableOrOp::Op(inner_op.into());
         }
         assert_token_raw(MpsToken::Dot, tokens)?;
         assert_token_raw(MpsToken::OpenBracket, tokens)?;
+        let mut end_tokens = tokens.split_off(tokens.len()-1); // don't parse closing bracket in filter
         let filter = self.filter_factory.build_filter(tokens, dict)?;
-        assert_token_raw(MpsToken::CloseBracket, tokens)?;
+        assert_token_raw(MpsToken::CloseBracket, &mut end_tokens)?;
         Ok(Box::new(MpsFilterStatement {
             predicate: filter,
             iterable: op,
