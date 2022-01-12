@@ -106,8 +106,9 @@ fn execute_comment_line() -> Result<(), Box<dyn MpsLanguageError>> {
 
 #[test]
 fn execute_repeat_line() -> Result<(), Box<dyn MpsLanguageError>> {
-    execute_single_line("repeat(song(`Christmas in L.A.`))", false, false)?;
-    execute_single_line("repeat(song(`Christmas in L.A.`), 4)", false, true)
+    execute_single_line("repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))", false, false)?;
+    execute_single_line("repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), 4)", false, true)?;
+    execute_single_line("repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), 0)", true, true)
 }
 
 #[test]
@@ -138,6 +139,21 @@ fn execute_emptyfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 fn execute_fieldfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year >= 2000)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year <= 2020)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year == 2016)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year != 2048)",
         false,
         true,
     )
