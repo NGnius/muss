@@ -4,7 +4,7 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use crate::lang::{MpsLanguageDictionary, MpsTypePrimitive};
 use crate::lang::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatementFactory};
 use crate::lang::{RuntimeError, SyntaxError};
-use crate::lang::Lookup;
+use crate::lang::{Lookup, utility::assert_token_raw};
 use crate::processing::{OpGetter, general::MpsType};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -16,6 +16,7 @@ pub struct IndexFilter {
     // state
     current: u64,
     complete: bool,
+    is_opposite: bool,
 }
 
 impl Display for IndexFilter {
@@ -48,9 +49,12 @@ impl MpsFilterPredicate for IndexFilter {
                 msg: format!("Cannot use {} as index", val),
             })
         };
-        if self.current == index {
+        if self.current == index && !self.is_opposite {
             self.current += 1;
             self.complete = true;
+            Ok(true)
+        } else if self.current != index && self.is_opposite {
+            self.current += 1;
             Ok(true)
         } else {
             self.current += 1;
@@ -73,8 +77,14 @@ pub struct IndexFilterFactory;
 
 impl MpsFilterFactory<IndexFilter> for IndexFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
-        tokens.len() == 1
-        && Lookup::check_is(&tokens[0])
+        (
+            tokens.len() == 1
+            && Lookup::check_is(&tokens[0])
+        ) || (
+            tokens.len() == 2
+            && tokens[0].is_exclamation()
+            && Lookup::check_is(&tokens[1])
+        )
     }
 
     fn build_filter(
@@ -82,11 +92,16 @@ impl MpsFilterFactory<IndexFilter> for IndexFilterFactory {
         tokens: &mut VecDeque<MpsToken>,
         _dict: &MpsLanguageDictionary,
     ) -> Result<IndexFilter, SyntaxError> {
+        let is_inverted = if tokens[0].is_exclamation() {
+            assert_token_raw(MpsToken::Exclamation, tokens)?;
+            true
+        } else {false};
         let lookup = Lookup::parse(tokens)?;
         Ok(IndexFilter {
             index: lookup,
             current: 0,
             complete: false,
+            is_opposite: is_inverted,
         })
     }
 }

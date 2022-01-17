@@ -211,6 +211,11 @@ fn execute_indexfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
         true,
     )?;
     execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(!0)",
+        false,
+        true,
+    )?;
+    execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(200)",
         true,
         true,
@@ -250,6 +255,11 @@ fn execute_orfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
     )?;
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year != 2020 || 5)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year != 2020 || 5 || 4 || 12)",
         false,
         true,
     )

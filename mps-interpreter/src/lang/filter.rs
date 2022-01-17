@@ -323,7 +323,7 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static>
     pub fn new(factory: F) -> Self {
         Self {
             filter_factory: factory,
-            idc: PhantomData::default(),
+            idc: PhantomData::<P>,
         }
     }
 }
