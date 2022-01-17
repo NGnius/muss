@@ -13,6 +13,8 @@ struct ReplState {
     line_number: usize,
     statement_buf: Vec<u8>,
     writer: ChannelWriter,
+    in_literal: Option<char>,
+    bracket_depth: usize,
 }
 
 impl ReplState {
@@ -22,11 +24,16 @@ impl ReplState {
             line_number: 0,
             statement_buf: Vec::new(),
             writer: chan_writer,
+            in_literal: None,
+            bracket_depth: 0,
         }
     }
 }
 
 pub fn repl(args: CliArgs) {
+    /*let mut terminal = termios::Termios::from_fd(0 /* stdin */).unwrap();
+    terminal.c_lflag &= !termios::ICANON; // no echo and canonical mode
+    termios::tcsetattr(0, termios::TCSANOW, &mut terminal).unwrap();*/
     let (writer, reader) = channel_io();
     let player_builder = move || {
         let runner = MpsRunner::with_stream(reader);
@@ -84,31 +91,57 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
     let mut read_buf: [u8; 1] = [0];
     prompt(&mut state.line_number, args);
     loop {
-        read_buf[0] = 0;
-        while read_buf[0] == 0 {
+        let mut read_count = 0;
+        //read_buf[0] = 0;
+        while read_count == 0 {
             // TODO: enable raw mode (char by char) reading of stdin
-            state
+            read_count = state
                 .stdin
                 .read(&mut read_buf)
                 .expect("Failed to read stdin");
         }
+        //println!("Read {}", read_buf[0]);
+        state.statement_buf.push(read_buf[0]);
         match read_buf[0] as char {
-            '\n' => {
-                state.statement_buf.push(read_buf[0]);
-                let statement_result = std::str::from_utf8(state.statement_buf.as_slice());
-                if statement_result.is_ok() && statement_result.unwrap().starts_with("?") {
-                    repl_commands(statement_result.unwrap());
+            '"' | '`' => {
+                if let Some(c) = state.in_literal {
+                    if c == read_buf[0] as char {
+                        state.in_literal = None;
+                    }
                 } else {
+                    state.in_literal = Some(read_buf[0] as char);
+                }
+            },
+            '(' => state.bracket_depth += 1,
+            ')' => state.bracket_depth -= 1,
+            ';' => {
+                if state.in_literal.is_none() {
                     state
                         .writer
                         .write(state.statement_buf.as_slice())
                         .expect("Failed to write to MPS interpreter");
                     execute();
+                    state.statement_buf.clear();
                 }
-                state.statement_buf.clear();
+            },
+            '\n' => {
+                let statement_result = std::str::from_utf8(state.statement_buf.as_slice());
+                if statement_result.is_ok() && statement_result.unwrap().trim().starts_with("?") {
+                    println!("Got {}", statement_result.unwrap());
+                    repl_commands(statement_result.unwrap().trim());
+                    state.statement_buf.clear();
+                } else if state.bracket_depth == 0 && state.in_literal.is_none() {
+                    state.statement_buf.push(';' as u8);
+                    state
+                        .writer
+                        .write(state.statement_buf.as_slice())
+                        .expect("Failed to write to MPS interpreter");
+                    execute();
+                    state.statement_buf.clear();
+                }
                 prompt(&mut state.line_number, args);
-            }
-            _ => state.statement_buf.push(read_buf[0]),
+            },
+            _ => {},
         }
     }
 }

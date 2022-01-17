@@ -18,6 +18,7 @@ members = [
 mps-interpreter = { version = "0.2.0", path = "./mps-interpreter" }
 # external
 clap = { version = "3.0", features = ["derive"] }
+# termios = { version = "^0.3"}
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
 mps-player = { version = "0.2.0", path = "./mps-player", default-features = false }

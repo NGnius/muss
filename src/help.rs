@@ -37,11 +37,21 @@ pub const FILTERS: &str =
 Operations to reduce the items in an iterable: iterable.(filter)
 
  field == something
+ field != something
  field >= something
  field > something
  field <= something
- field < something
-    Compare all items, keeping only those that match the condition.
+ field < something -- e.g. iterable.(title == `Romantic Traffic`)
+    Compare all items, keeping only those that match the condition. Valid field names are those of the MpsMusicItem (title, artist, album, genre, track, etc.), though this will change when proper object support is added. Optionally, a ? or ! can be added to the end of the field name to skip items whose field is missing/incomparable, or keep all items whose field is missing/incomparable (respectively).
 
- [empty]
+ start..end -- e.g. iterable.(0..42)
+    Keep only the items that are at the start index up to the end index. Start and/or end may be omitted to start/stop at the iterable's existing start/end (respectively). This stops once the end condition is met, leaving the rest of the iterator unconsumed.
+
+ start..=end -- e.g. iterable.(0..=42)
+    Keep only the items that are at the start index up to and including the end index. Start may be omitted to start at the iterable's existing start. This stops once the end condition is met, leaving the rest of the iterator unconsumed.
+
+ index -- e.g. iterable.(4)
+    Keep only the item at the given index. This stops once the index is reached, leaving the rest of the iterator unconsumed.
+
+ [empty] -- e.g. iterable.()
     Matches all items";

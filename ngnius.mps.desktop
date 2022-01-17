@@ -1,0 +1,10 @@
+[Desktop Entry]
+Categories=AudioVideo;Player;
+Comment=
+Exec=mps %U
+GenericName=Music Player
+Icon=utilities-terminal
+Name=MPS
+StartupNotify=false
+Terminal=true
+Type=Application
