@@ -53,5 +53,8 @@ Operations to reduce the items in an iterable: iterable.(filter)
  index -- e.g. iterable.(4)
     Keep only the item at the given index. This stops once the index is reached, leaving the rest of the iterator unconsumed.
 
+ filter1 || filter2 -- e.g. iterable.(4 || 5)
+    Keep only the items that meet the criteria of filter1 or filter2. This will always consume the full iterator.
+
  [empty] -- e.g. iterable.()
     Matches all items";
