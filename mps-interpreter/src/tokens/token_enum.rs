@@ -17,6 +17,8 @@ pub enum MpsToken {
     Dot,
     Exclamation,
     Interrogation,
+    Pipe,
+    Ampersand,
 }
 
 impl MpsToken {
@@ -34,10 +36,12 @@ impl MpsToken {
             "." => Ok(Self::Dot),
             "!" => Ok(Self::Exclamation),
             "?" => Ok(Self::Interrogation),
+            "|" => Ok(Self::Pipe),
+            "&" => Ok(Self::Ampersand),
             _ => {
                 // name validation
                 let mut ok = true;
-                for invalid_c in ["-", "+", ",", " ", "/", "\n", "\r", "!", "?", "=", "."] {
+                for invalid_c in ["-", "+", ",", " ", "/", "\n", "\r", "!", "?", "=", ".", "&", "|"] {
                     if s.contains(invalid_c) {
                         ok = false;
                         break;
@@ -156,6 +160,20 @@ impl MpsToken {
             _ => false,
         }
     }
+
+    pub fn is_pipe(&self) -> bool {
+        match self {
+            Self::Pipe => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_ampersand(&self) -> bool {
+        match self {
+            Self::Ampersand => true,
+            _ => false,
+        }
+    }
 }
 
 impl Display for MpsToken {
@@ -176,6 +194,8 @@ impl Display for MpsToken {
             Self::Dot => write!(f, "."),
             Self::Exclamation => write!(f, "!"),
             Self::Interrogation => write!(f, "?"),
+            Self::Pipe => write!(f, "|"),
+            Self::Ampersand => write!(f, "&"),
         }
     }
 }

@@ -79,7 +79,7 @@ where
                             .map_err(|e| self.error(format!("UTF-8 encoding error: {}", e)))?;
                         buf.push_back(
                             MpsToken::parse_from_string(token)
-                                .map_err(|e| self.error(format!("Invalid token {}", e)))?,
+                                .map_err(|e| self.error(format!("invalid token `{}`", e)))?,
                         );
                         bigger_buf.clear();
                     }
@@ -92,7 +92,7 @@ where
                             .map_err(|e| self.error(format!("UTF-8 encoding error: {}", e)))?;
                         buf.push_back(
                             MpsToken::parse_from_string(token)
-                                .map_err(|e| self.error(format!("Invalid token {}", e)))?,
+                                .map_err(|e| self.error(format!("invalid token `{}`", e)))?,
                         );
                         bigger_buf.clear();
                     }
@@ -102,7 +102,7 @@ where
                         .map_err(|e| self.error(format!("UTF-8 encoding error: {}", e)))?;
                     buf.push_back(
                         MpsToken::parse_from_string(token)
-                            .map_err(|e| self.error(format!("Invalid token {}", e)))?,
+                            .map_err(|e| self.error(format!("invalid token `{}`", e)))?,
                     );
                     bigger_buf.clear();
                 }
@@ -146,7 +146,7 @@ where
                 .map_err(|e| self.error(format!("UTF-8 encoding error: {}", e)))?;
             buf.push_back(
                 MpsToken::parse_from_string(token)
-                    .map_err(|e| self.error(format!("invalid token {}", e)))?,
+                    .map_err(|e| self.error(format!("invalid token `{}`", e)))?,
             );
             bigger_buf.clear();
         }
@@ -158,7 +158,7 @@ where
         if input as char == '\n' {
             self.line += 1;
             self.column = 0;
-        } else {
+        } else if input != 0 {
             self.column += 1; // TODO correctly track columns with utf-8 characters longer than one byte
         }
     }
@@ -182,6 +182,7 @@ where
     }
 
     fn current_column(&self) -> usize {
+        println!("Current column: {}", self.column);
         self.column
     }
 
@@ -257,10 +258,10 @@ impl ReaderStateMachine {
                 '#' => Self::Octothorpe { out: input },
                 '`' => Self::StartTickLiteral {},
                 '"' => Self::StartQuoteLiteral {},
-                ' ' => Self::EndToken {},
-                '\n' | ';' => Self::EndStatement {},
+                '\n'| '\r' | '\t' | ' ' => Self::EndToken {},
+                ';' => Self::EndStatement {},
                 '\0' => Self::EndOfFile {},
-                '(' | ')' | ',' | '=' | '<' | '>' | '.' | '!' | '?' => Self::SingleCharToken { out: input },
+                '(' | ')' | ',' | '=' | '<' | '>' | '.' | '!' | '?' | '|' => Self::SingleCharToken { out: input },
                 _ => Self::Regular { out: input },
             },
             Self::Escaped { inside } => match inside {
@@ -284,7 +285,7 @@ impl ReaderStateMachine {
                 '/' => Self::Comment { out: input },
                 ' ' => Self::EndToken {},
                 '\0' => Self::EndOfFile {},
-                '\n' | ';' => Self::EndStatement {},
+                ';' => Self::EndStatement {},
                 _ => Self::Regular { out: input },
             },
             Self::Octothorpe { .. } => match input_char {

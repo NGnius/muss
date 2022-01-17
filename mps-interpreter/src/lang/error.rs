@@ -33,7 +33,7 @@ impl MpsLanguageError for SyntaxError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RuntimeError {
     pub line: usize,
     pub op: PseudoOp,
