@@ -30,7 +30,7 @@ pub trait MpsVariableStorer: Debug {
             None => Err(RuntimeError {
                 line: 0,
                 op: op(),
-                msg: format!("Variable {} not found", name),
+                msg: format!("Variable '{}' not found", name),
             }),
         }
     }
@@ -43,7 +43,7 @@ pub trait MpsVariableStorer: Debug {
             None => Err(RuntimeError {
                 line: 0,
                 op: op(),
-                msg: format!("Variable {} not found", name),
+                msg: format!("Variable '{}' not found", name),
             }),
         }
     }
@@ -61,6 +61,10 @@ pub trait MpsVariableStorer: Debug {
     ) -> Result<(), RuntimeError>;
 
     fn remove(&mut self, name: &str, op: &mut OpGetter) -> Result<MpsType, RuntimeError>;
+
+    fn exists(&self, name: &str) -> bool {
+        self.get_opt(name).is_some()
+    }
 }
 
 #[derive(Default, Debug)]
@@ -82,7 +86,7 @@ impl MpsVariableStorer for MpsOpStorage {
             Err(RuntimeError {
                 line: 0,
                 op: op(),
-                msg: format!("Cannot assign to non-existent variable {}", key),
+                msg: format!("Cannot assign to non-existent variable '{}'", key),
             })
         } else {
             self.storage.insert(key.to_string(), item);
@@ -95,7 +99,7 @@ impl MpsVariableStorer for MpsOpStorage {
             Err(RuntimeError {
                 line: 0,
                 op: op(),
-                msg: format!("Cannot overwrite existing variable {}", key),
+                msg: format!("Cannot overwrite existing variable '{}'", key),
             })
         } else {
             self.storage.insert(key.to_string(), item);
@@ -110,7 +114,7 @@ impl MpsVariableStorer for MpsOpStorage {
             Err(RuntimeError {
                 line: 0,
                 op: op(),
-                msg: format!("Cannot remove non-existing variable {}", key),
+                msg: format!("Cannot remove non-existing variable '{}'", key),
             })
         }
     }

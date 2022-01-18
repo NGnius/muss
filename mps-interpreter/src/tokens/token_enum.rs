@@ -19,6 +19,7 @@ pub enum MpsToken {
     Interrogation,
     Pipe,
     Ampersand,
+    Colon,
 }
 
 impl MpsToken {
@@ -38,6 +39,7 @@ impl MpsToken {
             "?" => Ok(Self::Interrogation),
             "|" => Ok(Self::Pipe),
             "&" => Ok(Self::Ampersand),
+            ":" => Ok(Self::Colon),
             _ => {
                 // name validation
                 let mut ok = true;
@@ -174,6 +176,13 @@ impl MpsToken {
             _ => false,
         }
     }
+
+    pub fn is_colon(&self) -> bool {
+        match self {
+            Self::Colon => true,
+            _ => false,
+        }
+    }
 }
 
 impl Display for MpsToken {
@@ -196,6 +205,7 @@ impl Display for MpsToken {
             Self::Interrogation => write!(f, "?"),
             Self::Pipe => write!(f, "|"),
             Self::Ampersand => write!(f, "&"),
+            Self::Colon => write!(f, ":")
         }
     }
 }

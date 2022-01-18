@@ -261,7 +261,7 @@ impl ReaderStateMachine {
                 '\n'| '\r' | '\t' | ' ' => Self::EndToken {},
                 ';' => Self::EndStatement {},
                 '\0' => Self::EndOfFile {},
-                '(' | ')' | ',' | '=' | '<' | '>' | '.' | '!' | '?' | '|' => Self::SingleCharToken { out: input },
+                '(' | ')' | ',' | '=' | '<' | '>' | '.' | '!' | '?' | '|' | ':' => Self::SingleCharToken { out: input },
                 _ => Self::Regular { out: input },
             },
             Self::Escaped { inside } => match inside {

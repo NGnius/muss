@@ -49,26 +49,37 @@
 //! field >= something
 //! field > something
 //! field <= something
-//! field < something -- e.g. iterable.(title == "Romantic Traffic");
+//! field < something -- e.g. `iterable.(title == "Romantic Traffic");`
+//!
 //!    Compare all items, keeping only those that match the condition. Valid field names are those of the MpsMusicItem (title, artist, album, genre, track, etc.), though this will change when proper object support is added. Optionally, a ? or ! can be added to the end of the field name to skip items whose field is missing/incomparable, or keep all items whose field is missing/incomparable (respectively).
 //!
-//! start..end -- e.g. iterable.(0..42);
+//! start..end -- e.g. `iterable.(0..42);`
+//!
 //!    Keep only the items that are at the start index up to the end index. Start and/or end may be omitted to start/stop at the iterable's existing start/end (respectively). This stops once the end condition is met, leaving the rest of the iterator unconsumed.
 //!
-//! start..=end -- e.g. iterable.(0..=42);
+//! start..=end -- e.g. `iterable.(0..=42);`
+//!
 //!    Keep only the items that are at the start index up to and including the end index. Start may be omitted to start at the iterable's existing start. This stops once the end condition is met, leaving the rest of the iterator unconsumed.
 //!
-//! index -- e.g. iterable.(4);
+//! index -- e.g. `iterable.(4);`
+//!
 //!    Keep only the item at the given index. This stops once the index is reached, leaving the rest of the iterator unconsumed.
 //!
-//! predicate1 || predicate2 -- e.g. iterable.(4 || 5);
+//! predicate1 || predicate2 -- e.g. `iterable.(4 || 5);`
+//!
 //!    Keep only the items that meet the criteria of predicate1 or predicate2. This will always consume the full iterator.
 //!
-//! [empty] -- e.g. iterable.();
+//! [empty] -- e.g. `iterable.();`
+//!
 //!    Matches all items
+//!
+//! if filter: operation1 else operation2 -- e.g. `iterable.(if title == "Romantic Traffic": repeat(item, 2) else item.());`
+//!
+//!     Replace items matching the filter with operation1 and replace items not matching the filter with operation2. The `else operation2` part may be omitted to preserve items not matching the filter. To perform operations with the current item, use the special variable `item`.
 //!
 //! ## Functions
 //! Similar to most other languages: `function_name(param1, param2, etc.);`.
+//! These always return an iterable which can me manipulated.
 //! Functions are statements of the format `function_name(params)`, where "function_name" is one of the function names (below) and params is a valid parameter input for the function.
 //! Each function is responsible for parsing it's own parameters when the statement is parsed, so this is very flexible.
 //! E.g. `files(folder="~/Music/", recursive=true);` is valid function syntax to execute the files function with parameters `folder="~/Music/", recursive=true`.

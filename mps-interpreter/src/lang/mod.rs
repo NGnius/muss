@@ -2,6 +2,7 @@ mod db_items;
 mod dictionary;
 mod error;
 mod filter;
+mod filter_replace;
 mod function;
 mod lookup;
 mod operation;
@@ -17,6 +18,7 @@ pub use error::{MpsLanguageError, RuntimeError, SyntaxError};
 pub use filter::{
     MpsFilterFactory, MpsFilterPredicate, MpsFilterStatement, MpsFilterStatementFactory,
 };
+pub use filter_replace::MpsFilterReplaceStatement;
 pub use function::{MpsFunctionFactory, MpsFunctionStatementFactory};
 pub use lookup::Lookup;
 pub use operation::{BoxedMpsOpFactory, MpsOp, MpsOpFactory, SimpleMpsOpFactory};

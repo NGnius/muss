@@ -132,7 +132,7 @@ fn execute_assign_line() -> Result<(), Box<dyn MpsLanguageError>> {
 
 #[test]
 fn execute_emptyfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
-    execute_single_line("song(`lov`).()", false, true)
+    execute_single_line("files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).().().()", false, true)
 }
 
 #[test]
@@ -260,6 +260,25 @@ fn execute_orfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
     )?;
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year != 2020 || 5 || 4 || 12)",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_replacefilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(if 4: files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(5))",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(if 4: files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(5) else item.())",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(if 4: item.() else files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(0 || 1).(if 200: files() else repeat(item.(), 2)))",
         false,
         true,
     )

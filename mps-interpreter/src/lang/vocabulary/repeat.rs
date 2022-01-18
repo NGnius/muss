@@ -25,7 +25,11 @@ pub struct RepeatStatement {
 
 impl Display for RepeatStatement {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "repeat({})", self.inner_statement)
+        if self.loop_forever {
+            write!(f, "repeat({})", self.inner_statement)
+        } else {
+            write!(f, "repeat({}, {})", self.inner_statement, self.original_repetitions)
+        }
     }
 }
 

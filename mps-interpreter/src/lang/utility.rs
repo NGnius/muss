@@ -121,9 +121,9 @@ pub fn check_is_type(token: &MpsToken) -> bool {
     match token {
         MpsToken::Literal(_) => true,
         MpsToken::Name(s) => {
-            s.parse::<f64>().is_ok()
-                || s.parse::<i64>().is_ok()
+            s.parse::<i64>().is_ok()
                 || s.parse::<u64>().is_ok()
+                || s.parse::<f64>().is_ok()
                 || s == "false"
                 || s == "true"
         }
@@ -143,12 +143,12 @@ pub fn assert_type(tokens: &mut VecDeque<MpsToken>) -> Result<MpsTypePrimitive, 
     match token {
         MpsToken::Literal(s) => Ok(MpsTypePrimitive::String(s)),
         MpsToken::Name(s) => {
-            if let Ok(f) = s.parse::<f64>() {
-                Ok(MpsTypePrimitive::Float(f))
-            } else if let Ok(i) = s.parse::<i64>() {
+            if  let Ok(i) = s.parse::<i64>() {
                 Ok(MpsTypePrimitive::Int(i))
             } else if let Ok(u) = s.parse::<u64>() {
                 Ok(MpsTypePrimitive::UInt(u))
+            } else if let Ok(f) = s.parse::<f64>() {
+                Ok(MpsTypePrimitive::Float(f))
             } else if s == "false" {
                 Ok(MpsTypePrimitive::Bool(false))
             } else if s == "true" {
