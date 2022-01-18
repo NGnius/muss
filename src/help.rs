@@ -7,7 +7,7 @@ To view the currently-supported operations, try ?functions and ?filters";
 pub const FUNCTIONS: &str =
 "FUNCTIONS (?functions)
 Similar to most other languages: function_name(param1, param2, etc.)
-These always return an iterable which can me manipulated.
+These always return an iterable which can be manipulated.
 
  sql_init(generate = true|false, folder = `path/to/music`)
     Initialize the SQLite database connection using the provided parameters. This must be performed before any other database operation (otherwise the database will already be connected with default settings).
@@ -61,4 +61,4 @@ Operations to reduce the items in an iterable: iterable.(filter)
     Matches all items
 
  if filter: operation1 else operation2 -- e.g. iterable.(if title == `Romantic Traffic`: repeat(item, 2) else item.())
-    Replace items matching the filter with operation1 and replace items not matching the filter with operation2. The `else operation2` part may be omitted to preserve items not matching the filter. To perform operations with the current item, use the special variable `item`.";
+    Replace items matching the filter with operation1 and replace items not matching the filter with operation2. The `else operation2` part may be omitted to preserve items not matching the filter. To perform operations with the current item, use the special variable `item`. The replacement filter may not contain || -- instead, use multiple filters chained together.";
