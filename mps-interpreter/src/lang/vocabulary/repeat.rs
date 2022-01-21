@@ -4,11 +4,11 @@ use std::iter::Iterator;
 
 use crate::tokens::MpsToken;
 use crate::MpsContext;
-use crate::MpsMusicItem;
+use crate::MpsItem;
 
 use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsOp, PseudoOp};
+use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsOp, PseudoOp, MpsIteratorItem};
 use crate::lang::{RuntimeError, SyntaxError};
 
 #[derive(Debug)]
@@ -16,7 +16,7 @@ pub struct RepeatStatement {
     inner_statement: PseudoOp,
     inner_done: bool,
     context: Option<MpsContext>,
-    cache: Vec<MpsMusicItem>,
+    cache: Vec<MpsItem>,
     cache_position: usize,
     repetitions: usize,
     loop_forever: bool,
@@ -49,7 +49,7 @@ impl std::clone::Clone for RepeatStatement {
 }
 
 impl Iterator for RepeatStatement {
-    type Item = Result<MpsMusicItem, RuntimeError>;
+    type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
         let real_op = match self.inner_statement.try_real() {

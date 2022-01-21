@@ -4,12 +4,11 @@ use std::iter::Iterator;
 
 use crate::tokens::MpsToken;
 use crate::MpsContext;
-use crate::MpsMusicItem;
 
 use crate::lang::utility::assert_token;
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::{BoxedMpsOpFactory, MpsOp, MpsOpFactory, SimpleMpsOpFactory};
-use crate::lang::{RuntimeError, SyntaxError};
+use crate::lang::{BoxedMpsOpFactory, MpsOp, MpsOpFactory, SimpleMpsOpFactory, MpsIteratorItem};
+use crate::lang::SyntaxError;
 
 #[derive(Debug)]
 pub struct CommentStatement {
@@ -45,7 +44,7 @@ impl std::clone::Clone for CommentStatement {
 }
 
 impl Iterator for CommentStatement {
-    type Item = Result<MpsMusicItem, RuntimeError>;
+    type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
         None

@@ -21,7 +21,7 @@ pub use filter::{
 pub use filter_replace::MpsFilterReplaceStatement;
 pub use function::{MpsFunctionFactory, MpsFunctionStatementFactory};
 pub use lookup::Lookup;
-pub use operation::{BoxedMpsOpFactory, MpsOp, MpsOpFactory, SimpleMpsOpFactory};
+pub use operation::{BoxedMpsOpFactory, MpsOp, MpsOpFactory, SimpleMpsOpFactory, MpsIteratorItem};
 pub use pseudo_op::PseudoOp;
 pub use repeated_meme::{repeated_tokens, RepeatedTokens};
 pub use single_op::SingleItem;

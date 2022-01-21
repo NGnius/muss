@@ -7,7 +7,7 @@ use std::thread::JoinHandle;
 use mpris_player::{MprisPlayer, PlaybackStatus, Metadata};
 
 #[cfg(all(target_os = "linux", feature = "os-controls"))]
-use mps_interpreter::MpsMusicItem;
+use mps_interpreter::MpsItem;
 
 //use super::MpsController;
 use super::player_wrapper::{ControlAction, PlaybackAction};
@@ -177,20 +177,20 @@ impl SystemControlWrapper {
         }
     }
 
-    fn enqueued(item: MpsMusicItem, dbus_ctrl: &Sender<DbusControl>) {
+    fn enqueued(item: MpsItem, dbus_ctrl: &Sender<DbusControl>) {
         //println!("Got enqueued item {}", &item.title);
         dbus_ctrl.send(DbusControl::SetMetadata(Metadata {
             length: None,
             art_url: None,
-            album: item.album,
+            album: item.field("album").and_then(|x| x.to_owned().to_str()),
             album_artist: None, // TODO maybe?
-            artist: item.artist.map(|artist| vec![artist]),
+            artist: item.field("artist").and_then(|x| x.to_owned().to_str()).map(|x| vec![x]),
             composer: None,
             disc_number: None,
-            genre: item.genre.map(|genre| vec![genre]),
-            title: Some(item.title),
-            track_number: item.track.map(|track| track as i32),
-            url: Some(item.filename),
+            genre: item.field("genre").and_then(|x| x.to_owned().to_str()).map(|genre| vec![genre]),
+            title: item.field("title").and_then(|x| x.to_owned().to_str()),
+            track_number: item.field("track").and_then(|x| x.to_owned().to_i64()).map(|track| track as i32),
+            url: item.field("filename").and_then(|x| x.to_owned().to_str()),
         })).unwrap_or(());
     }
 

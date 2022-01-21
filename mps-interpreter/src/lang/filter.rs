@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use crate::lang::utility::{assert_token, assert_token_raw, check_name, assert_name};
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::{BoxedMpsOpFactory, MpsOp, PseudoOp};
+use crate::lang::{BoxedMpsOpFactory, MpsOp, PseudoOp, MpsIteratorItem};
 use crate::lang::{RuntimeError, SyntaxError};
 use crate::lang::SingleItem;
 use crate::lang::MpsFilterReplaceStatement;
@@ -13,14 +13,14 @@ use crate::processing::general::MpsType;
 use crate::processing::OpGetter;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
-use crate::MpsMusicItem;
+use crate::MpsItem;
 
 const INNER_VARIABLE_NAME: &str = "[inner variable]";
 
 pub trait MpsFilterPredicate: Clone + Debug + Display {
     fn matches(
         &mut self,
-        item: &MpsMusicItem,
+        item: &MpsItem,
         ctx: &mut MpsContext,
         op: &mut OpGetter,
     ) -> Result<bool, RuntimeError>;
@@ -161,7 +161,7 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
 }
 
 impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
-    type Item = Result<MpsMusicItem, RuntimeError>;
+    type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.predicate.is_complete() && self.other_filters.is_none() {
@@ -363,7 +363,7 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
             if start_of_predicate > tokens_len - 1 {
                 false
             } else {
-                let pipe_location_opt = last_double_pipe(tokens, 1);
+                let pipe_location_opt = first_double_pipe(tokens, 1);
                 if pipe_location_opt.is_some() && pipe_location_opt.unwrap() > start_of_predicate {
                     let pipe_location = pipe_location_opt.unwrap();
                     // filters combined by OR operations
@@ -470,7 +470,7 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
             }
         } else {
             let mut another_filter = None;
-            let (has_or, end_tokens) = if let Some(pipe_location) = last_double_pipe(tokens, 1) {
+            let (has_or, end_tokens) = if let Some(pipe_location) = first_double_pipe(tokens, 0) {
                 (true, tokens.split_off(pipe_location)) // parse up to OR operator
             } else {
                 (false, tokens.split_off(tokens.len()-1)) // don't parse closing bracket in filter
@@ -546,21 +546,21 @@ fn last_dot_before_open_bracket(tokens: &VecDeque<MpsToken>) -> usize {
     0
 }
 
-fn last_double_pipe(tokens: &VecDeque<MpsToken>, in_brackets: usize) -> Option<usize> {
+fn first_double_pipe(tokens: &VecDeque<MpsToken>, in_brackets: usize) -> Option<usize> {
     let mut inside_brackets = 0;
     let mut pipe_found = false;
-    for i in (0..tokens.len()).rev() {
+    for i in 0..tokens.len() {
         if tokens[i].is_pipe() && inside_brackets == in_brackets {
             if pipe_found {
-                return Some(i);
+                return Some(i-1);
             } else {
                 pipe_found = true;
             }
         } else {
             pipe_found = false;
-            if tokens[i].is_close_bracket() {
+            if tokens[i].is_open_bracket() {
                 inside_brackets += 1;
-            } else if tokens[i].is_open_bracket() && inside_brackets != 0 {
+            } else if tokens[i].is_close_bracket() && inside_brackets != 0 {
                 inside_brackets -= 1;
             }
         }

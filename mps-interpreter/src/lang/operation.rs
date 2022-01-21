@@ -7,7 +7,7 @@ use super::PseudoOp;
 use super::{RuntimeError, SyntaxError};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
-use crate::MpsMusicItem;
+use crate::MpsItem;
 
 pub trait SimpleMpsOpFactory<T: MpsOp + 'static> {
     fn is_op_simple(&self, tokens: &VecDeque<MpsToken>) -> bool;
@@ -58,7 +58,9 @@ pub trait BoxedMpsOpFactory {
     fn is_op_boxed(&self, tokens: &VecDeque<MpsToken>) -> bool;
 }
 
-pub trait MpsOp: Iterator<Item = Result<MpsMusicItem, RuntimeError>> + Debug + Display {
+pub type MpsIteratorItem = Result<MpsItem, RuntimeError>;
+
+pub trait MpsOp: Iterator<Item = MpsIteratorItem> + Debug + Display {
     fn enter(&mut self, ctx: MpsContext);
 
     fn escape(&mut self) -> MpsContext;

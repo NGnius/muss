@@ -6,7 +6,7 @@ use std::path::Path;
 use super::lang::{MpsLanguageDictionary, MpsLanguageError, MpsOp};
 use super::tokens::MpsToken;
 use super::MpsContext;
-use super::MpsMusicItem;
+use super::MpsItem;
 
 /// The script interpreter.
 /// Use MpsRunner for a better interface.
@@ -81,7 +81,7 @@ impl<T> Iterator for MpsInterpretor<T>
 where
     T: crate::tokens::MpsTokenReader,
 {
-    type Item = Result<MpsMusicItem, Box<dyn MpsLanguageError>>;
+    type Item = Result<MpsItem, Box<dyn MpsLanguageError>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut is_stmt_done = false;

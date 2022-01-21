@@ -3,11 +3,11 @@ use std::collections::{HashMap, HashSet};
 
 use crate::lang::db::*;
 use crate::lang::RuntimeError;
-use crate::MpsMusicItem;
+use crate::MpsItem;
 
 use super::OpGetter as QueryOp;
 
-pub type QueryResult = Result<Vec<Result<MpsMusicItem, RuntimeError>>, RuntimeError>;
+pub type QueryResult = Result<Vec<Result<MpsItem, RuntimeError>>, RuntimeError>;
 
 /// SQL querying functionality, loosely de-coupled from any specific SQL dialect (excluding raw call)
 pub trait MpsDatabaseQuerier: Debug {
@@ -250,7 +250,7 @@ impl std::convert::TryInto<rusqlite::Connection> for SqliteSettings {
         let music_path = self
             .music_path
             .and_then(|p| Some(std::path::PathBuf::from(p)))
-            .unwrap_or_else(|| crate::lang::utility::music_folder());
+            .unwrap_or_else(crate::lang::utility::music_folder);
         let sqlite_path = self
             .db_path
             .unwrap_or_else(|| crate::lang::db::DEFAULT_SQLITE_FILEPATH.to_string());
@@ -262,7 +262,7 @@ impl std::convert::TryInto<rusqlite::Connection> for SqliteSettings {
 fn build_mps_item(
     conn: &mut rusqlite::Connection,
     item: DbMusicItem,
-) -> rusqlite::Result<MpsMusicItem> {
+) -> rusqlite::Result<MpsItem> {
     // query artist
     let mut stmt = conn.prepare_cached("SELECT * from artists WHERE artist_id = ?")?;
     let artist = stmt.query_row([item.artist], DbArtistItem::map_row)?;
@@ -276,14 +276,14 @@ fn build_mps_item(
     let mut stmt = conn.prepare_cached("SELECT * from genres WHERE genre_id = ?")?;
     let genre = stmt.query_row([item.genre], DbGenreItem::map_row)?;
 
-    Ok(MpsMusicItem::merge(item, artist, album, meta, genre))
+    Ok(rows_to_item(item, artist, album, meta, genre))
 }
 
 #[inline]
 fn perform_query(
     conn: &mut rusqlite::Connection,
     query: &str,
-) -> Result<Vec<rusqlite::Result<MpsMusicItem>>, String> {
+) -> Result<Vec<rusqlite::Result<MpsItem>>, String> {
     let collection: Vec<rusqlite::Result<DbMusicItem>>;
     {
         let mut stmt = conn
@@ -306,7 +306,7 @@ fn perform_single_param_query(
     conn: &mut rusqlite::Connection,
     query: &str,
     param: &str,
-) -> Result<Vec<rusqlite::Result<MpsMusicItem>>, String> {
+) -> Result<Vec<rusqlite::Result<MpsItem>>, String> {
     let collection: Vec<rusqlite::Result<DbMusicItem>>;
     {
         let mut stmt = conn
@@ -322,4 +322,29 @@ fn perform_single_param_query(
         Err(e) => Err(e),
     });
     Ok(iter2.collect())
+}
+
+fn rows_to_item(
+    music: DbMusicItem,
+    artist: DbArtistItem,
+    album: DbAlbumItem,
+    meta: DbMetaItem,
+    genre: DbGenreItem,
+) -> MpsItem {
+
+    let mut item = MpsItem::new();
+    item
+        // music row
+        .set_field_chain("title", music.title.into())
+        .set_field_chain("filename", music.filename.into())
+        // artist row
+        .set_field_chain("artist", artist.name.into())
+        // album row
+        .set_field_chain("album", album.title.into())
+        // genre row
+        .set_field_chain("genre", genre.title.into())
+        // music metadata
+        .set_field_chain("track", meta.track.into())
+        .set_field_chain("year", meta.date.into());
+    item
 }

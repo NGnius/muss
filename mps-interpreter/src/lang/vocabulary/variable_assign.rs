@@ -4,11 +4,10 @@ use std::iter::Iterator;
 
 use crate::tokens::MpsToken;
 use crate::MpsContext;
-use crate::MpsMusicItem;
 
 use crate::lang::utility::{assert_token, assert_token_raw, assert_type, check_is_type};
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::{BoxedMpsOpFactory, MpsOp, MpsOpFactory, MpsTypePrimitive, PseudoOp};
+use crate::lang::{BoxedMpsOpFactory, MpsOp, MpsOpFactory, MpsTypePrimitive, PseudoOp, MpsIteratorItem};
 use crate::lang::{RuntimeError, SyntaxError};
 use crate::processing::general::MpsType;
 
@@ -46,7 +45,7 @@ impl std::clone::Clone for AssignStatement {
 }
 
 impl Iterator for AssignStatement {
-    type Item = Result<MpsMusicItem, RuntimeError>;
+    type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(inner_statement) = &mut self.inner_statement {

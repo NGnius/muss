@@ -3,11 +3,11 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
 use crate::lang::utility::assert_token;
-use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsLanguageDictionary, MpsOp};
+use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsLanguageDictionary, MpsOp, MpsIteratorItem};
 use crate::lang::{RuntimeError, SyntaxError};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
-use crate::MpsMusicItem;
+use crate::MpsItem;
 
 #[derive(Debug, Clone)]
 enum QueryMode {
@@ -63,12 +63,12 @@ pub struct SimpleSqlStatement {
     query: String,
     mode: QueryMode,
     context: Option<MpsContext>,
-    rows: Option<Vec<Result<MpsMusicItem, RuntimeError>>>,
+    rows: Option<Vec<Result<MpsItem, RuntimeError>>>,
     current: usize,
 }
 
 impl SimpleSqlStatement {
-    fn get_item(&mut self, increment: bool) -> Option<Result<MpsMusicItem, RuntimeError>> {
+    fn get_item(&mut self, increment: bool) -> Option<MpsIteratorItem> {
         if let Some(rows) = &self.rows {
             if increment {
                 if self.current == rows.len() {
@@ -81,7 +81,7 @@ impl SimpleSqlStatement {
             } else {
                 //Some(rows[self.current].clone())
                 match &rows[self.current] {
-                    Ok(item) => Some(Ok(item.clone())),
+                    Ok(item) => Some(Ok(item.clone().into())),
                     Err(e) => Some(Err(RuntimeError {
                         line: e.line,
                         op: (Box::new(self.clone()) as Box<dyn MpsOp>).into(),
@@ -132,7 +132,7 @@ impl std::clone::Clone for SimpleSqlStatement {
 }
 
 impl Iterator for SimpleSqlStatement {
-    type Item = Result<MpsMusicItem, RuntimeError>;
+    type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.rows.is_some() {

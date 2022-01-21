@@ -5,7 +5,7 @@ use rodio::{decoder::Decoder, OutputStream, OutputStreamHandle, Sink};
 
 use m3u8_rs::{MediaPlaylist, MediaSegment};
 
-use mps_interpreter::{tokens::MpsTokenReader, MpsRunner, MpsMusicItem};
+use mps_interpreter::{tokens::MpsTokenReader, MpsRunner, MpsItem};
 
 use super::PlaybackError;
 
@@ -36,12 +36,15 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
             self.sink.sleep_until_end();
             match item {
                 Ok(music) => {
-                    let file = fs::File::open(music.filename).map_err(PlaybackError::from_err)?;
-                    let stream = io::BufReader::new(file);
-                    let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
-                    self.sink.append(source);
-                    //self.sink.play(); // idk if this is necessary
-                    Ok(())
+                    if let Some(filename) = music.field("filename").and_then(|x| x.to_owned().to_str()) {
+                        let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
+                        let stream = io::BufReader::new(file);
+                        let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
+                        self.sink.append(source);
+                        Ok(())
+                    } else {
+                        Err(PlaybackError::from_err("Field `filename` does not exist on item"))
+                    }
                 }
                 Err(e) => Err(PlaybackError::from_err(e)),
             }?;
@@ -50,18 +53,21 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
         Ok(())
     }
 
-    pub fn enqueue_all(&mut self) -> Result<Vec<MpsMusicItem>, PlaybackError> {
+    pub fn enqueue_all(&mut self) -> Result<Vec<MpsItem>, PlaybackError> {
         let mut enqueued = Vec::new();
         for item in &mut self.runner {
             match item {
                 Ok(music) => {
                     enqueued.push(music.clone());
-                    let file = fs::File::open(music.filename).map_err(PlaybackError::from_err)?;
-                    let stream = io::BufReader::new(file);
-                    let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
-                    self.sink.append(source);
-                    //self.sink.play(); // idk if this is necessary
-                    Ok(())
+                    if let Some(filename) = music.field("filename").and_then(|x| x.to_owned().to_str()) {
+                        let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
+                        let stream = io::BufReader::new(file);
+                        let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
+                        self.sink.append(source);
+                        Ok(())
+                    } else {
+                        Err(PlaybackError::from_err("Field `filename` does not exist on item"))
+                    }
                 }
                 Err(e) => Err(PlaybackError::from_err(e)),
             }?;
@@ -69,7 +75,7 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
         Ok(enqueued)
     }
 
-    pub fn enqueue(&mut self, count: usize) -> Result<Vec<MpsMusicItem>, PlaybackError> {
+    pub fn enqueue(&mut self, count: usize) -> Result<Vec<MpsItem>, PlaybackError> {
         let mut items_left = count;
         let mut enqueued = Vec::with_capacity(count);
         if items_left == 0 {
@@ -79,12 +85,15 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
             match item {
                 Ok(music) => {
                     enqueued.push(music.clone());
-                    let file = fs::File::open(music.filename).map_err(PlaybackError::from_err)?;
-                    let stream = io::BufReader::new(file);
-                    let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
-                    self.sink.append(source);
-                    //self.sink.play(); // idk if this is necessary
-                    Ok(())
+                    if let Some(filename) = music.field("filename").and_then(|x| x.to_owned().to_str()) {
+                        let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
+                        let stream = io::BufReader::new(file);
+                        let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
+                        self.sink.append(source);
+                        Ok(())
+                    } else {
+                        Err(PlaybackError::from_err("Field `filename` does not exist on item"))
+                    }
                 }
                 Err(e) => Err(PlaybackError::from_err(e)),
             }?;
@@ -130,12 +139,16 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
         for item in &mut self.runner {
             match item {
                 Ok(music) => {
-                    playlist.segments.push(MediaSegment {
-                        uri: music.filename,
-                        title: Some(music.title),
-                        ..Default::default()
-                    });
-                    Ok(())
+                    if let Some(filename) = music.field("filename").and_then(|x| x.to_owned().to_str()) {
+                        playlist.segments.push(MediaSegment {
+                            uri: filename,
+                            title: music.field("title").and_then(|x| x.to_owned().to_str()),
+                            ..Default::default()
+                        });
+                        Ok(())
+                    } else {
+                        Err(PlaybackError::from_err("Field `filename` does not exist on item"))
+                    }
                 }
                 Err(e) => Err(PlaybackError::from_err(e)),
             }?;
@@ -173,7 +186,7 @@ mod tests {
     use std::io;
 
     #[allow(dead_code)]
-    #[test]
+    //#[test]
     fn play_cursor() -> Result<(), PlaybackError> {
         let cursor = io::Cursor::new("sql(`SELECT * FROM songs JOIN artists ON songs.artist = artists.artist_id WHERE artists.name like 'thundercat'`);");
         let runner = MpsRunner::with_stream(cursor);

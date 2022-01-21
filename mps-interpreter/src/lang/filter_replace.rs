@@ -2,20 +2,20 @@ use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
-use crate::lang::{MpsOp, PseudoOp};
+use crate::lang::{MpsOp, PseudoOp, MpsIteratorItem};
 use crate::lang::RuntimeError;
 use crate::lang::{MpsFilterPredicate, filter::VariableOrOp};
 use crate::lang::SingleItem;
 use crate::processing::general::MpsType;
 use crate::processing::OpGetter;
 use crate::MpsContext;
-use crate::MpsMusicItem;
+use crate::MpsItem;
 
 const ITEM_VARIABLE_NAME: &str = "item";
 const ITEM_CACHE_DEFAULT_SIZE: usize = 8;
 
 #[inline(always)]
-pub(super) fn item_cache_deque() -> VecDeque<Result<MpsMusicItem, RuntimeError>> {
+pub(super) fn item_cache_deque() -> VecDeque<Result<MpsItem, RuntimeError>> {
     VecDeque::with_capacity(ITEM_CACHE_DEFAULT_SIZE)
 }
 
@@ -26,7 +26,7 @@ pub struct MpsFilterReplaceStatement<P: MpsFilterPredicate + 'static> {
     pub(super) context: Option<MpsContext>,
     pub(super) op_if: PseudoOp,
     pub(super) op_else: Option<PseudoOp>,
-    pub(super) item_cache: VecDeque<Result<MpsMusicItem, RuntimeError>>,
+    pub(super) item_cache: VecDeque<Result<MpsItem, RuntimeError>>,
 }
 
 impl<P: MpsFilterPredicate + 'static> std::clone::Clone for MpsFilterReplaceStatement<P> {
@@ -120,7 +120,7 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterReplaceStatement<P> {
 }
 
 impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> {
-    type Item = Result<MpsMusicItem, RuntimeError>;
+    type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
         if !self.item_cache.is_empty() {

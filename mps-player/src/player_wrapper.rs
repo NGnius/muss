@@ -2,7 +2,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::{thread, thread::JoinHandle};
 
 use mps_interpreter::tokens::MpsTokenReader;
-use mps_interpreter::MpsMusicItem;
+use mps_interpreter::MpsItem;
 
 use super::MpsPlayer;
 use super::PlaybackError;
@@ -215,7 +215,7 @@ pub enum PlayerAction {
 #[derive(Clone, Debug)]
 pub enum PlaybackAction {
     Empty,
-    Enqueued(MpsMusicItem),
+    Enqueued(MpsItem),
     Exit,
 }
 

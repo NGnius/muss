@@ -62,7 +62,10 @@ fn execute_single_line(
                     break;
                 }
             } // no need to spam the rest of the songs
-            println!("Got song `{}` (file: `{}`)", item.title, item.filename);
+            println!("Got song `{}` (file: `{}`)",
+                item.field("title").expect("Expected field `title` to exist").clone().to_str().expect("Expected field `title` to be String"),
+                item.field("filename").expect("Expected field `filename` to exist").clone().to_str().expect("Expected field `filename` to be String")
+            );
         } else {
             println!("!!! Got error while iterating (executing) !!!");
             eprintln!("{}", result.as_ref().err().unwrap());

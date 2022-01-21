@@ -74,6 +74,47 @@ impl MpsTypePrimitive {
             )),
         }
     }
+
+    pub fn to_str(self) -> Option<String> {
+        match self {
+            Self::String(s) => Some(s),
+            _ => None,
+        }
+    }
+
+    pub fn to_u64(self) -> Option<u64> {
+        match self {
+            Self::UInt(x) => Some(x),
+            Self::Int(x) => Some(x as _),
+            Self::Float(x) => Some(x as _),
+            _ => None,
+        }
+    }
+
+    pub fn to_i64(self) -> Option<i64> {
+        match self {
+            Self::UInt(x) => Some(x as _),
+            Self::Int(x) => Some(x),
+            Self::Float(x) => Some(x as _),
+            _ => None,
+        }
+    }
+
+    pub fn parse(s: String) -> Self {
+        if  let Ok(i) = s.parse::<i64>() {
+            Self::Int(i)
+        } else if let Ok(u) = s.parse::<u64>() {
+            Self::UInt(u)
+        } else if let Ok(f) = s.parse::<f64>() {
+            Self::Float(f)
+        } else if s == "false" {
+            Self::Bool(false)
+        } else if s == "true" {
+            Self::Bool(true)
+        } else {
+            Self::String(s)
+        }
+    }
 }
 
 impl Display for MpsTypePrimitive {
@@ -94,5 +135,35 @@ fn map_ordering(ordering: std::cmp::Ordering) -> i8 {
         std::cmp::Ordering::Less => -1,
         std::cmp::Ordering::Equal => 0,
         std::cmp::Ordering::Greater => 1,
+    }
+}
+
+impl std::convert::From<String> for MpsTypePrimitive {
+    fn from(item: String) -> Self {
+        Self::String(item)
+    }
+}
+
+impl std::convert::From<i64> for MpsTypePrimitive {
+    fn from(item: i64) -> Self {
+        Self::Int(item)
+    }
+}
+
+impl std::convert::From<u64> for MpsTypePrimitive {
+    fn from(item: u64) -> Self {
+        Self::UInt(item)
+    }
+}
+
+impl std::convert::From<f64> for MpsTypePrimitive {
+    fn from(item: f64) -> Self {
+        Self::Float(item)
+    }
+}
+
+impl std::convert::From<bool> for MpsTypePrimitive {
+    fn from(item: bool) -> Self {
+        Self::Bool(item)
     }
 }

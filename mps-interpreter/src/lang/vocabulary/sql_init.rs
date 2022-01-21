@@ -5,13 +5,12 @@ use std::iter::Iterator;
 
 use crate::tokens::MpsToken;
 use crate::MpsContext;
-use crate::MpsMusicItem;
 
 use crate::lang::repeated_tokens;
 use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsOp};
-use crate::lang::{RuntimeError, SyntaxError};
+use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsOp, MpsIteratorItem};
+use crate::lang::SyntaxError;
 
 #[derive(Debug)]
 pub struct SqlInitStatement {
@@ -39,7 +38,7 @@ impl std::clone::Clone for SqlInitStatement {
 }
 
 impl Iterator for SqlInitStatement {
-    type Item = Result<MpsMusicItem, RuntimeError>;
+    type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
         let pseudo_clone = self.clone();

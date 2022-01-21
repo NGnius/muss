@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 use regex::Regex;
 
 use super::OpGetter;
-use crate::lang::RuntimeError;
-use crate::MpsMusicItem;
+use crate::lang::{RuntimeError, MpsTypePrimitive};
+use crate::MpsItem;
 
 const DEFAULT_REGEX: &str = r"/(?P<artist>[^/]+)/(?P<album>[^/]+)/(?:(?:(?P<disc>\d+)\s+)?(?P<track>\d+)\.?\s+)?(?P<title>[^/]+)\.(?P<format>(?:mp3)|(?:wav)|(?:ogg)|(?:flac)|(?:mp4)|(?:aac))$";
 
@@ -127,7 +127,7 @@ impl FileIter {
         }
     }
 
-    fn build_item<P: AsRef<Path>>(&self, filepath: P) -> Option<MpsMusicItem> {
+    fn build_item<P: AsRef<Path>>(&self, filepath: P) -> Option<MpsItem> {
         let path = filepath.as_ref();
         let path_str = path.to_str()?;
         #[cfg(debug_assertions)]
@@ -135,8 +135,9 @@ impl FileIter {
             panic!("Got non-file path `{}` when building music item", path_str)
         }
         let captures = self.pattern.captures(path_str)?;
+        let capture_names = self.pattern.capture_names();
         // populate fields
-        self.populate_item_impl(path, path_str, captures)
+        self.populate_item_impl(path, path_str, captures, capture_names)
     }
 
     #[cfg(feature = "music_library")]
@@ -145,105 +146,90 @@ impl FileIter {
         path: &Path,
         path_str: &str,
         captures: regex::Captures,
-    ) -> Option<MpsMusicItem> {
+        capture_names: regex::CaptureNames,
+    ) -> Option<MpsItem> {
         match crate::music::MpsLibrary::read_media_tags(path) {
-            Ok(tags) => Some(MpsMusicItem {
-                title: captures
-                    .name("title")
-                    .and_then(|m| Some(m.as_str().to_string()))
-                    .unwrap_or_else(|| tags.track_title()),
-                artist: captures
-                    .name("artist")
-                    .and_then(|m| Some(m.as_str().to_string()))
-                    .or_else(|| tags.artist_name()),
-                album: captures
-                    .name("album")
-                    .and_then(|m| Some(m.as_str().to_string()))
-                    .or_else(|| tags.album_title()),
-                filename: path_str.to_string(),
-                genre: captures
-                    .name("genre")
-                    .and_then(|m| Some(m.as_str().to_string()))
-                    .or_else(|| tags.genre_title()),
-                track: match captures.name("track") {
-                    None => tags.track_number(),
-                    Some(m) => match m.as_str().parse::<u64>() {
-                        Ok(u) => Some(u),
-                        Err(_) => tags.track_number(),
-                    },
-                },
-                year: match captures.name("year") {
-                    None => tags.track_date(),
-                    Some(m) => match m.as_str().parse::<u64>() {
-                        Ok(u) => Some(u),
-                        Err(_) => tags.track_date(),
-                    },
-                },
-            }),
-            Err(_) => self.populate_item_impl_simple(path, path_str, captures),
+            Ok(tags) => {
+                let mut item = MpsItem::new();
+                self.populate_item_impl_simple(&mut item, path_str, captures, capture_names);
+                if item.field("title").is_none() {
+                    item.set_field("title", tags.track_title().into());
+                }
+                if item.field("artist").is_none() {
+                    if let Some(artist) = tags.artist_name() {
+                        item.set_field("artist", artist.into());
+                    }
+                }
+                if item.field("album").is_none() {
+                    if let Some(album) = tags.album_title() {
+                        item.set_field("album", album.into());
+                    }
+                }
+                if item.field("genre").is_none() {
+                    if let Some(genre) = tags.genre_title() {
+                        item.set_field("genre", genre.into());
+                    }
+                }
+                if item.field("track").is_none() {
+                    if let Some(track) = tags.track_number() {
+                        item.set_field("track", track.into());
+                    }
+                }
+                if item.field("year").is_none() {
+                    if let Some(year) = tags.track_date() {
+                        item.set_field("year", year.into());
+                    }
+                }
+                Some(item)
+            },
+            Err(_) => {
+                let mut item = MpsItem::new();
+                self.populate_item_impl_simple(&mut item, path_str, captures, capture_names);
+                Some(item)
+            },
         }
     }
 
     #[cfg(not(feature = "music_library"))]
     fn populate_item_impl(
         &self,
-        path: &Path,
         path_str: &str,
         captures: regex::Captures,
-    ) -> Option<MpsMusicItem> {
-        self.populate_item_impl_simple(path, path_str, captures)
+        capture_names: regex::CaptureNames,
+    ) -> Option<MpsItem> {
+        let mut item = MpsItem::new();
+        self.populate_item_impl_simple(&mut item, path_str, captures, capture_names);
+        Some(item)
     }
 
     #[inline]
     fn populate_item_impl_simple(
         &self,
-        path: &Path,
+        item: &mut MpsItem,
         path_str: &str,
         captures: regex::Captures,
-    ) -> Option<MpsMusicItem> {
-        Some(MpsMusicItem {
-            title: captures
-                .name("title")
-                .and_then(|m| Some(m.as_str().to_string()))
-                .unwrap_or_else(|| Self::default_title(path)),
-            artist: captures
-                .name("artist")
-                .and_then(|m| Some(m.as_str().to_string())),
-            album: captures
-                .name("album")
-                .and_then(|m| Some(m.as_str().to_string())),
-            filename: path_str.to_string(),
-            genre: captures
-                .name("genre")
-                .and_then(|m| Some(m.as_str().to_string())),
-            track: match captures.name("track") {
-                None => None,
-                Some(m) => match m.as_str().parse::<u64>() {
-                    Ok(u) => Some(u),
-                    Err(_) => None,
-                },
-            },
-            year: match captures.name("year") {
-                None => None,
-                Some(m) => match m.as_str().parse::<u64>() {
-                    Ok(u) => Some(u),
-                    Err(_) => None,
-                },
-            },
-        })
+        mut capture_names: regex::CaptureNames,
+    ) {
+        // populates fields from named capture groups
+        while let Some(Some(name)) = capture_names.next() {
+            if let Some(value) = captures.name(name).and_then(|m| Some(m.as_str().to_string())) {
+                item.set_field(name, MpsTypePrimitive::parse(value));
+            }
+        }
+        item.set_field("filename", path_str.to_string().into());
     }
 
-    fn default_title(path: &Path) -> String {
+    /*fn default_title(path: &Path) -> String {
         let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
         path.file_name()
             .and_then(|file| file.to_str())
             .and_then(|file| Some(file.replacen(&format!(".{}", extension), "", 1)))
             .unwrap_or("Unknown Title".into())
-    }
+    }*/
 }
 
 impl Iterator for FileIter {
-    type Item = Result<MpsMusicItem, String>;
+    type Item = Result<MpsItem, String>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.is_complete {

@@ -7,7 +7,7 @@ use crate::lang::{RuntimeError, SyntaxError};
 use crate::processing::OpGetter;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
-use crate::MpsMusicItem;
+use crate::MpsItem;
 
 #[derive(Debug, Clone)]
 pub struct EmptyFilter;
@@ -21,7 +21,7 @@ impl Display for EmptyFilter {
 impl MpsFilterPredicate for EmptyFilter {
     fn matches(
         &mut self,
-        _item: &MpsMusicItem,
+        _item: &MpsItem,
         _ctx: &mut MpsContext,
         _op: &mut OpGetter,
     ) -> Result<bool, RuntimeError> {

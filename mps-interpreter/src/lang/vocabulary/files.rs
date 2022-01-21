@@ -4,12 +4,11 @@ use std::iter::Iterator;
 
 use crate::tokens::MpsToken;
 use crate::MpsContext;
-use crate::MpsMusicItem;
 
 use crate::lang::repeated_tokens;
 use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsOp};
+use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsOp, MpsIteratorItem};
 use crate::lang::{RuntimeError, SyntaxError};
 use crate::processing::general::FileIter;
 
@@ -65,7 +64,7 @@ impl std::clone::Clone for FilesStatement {
 }
 
 impl Iterator for FilesStatement {
-    type Item = Result<MpsMusicItem, RuntimeError>;
+    type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.file_iter.is_none() {
@@ -87,7 +86,7 @@ impl Iterator for FilesStatement {
             });
         }
         match self.file_iter.as_mut().unwrap().next() {
-            Some(Ok(item)) => Some(Ok(item)),
+            Some(Ok(item)) => Some(Ok(item.into())),
             Some(Err(e)) => Some(Err(RuntimeError {
                 line: 0,
                 op: (Box::new(self.clone()) as Box<dyn MpsOp>).into(),

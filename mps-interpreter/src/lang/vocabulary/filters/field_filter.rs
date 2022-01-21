@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use super::utility::{assert_comparison_operator, item_to_primitive_lut};
+use super::utility::assert_comparison_operator;
 use crate::lang::utility::{assert_token, assert_type, check_is_type};
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::MpsTypePrimitive;
@@ -11,7 +11,7 @@ use crate::processing::general::MpsType;
 use crate::processing::OpGetter;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
-use crate::MpsMusicItem;
+use crate::MpsItem;
 
 #[derive(Debug, Clone)]
 pub(super) enum VariableOrValue {
@@ -61,11 +61,10 @@ impl Display for FieldFilter {
 impl MpsFilterPredicate for FieldFilter {
     fn matches(
         &mut self,
-        item: &MpsMusicItem,
+        music_item_lut: &MpsItem,
         ctx: &mut MpsContext,
         op: &mut OpGetter,
     ) -> Result<bool, RuntimeError> {
-        let music_item_lut = item_to_primitive_lut(item.to_owned());
         let variable = match &self.val {
             VariableOrValue::Variable(name) => match ctx.variables.get(&name, op)? {
                 MpsType::Primitive(t) => Ok(t),
@@ -77,7 +76,7 @@ impl MpsFilterPredicate for FieldFilter {
             },
             VariableOrValue::Value(val) => Ok(val),
         }?;
-        if let Some(field) = music_item_lut.get(&self.field_name) {
+        if let Some(field) = music_item_lut.field(&self.field_name) {
             let compare_res = field.compare(variable);
             if let Err(e) = compare_res {
                 match self.comparison_errors {

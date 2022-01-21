@@ -1,19 +1,19 @@
 use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
-use crate::lang::{MpsOp, RuntimeError};
+use crate::lang::{MpsOp, RuntimeError, MpsIteratorItem};
 use crate::MpsContext;
-use crate::MpsMusicItem;
+use crate::MpsItem;
 
 #[derive(Debug)]
 pub struct SingleItem {
     context: Option<MpsContext>,
-    item: Result<MpsMusicItem, RuntimeError>,
+    item: Result<MpsItem, RuntimeError>,
     is_complete: bool,
 }
 
 impl SingleItem {
-    pub fn new(item: Result<MpsMusicItem, RuntimeError>) -> Self {
+    pub fn new(item: Result<MpsItem, RuntimeError>) -> Self {
         Self {
             context: None,
             item: item,
@@ -21,11 +21,11 @@ impl SingleItem {
         }
     }
 
-    pub fn new_ok(item: MpsMusicItem) -> Self {
+    pub fn new_ok(item: MpsItem) -> Self {
         Self::new(Ok(item))
     }
 
-    pub fn replace(&mut self, new_item: Result<MpsMusicItem, RuntimeError>) {
+    pub fn replace(&mut self, new_item: Result<MpsItem, RuntimeError>) {
         self.item = new_item
     }
 }
@@ -33,7 +33,7 @@ impl SingleItem {
 impl Display for SingleItem {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match &self.item {
-            Ok(item) => write!(f, "*single item*[Ok({})]", item.filename),
+            Ok(item) => write!(f, "*single item*[Ok({})]", item),
             Err(e) => write!(f, "*single-item*[Err({})]", e)
         }
     }
@@ -50,7 +50,7 @@ impl std::clone::Clone for SingleItem {
 }
 
 impl Iterator for SingleItem {
-    type Item = Result<MpsMusicItem, RuntimeError>;
+    type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.is_complete {

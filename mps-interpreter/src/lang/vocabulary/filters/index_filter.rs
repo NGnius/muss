@@ -8,7 +8,7 @@ use crate::lang::{Lookup, utility::assert_token_raw};
 use crate::processing::{OpGetter, general::MpsType};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
-use crate::MpsMusicItem;
+use crate::MpsItem;
 
 #[derive(Debug, Clone)]
 pub struct IndexFilter {
@@ -28,7 +28,7 @@ impl Display for IndexFilter {
 impl MpsFilterPredicate for IndexFilter {
     fn matches(
         &mut self,
-        _item: &MpsMusicItem,
+        _item: &MpsItem,
         ctx: &mut MpsContext,
         op: &mut OpGetter,
     ) -> Result<bool, RuntimeError> {
