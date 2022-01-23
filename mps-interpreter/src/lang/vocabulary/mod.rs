@@ -13,4 +13,6 @@ pub use sql_init::{sql_init_function_factory, SqlInitStatementFactory};
 pub use sql_query::{sql_function_factory, SqlStatementFactory};
 pub use sql_simple_query::{simple_sql_function_factory, SimpleSqlStatementFactory};
 pub use variable_assign::{AssignStatement, AssignStatementFactory};
+
 pub mod filters;
+pub mod sorters;

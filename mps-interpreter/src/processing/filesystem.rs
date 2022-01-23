@@ -100,13 +100,14 @@ impl FileIter {
         } else {
             Vec::with_capacity(DEFAULT_VEC_CACHE_SIZE)
         };
+        let pattern_re = Regex::new(pattern.unwrap_or(DEFAULT_REGEX)).map_err(|e| RuntimeError {
+            line: 0,
+            op: op(),
+            msg: format!("Regex compile error: {}", e),
+        })?;
         Ok(Self {
             root: root_path,
-            pattern: Regex::new(pattern.unwrap_or(DEFAULT_REGEX)).map_err(|e| RuntimeError {
-                line: 0,
-                op: op(),
-                msg: format!("Regex compile error: {}", e),
-            })?,
+            pattern: pattern_re,
             recursive: recurse,
             dir_iters: dir_vec,
             is_complete: false,
@@ -211,9 +212,11 @@ impl FileIter {
         mut capture_names: regex::CaptureNames,
     ) {
         // populates fields from named capture groups
-        while let Some(Some(name)) = capture_names.next() {
-            if let Some(value) = captures.name(name).and_then(|m| Some(m.as_str().to_string())) {
-                item.set_field(name, MpsTypePrimitive::parse(value));
+        while let Some(name_maybe) = capture_names.next() {
+            if let Some(name) = name_maybe {
+                if let Some(value) = captures.name(name).and_then(|m| Some(m.as_str().to_string())) {
+                    item.set_field(name, MpsTypePrimitive::parse(value));
+                }
             }
         }
         item.set_field("filename", path_str.to_string().into());

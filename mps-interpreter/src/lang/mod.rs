@@ -9,6 +9,7 @@ mod operation;
 mod pseudo_op;
 mod repeated_meme;
 mod single_op;
+mod sorter;
 //mod statement;
 mod type_primitives;
 pub(crate) mod utility;
@@ -25,6 +26,7 @@ pub use operation::{BoxedMpsOpFactory, MpsOp, MpsOpFactory, SimpleMpsOpFactory, 
 pub use pseudo_op::PseudoOp;
 pub use repeated_meme::{repeated_tokens, RepeatedTokens};
 pub use single_op::SingleItem;
+pub use sorter::{MpsSorterFactory, MpsSorter, MpsSortStatement, MpsSortStatementFactory};
 //pub(crate) use statement::MpsStatement;
 pub use type_primitives::MpsTypePrimitive;
 

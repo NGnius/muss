@@ -20,6 +20,7 @@ pub enum MpsToken {
     Pipe,
     Ampersand,
     Colon,
+    Tilde,
 }
 
 impl MpsToken {
@@ -40,6 +41,7 @@ impl MpsToken {
             "|" => Ok(Self::Pipe),
             "&" => Ok(Self::Ampersand),
             ":" => Ok(Self::Colon),
+            "~" => Ok(Self::Tilde),
             _ => {
                 // name validation
                 let mut ok = true;
@@ -183,6 +185,13 @@ impl MpsToken {
             _ => false,
         }
     }
+
+    pub fn is_tilde(&self) -> bool {
+        match self {
+            Self::Tilde => true,
+            _ => false,
+        }
+    }
 }
 
 impl Display for MpsToken {
@@ -205,7 +214,8 @@ impl Display for MpsToken {
             Self::Interrogation => write!(f, "?"),
             Self::Pipe => write!(f, "|"),
             Self::Ampersand => write!(f, "&"),
-            Self::Colon => write!(f, ":")
+            Self::Colon => write!(f, ":"),
+            Self::Tilde => write!(f, "~"),
         }
     }
 }

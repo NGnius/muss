@@ -156,11 +156,15 @@ fn box_error_with_ctx<E: MpsLanguageError + 'static>(
 /// Builder function to add the standard statements of MPS.
 pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
     vocabulary
+        // filters
         .add(crate::lang::vocabulary::filters::empty_filter())
         .add(crate::lang::vocabulary::filters::field_filter())
         .add(crate::lang::vocabulary::filters::field_filter_maybe())
         .add(crate::lang::vocabulary::filters::index_filter())
         .add(crate::lang::vocabulary::filters::range_filter())
+        // sorters
+        .add(crate::lang::vocabulary::sorters::empty_sort())
+        // functions and misc
         .add(crate::lang::vocabulary::sql_function_factory())
         .add(crate::lang::vocabulary::simple_sql_function_factory())
         .add(crate::lang::vocabulary::CommentStatementFactory)

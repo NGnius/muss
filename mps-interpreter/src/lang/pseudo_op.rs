@@ -22,6 +22,17 @@ impl PseudoOp {
         }
     }
 
+    pub fn try_real_ref(&self) -> Result<&Box<dyn MpsOp>, RuntimeError> {
+        match self {
+            Self::Real(op) => Ok(op),
+            Self::Fake(_) => Err(RuntimeError {
+                line: 0,
+                op: self.clone(),
+                msg: "PseudoOp::Fake is not a real MpsOp".into(),
+            }),
+        }
+    }
+
     pub fn unwrap_real(self) -> Result<Box<dyn MpsOp>, RuntimeError> {
         match self {
             Self::Real(op) => {

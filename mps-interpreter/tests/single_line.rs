@@ -286,3 +286,17 @@ fn execute_replacefilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
         true,
     )
 }
+
+#[test]
+fn execute_emptysort_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).sort()",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~()",
+        false,
+        true,
+    )
+}
