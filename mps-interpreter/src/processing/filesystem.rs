@@ -289,6 +289,7 @@ impl Iterator for FileIter {
                         }
                     }
                 }
+                self.is_complete = true;
                 None
             }
         }

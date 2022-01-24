@@ -1,8 +1,9 @@
 //! Basic types for MPS
 
 use std::fmt::{Debug, Display, Error, Formatter};
+use std::cmp::{Ordering, Ord};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum MpsTypePrimitive {
     String(String),
     Int(i64),
@@ -14,60 +15,9 @@ pub enum MpsTypePrimitive {
 impl MpsTypePrimitive {
     #[inline]
     pub fn compare(&self, other: &Self) -> Result<i8, String> {
-        let result = match self {
-            Self::String(s1) => match other {
-                Self::String(s2) => Some(map_ordering(s1.cmp(s2))),
-                _ => None,
-            },
-            Self::Int(i1) => match other {
-                Self::Int(i2) => Some(map_ordering(i1.cmp(i2))),
-                Self::UInt(i2) => Some(map_ordering((*i1 as i128).cmp(&(*i2 as i128)))),
-                Self::Float(i2) => Some(map_ordering(
-                    (*i1 as f64)
-                        .partial_cmp(&(*i2 as f64))
-                        .unwrap_or(std::cmp::Ordering::Less),
-                )),
-                _ => None,
-            },
-            Self::UInt(u1) => match other {
-                Self::UInt(u2) => Some(map_ordering(u1.cmp(u2))),
-                Self::Int(u2) => Some(map_ordering((*u1 as i128).cmp(&(*u2 as i128)))),
-                Self::Float(u2) => Some(map_ordering(
-                    (*u1 as f64)
-                        .partial_cmp(&(*u2 as f64))
-                        .unwrap_or(std::cmp::Ordering::Less),
-                )),
-                _ => None,
-            },
-            Self::Float(f1) => match other {
-                Self::Float(f2) => Some(map_ordering(
-                    f1.partial_cmp(f2).unwrap_or(std::cmp::Ordering::Less),
-                )),
-                Self::Int(f2) => Some(map_ordering(
-                    f1.partial_cmp(&(*f2 as f64))
-                        .unwrap_or(std::cmp::Ordering::Less),
-                )),
-                Self::UInt(f2) => Some(map_ordering(
-                    f1.partial_cmp(&(*f2 as f64))
-                        .unwrap_or(std::cmp::Ordering::Less),
-                )),
-                _ => None,
-            },
-            Self::Bool(b1) => match other {
-                Self::Bool(b2) => {
-                    if *b2 == *b1 {
-                        Some(0)
-                    } else if *b1 {
-                        Some(1)
-                    } else {
-                        Some(-1)
-                    }
-                }
-                _ => None,
-            },
-        };
+        let result = self.partial_cmp(other);
         match result {
-            Some(x) => Ok(x),
+            Some(x) => Ok(map_ordering(x)),
             None => Err(format!(
                 "Cannot compare {} to {}: incompatible types",
                 self, other
@@ -79,6 +29,16 @@ impl MpsTypePrimitive {
         match self {
             Self::String(s) => Some(s),
             _ => None,
+        }
+    }
+
+    pub fn as_str(&self) -> String {
+        match self {
+            Self::String(s) => s.clone(),
+            Self::UInt(x) => format!("{}", x),
+            Self::Int(x) => format!("{}", x),
+            Self::Float(x) => format!("{}", x),
+            Self::Bool(x) => format!("{}", x)
         }
     }
 
@@ -120,11 +80,68 @@ impl MpsTypePrimitive {
 impl Display for MpsTypePrimitive {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match self {
-            Self::String(s) => write!(f, "(String) {}", s),
-            Self::Int(i) => write!(f, "(Int) {}", *i),
-            Self::UInt(u) => write!(f, "(UInt) {}", *u),
-            Self::Float(f_) => write!(f, "(Float) {}", *f_),
-            Self::Bool(b) => write!(f, "(Bool) {}", *b),
+            Self::String(s) => write!(f, "String[`{}`]", s),
+            Self::Int(i) => write!(f, "Int[{}]", *i),
+            Self::UInt(u) => write!(f, "UInt[{}]", *u),
+            Self::Float(f_) => write!(f, "Float[{}]", *f_),
+            Self::Bool(b) => write!(f, "Bool[{}]", *b),
+        }
+    }
+}
+
+impl PartialOrd for MpsTypePrimitive {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match self {
+            Self::String(s1) => match other {
+                Self::String(s2) => Some(s1.cmp(s2)),
+                _ => None,
+            },
+            Self::Int(i1) => match other {
+                Self::Int(i2) => Some(i1.cmp(i2)),
+                Self::UInt(i2) => Some((*i1 as i128).cmp(&(*i2 as i128))),
+                Self::Float(i2) => Some(
+                    (*i1 as f64)
+                        .partial_cmp(&(*i2 as f64))
+                        .unwrap_or(std::cmp::Ordering::Less),
+                ),
+                _ => None,
+            },
+            Self::UInt(u1) => match other {
+                Self::UInt(u2) => Some(u1.cmp(u2)),
+                Self::Int(u2) => Some((*u1 as i128).cmp(&(*u2 as i128))),
+                Self::Float(u2) => Some(
+                    (*u1 as f64)
+                        .partial_cmp(&(*u2 as f64))
+                        .unwrap_or(std::cmp::Ordering::Less),
+                ),
+                _ => None,
+            },
+            Self::Float(f1) => match other {
+                Self::Float(f2) => Some(
+                    f1.partial_cmp(f2).unwrap_or(std::cmp::Ordering::Less),
+                ),
+                Self::Int(f2) => Some(
+                    f1.partial_cmp(&(*f2 as f64))
+                        .unwrap_or(std::cmp::Ordering::Less),
+                ),
+                Self::UInt(f2) => Some(
+                    f1.partial_cmp(&(*f2 as f64))
+                        .unwrap_or(std::cmp::Ordering::Less),
+                ),
+                _ => None,
+            },
+            Self::Bool(b1) => match other {
+                Self::Bool(b2) => {
+                    if *b2 == *b1 {
+                        Some(std::cmp::Ordering::Equal)
+                    } else if *b1 {
+                        Some(std::cmp::Ordering::Greater)
+                    } else {
+                        Some(std::cmp::Ordering::Less)
+                    }
+                }
+                _ => None,
+            },
         }
     }
 }
