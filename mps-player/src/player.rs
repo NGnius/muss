@@ -5,7 +5,7 @@ use rodio::{decoder::Decoder, OutputStream, OutputStreamHandle, Sink};
 
 use m3u8_rs::{MediaPlaylist, MediaSegment};
 
-use mps_interpreter::{tokens::MpsTokenReader, MpsRunner, MpsItem};
+use mps_interpreter::{tokens::MpsTokenReader, MpsItem, MpsRunner};
 
 use super::PlaybackError;
 
@@ -36,14 +36,18 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
             self.sink.sleep_until_end();
             match item {
                 Ok(music) => {
-                    if let Some(filename) = music.field("filename").and_then(|x| x.to_owned().to_str()) {
+                    if let Some(filename) =
+                        music.field("filename").and_then(|x| x.to_owned().to_str())
+                    {
                         let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
                         let stream = io::BufReader::new(file);
                         let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
                         self.sink.append(source);
                         Ok(())
                     } else {
-                        Err(PlaybackError::from_err("Field `filename` does not exist on item"))
+                        Err(PlaybackError::from_err(
+                            "Field `filename` does not exist on item",
+                        ))
                     }
                 }
                 Err(e) => Err(PlaybackError::from_err(e)),
@@ -59,14 +63,18 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
             match item {
                 Ok(music) => {
                     enqueued.push(music.clone());
-                    if let Some(filename) = music.field("filename").and_then(|x| x.to_owned().to_str()) {
+                    if let Some(filename) =
+                        music.field("filename").and_then(|x| x.to_owned().to_str())
+                    {
                         let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
                         let stream = io::BufReader::new(file);
                         let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
                         self.sink.append(source);
                         Ok(())
                     } else {
-                        Err(PlaybackError::from_err("Field `filename` does not exist on item"))
+                        Err(PlaybackError::from_err(
+                            "Field `filename` does not exist on item",
+                        ))
                     }
                 }
                 Err(e) => Err(PlaybackError::from_err(e)),
@@ -85,14 +93,18 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
             match item {
                 Ok(music) => {
                     enqueued.push(music.clone());
-                    if let Some(filename) = music.field("filename").and_then(|x| x.to_owned().to_str()) {
+                    if let Some(filename) =
+                        music.field("filename").and_then(|x| x.to_owned().to_str())
+                    {
                         let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
                         let stream = io::BufReader::new(file);
                         let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
                         self.sink.append(source);
                         Ok(())
                     } else {
-                        Err(PlaybackError::from_err("Field `filename` does not exist on item"))
+                        Err(PlaybackError::from_err(
+                            "Field `filename` does not exist on item",
+                        ))
                     }
                 }
                 Err(e) => Err(PlaybackError::from_err(e)),
@@ -139,7 +151,9 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
         for item in &mut self.runner {
             match item {
                 Ok(music) => {
-                    if let Some(filename) = music.field("filename").and_then(|x| x.to_owned().to_str()) {
+                    if let Some(filename) =
+                        music.field("filename").and_then(|x| x.to_owned().to_str())
+                    {
                         playlist.segments.push(MediaSegment {
                             uri: filename,
                             title: music.field("title").and_then(|x| x.to_owned().to_str()),
@@ -147,7 +161,9 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
                         });
                         Ok(())
                     } else {
-                        Err(PlaybackError::from_err("Field `filename` does not exist on item"))
+                        Err(PlaybackError::from_err(
+                            "Field `filename` does not exist on item",
+                        ))
                     }
                 }
                 Err(e) => Err(PlaybackError::from_err(e)),

@@ -62,9 +62,18 @@ fn execute_single_line(
                     break;
                 }
             } // no need to spam the rest of the songs
-            println!("Got song `{}` (file: `{}`)",
-                item.field("title").expect("Expected field `title` to exist").clone().to_str().expect("Expected field `title` to be String"),
-                item.field("filename").expect("Expected field `filename` to exist").clone().to_str().expect("Expected field `filename` to be String")
+            println!(
+                "Got song `{}` (file: `{}`)",
+                item.field("title")
+                    .expect("Expected field `title` to exist")
+                    .clone()
+                    .to_str()
+                    .expect("Expected field `title` to be String"),
+                item.field("filename")
+                    .expect("Expected field `filename` to exist")
+                    .clone()
+                    .to_str()
+                    .expect("Expected field `filename` to be String")
             );
         } else {
             println!("!!! Got error while iterating (executing) !!!");
@@ -109,9 +118,21 @@ fn execute_comment_line() -> Result<(), Box<dyn MpsLanguageError>> {
 
 #[test]
 fn execute_repeat_line() -> Result<(), Box<dyn MpsLanguageError>> {
-    execute_single_line("repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))", false, false)?;
-    execute_single_line("repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), 4)", false, true)?;
-    execute_single_line("repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), 0)", true, true)
+    execute_single_line(
+        "repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))",
+        false,
+        false,
+    )?;
+    execute_single_line(
+        "repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), 4)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), 0)",
+        true,
+        true,
+    )
 }
 
 #[test]
@@ -135,7 +156,11 @@ fn execute_assign_line() -> Result<(), Box<dyn MpsLanguageError>> {
 
 #[test]
 fn execute_emptyfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
-    execute_single_line("files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).().().()", false, true)
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).().().()",
+        false,
+        true,
+    )
 }
 
 #[test]

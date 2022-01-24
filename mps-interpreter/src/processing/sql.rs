@@ -259,10 +259,7 @@ impl std::convert::TryInto<rusqlite::Connection> for SqliteSettings {
 }
 
 #[inline(always)]
-fn build_mps_item(
-    conn: &mut rusqlite::Connection,
-    item: DbMusicItem,
-) -> rusqlite::Result<MpsItem> {
+fn build_mps_item(conn: &mut rusqlite::Connection, item: DbMusicItem) -> rusqlite::Result<MpsItem> {
     // query artist
     let mut stmt = conn.prepare_cached("SELECT * from artists WHERE artist_id = ?")?;
     let artist = stmt.query_row([item.artist], DbArtistItem::map_row)?;
@@ -331,7 +328,6 @@ fn rows_to_item(
     meta: DbMetaItem,
     genre: DbGenreItem,
 ) -> MpsItem {
-
     let mut item = MpsItem::new();
     item
         // music row

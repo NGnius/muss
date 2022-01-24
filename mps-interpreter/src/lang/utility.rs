@@ -143,7 +143,7 @@ pub fn assert_type(tokens: &mut VecDeque<MpsToken>) -> Result<MpsTypePrimitive, 
     match token {
         MpsToken::Literal(s) => Ok(MpsTypePrimitive::String(s)),
         MpsToken::Name(s) => {
-            if  let Ok(i) = s.parse::<i64>() {
+            if let Ok(i) = s.parse::<i64>() {
                 Ok(MpsTypePrimitive::Int(i))
             } else if let Ok(u) = s.parse::<u64>() {
                 Ok(MpsTypePrimitive::UInt(u))

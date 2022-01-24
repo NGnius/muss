@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
-use crate::lang::{MpsOp, RuntimeError, MpsIteratorItem};
+use crate::lang::{MpsIteratorItem, MpsOp, RuntimeError};
 use crate::MpsContext;
 use crate::MpsItem;
 
@@ -34,7 +34,7 @@ impl Display for SingleItem {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match &self.item {
             Ok(item) => write!(f, "*single item*[Ok({})]", item),
-            Err(e) => write!(f, "*single-item*[Err({})]", e)
+            Err(e) => write!(f, "*single-item*[Err({})]", e),
         }
     }
 }

@@ -30,8 +30,8 @@ pub struct FieldFilter {
 
 #[derive(Debug, Clone)]
 pub enum FieldFilterErrorHandling {
-    Error, // return error
-    Ignore, // return Ok(false) when error encountered
+    Error,   // return error
+    Ignore,  // return Ok(false) when error encountered
     Include, // return Ok(true) when error encountered
 }
 
@@ -44,7 +44,7 @@ fn comparison_op(c: &[i8; 2]) -> &str {
         [0, -1] => "<=",
         [0, 1] => ">=",
         [-1, 1] => "!=",
-        _ => "??"
+        _ => "??",
     }
 }
 
@@ -52,7 +52,9 @@ impl Display for FieldFilter {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         let comp_op = comparison_op(&self.comparison);
         match &self.val {
-            VariableOrValue::Variable(name) => write!(f, "{} {} {}", self.field_name, comp_op, name),
+            VariableOrValue::Variable(name) => {
+                write!(f, "{} {} {}", self.field_name, comp_op, name)
+            }
             VariableOrValue::Value(t) => write!(f, "{} {} {}", self.field_name, comp_op, t),
         }
     }

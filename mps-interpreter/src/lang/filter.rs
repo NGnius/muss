@@ -3,12 +3,12 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 use std::marker::PhantomData;
 
-use crate::lang::utility::{assert_token, assert_token_raw, check_name, assert_name};
-use crate::lang::MpsLanguageDictionary;
-use crate::lang::{BoxedMpsOpFactory, MpsOp, PseudoOp, MpsIteratorItem};
-use crate::lang::{RuntimeError, SyntaxError};
-use crate::lang::SingleItem;
+use crate::lang::utility::{assert_name, assert_token, assert_token_raw, check_name};
 use crate::lang::MpsFilterReplaceStatement;
+use crate::lang::MpsLanguageDictionary;
+use crate::lang::SingleItem;
+use crate::lang::{BoxedMpsOpFactory, MpsIteratorItem, MpsOp, PseudoOp};
+use crate::lang::{RuntimeError, SyntaxError};
 use crate::processing::general::MpsType;
 use crate::processing::OpGetter;
 use crate::tokens::MpsToken;
@@ -77,7 +77,11 @@ impl<P: MpsFilterPredicate + 'static> std::clone::Clone for MpsFilterStatement<P
 impl<P: MpsFilterPredicate + 'static> Display for MpsFilterStatement<P> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         if let Some(other_filters) = &self.other_filters {
-            write!(f, "{}.({} || (like) {})", self.iterable, self.predicate, other_filters)
+            write!(
+                f,
+                "{}.({} || (like) {})",
+                self.iterable, self.predicate, other_filters
+            )
         } else {
             write!(f, "{}.({})", self.iterable, self.predicate)
         }
@@ -103,15 +107,19 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
                     } else {
                         false
                     }
-                } else {true} // ASSUMPTION
-
+                } else {
+                    true
+                } // ASSUMPTION
             }
             VariableOrOp::Op(PseudoOp::Real(op)) => op.is_resetable(),
             VariableOrOp::Op(PseudoOp::Fake(_)) => false,
         };
-        let is_other_filter_resetable = if let Some(PseudoOp::Real(other_filter)) = &self.other_filters {
-            other_filter.is_resetable()
-        } else {true};
+        let is_other_filter_resetable =
+            if let Some(PseudoOp::Real(other_filter)) = &self.other_filters {
+                other_filter.is_resetable()
+            } else {
+                true
+            };
         is_iterable_resetable && is_other_filter_resetable
     }
 
@@ -122,7 +130,12 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
             VariableOrOp::Variable(s) => {
                 if self.context.as_mut().unwrap().variables.exists(s) {
                     let fake_getter = &mut move || fake.clone();
-                    let mut var = self.context.as_mut().unwrap().variables.remove(s, fake_getter)?;
+                    let mut var = self
+                        .context
+                        .as_mut()
+                        .unwrap()
+                        .variables
+                        .remove(s, fake_getter)?;
                     let result = if let MpsType::Op(var) = &mut var {
                         var.enter(self.context.take().unwrap());
                         let result = var.reset();
@@ -135,16 +148,22 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
                             msg: "Cannot reset non-iterable filter variable".to_string(),
                         })
                     };
-                    self.context.as_mut().unwrap().variables.declare(s, var, fake_getter)?;
+                    self.context
+                        .as_mut()
+                        .unwrap()
+                        .variables
+                        .declare(s, var, fake_getter)?;
                     result
-                } else {Ok(())}
-            },
+                } else {
+                    Ok(())
+                }
+            }
             VariableOrOp::Op(PseudoOp::Real(op)) => {
                 op.enter(self.context.take().unwrap());
                 let result = op.reset();
                 self.context = Some(op.escape());
                 result
-            },
+            }
             VariableOrOp::Op(PseudoOp::Fake(_)) => Err(RuntimeError {
                 line: 0,
                 op: fake,
@@ -156,7 +175,9 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
             let result = other_filter.reset();
             self.context = Some(other_filter.escape());
             result
-        } else {Ok(())}
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -185,7 +206,7 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                                 maybe_result = Some(Err(e));
                                 self.context = Some(ctx);
                                 break;
-                            },
+                            }
                             Ok(item) => {
                                 let matches_result =
                                     self.predicate.matches(&item, &mut ctx, &mut op_getter);
@@ -201,14 +222,18 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                                     // handle other filters
                                     // make fake inner item
                                     let single_op = SingleItem::new_ok(item.clone());
-                                    match ctx.variables.declare(INNER_VARIABLE_NAME, MpsType::Op(Box::new(single_op)), &mut op_getter) {
+                                    match ctx.variables.declare(
+                                        INNER_VARIABLE_NAME,
+                                        MpsType::Op(Box::new(single_op)),
+                                        &mut op_getter,
+                                    ) {
                                         Ok(x) => x,
                                         Err(e) => {
                                             //self.context = Some(op.escape());
                                             maybe_result = Some(Err(e));
                                             self.context = Some(ctx);
                                             break;
-                                        },
+                                        }
                                     };
                                     let inner_real = match inner.try_real() {
                                         Ok(x) => x,
@@ -217,28 +242,34 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                                             maybe_result = Some(Err(e));
                                             self.context = Some(ctx);
                                             break;
-                                        },
+                                        }
                                     };
                                     inner_real.enter(ctx);
                                     match inner_real.next() {
                                         Some(item) => {
                                             maybe_result = Some(item);
                                             ctx = inner_real.escape();
-                                            match ctx.variables.remove(INNER_VARIABLE_NAME, &mut op_getter) {
-                                                Ok(_) => {},
+                                            match ctx
+                                                .variables
+                                                .remove(INNER_VARIABLE_NAME, &mut op_getter)
+                                            {
+                                                Ok(_) => {}
                                                 Err(e) => match maybe_result {
                                                     Some(Ok(_)) => maybe_result = Some(Err(e)),
                                                     Some(Err(e2)) => maybe_result = Some(Err(e2)), // already failing, do not replace error,
-                                                    None => {}, // impossible
-                                                }
+                                                    None => {} // impossible
+                                                },
                                             }
                                             self.context = Some(ctx);
                                             break;
-                                        },
+                                        }
                                         None => {
                                             ctx = inner_real.escape(); // move ctx back to expected spot
-                                            match ctx.variables.remove(INNER_VARIABLE_NAME, &mut op_getter) {
-                                                Ok(_) => {},
+                                            match ctx
+                                                .variables
+                                                .remove(INNER_VARIABLE_NAME, &mut op_getter)
+                                            {
+                                                Ok(_) => {}
                                                 Err(e) => {
                                                     //self.context = Some(op.escape());
                                                     maybe_result = Some(Err(e));
@@ -377,7 +408,9 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
                     if tokens2.len() != 0 && check_name("if", &tokens2[0]) {
                         // replacement filter
                         if let Some(colon_location) = first_colon2(&tokens2) {
-                            let tokens3 = VecDeque::from_iter(tokens.range(start_of_predicate+1..start_of_predicate+colon_location));
+                            let tokens3 = VecDeque::from_iter(tokens.range(
+                                start_of_predicate + 1..start_of_predicate + colon_location,
+                            ));
                             self.filter_factory.is_filter(&tokens3)
                         } else {
                             false
@@ -386,9 +419,7 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
                         // regular filter
                         self.filter_factory.is_filter(&tokens2)
                     }
-
                 }
-
             }
         } else {
             false
@@ -442,7 +473,7 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
                         tokens.extend(end_tokens);
                         assert_name("else", tokens)?;
                         let end_tokens = tokens.split_off(tokens.len() - 1); // up to ending close bracket
-                        // build replacement system
+                                                                             // build replacement system
                         else_op = Some(dict.try_build_statement(tokens)?.into());
                         tokens.extend(end_tokens);
                     } else {
@@ -458,7 +489,7 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
                         context: None,
                         op_if: if_op,
                         op_else: else_op,
-                        item_cache: super::filter_replace::item_cache_deque()
+                        item_cache: super::filter_replace::item_cache_deque(),
                     }))
                 } else {
                     Err(SyntaxError {
@@ -467,13 +498,13 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
                         got: None,
                     })
                 }
-            }
+            };
         } else {
             let mut another_filter = None;
             let (has_or, end_tokens) = if let Some(pipe_location) = first_double_pipe(tokens, 0) {
                 (true, tokens.split_off(pipe_location)) // parse up to OR operator
             } else {
-                (false, tokens.split_off(tokens.len()-1)) // don't parse closing bracket in filter
+                (false, tokens.split_off(tokens.len() - 1)) // don't parse closing bracket in filter
             };
             let filter = self.filter_factory.build_filter(tokens, dict)?;
             tokens.extend(end_tokens);
@@ -496,7 +527,6 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
                 other_filters: another_filter,
             }))
         }
-
     }
 }
 
@@ -552,7 +582,7 @@ fn first_double_pipe(tokens: &VecDeque<MpsToken>, in_brackets: usize) -> Option<
     for i in 0..tokens.len() {
         if tokens[i].is_pipe() && inside_brackets == in_brackets {
             if pipe_found {
-                return Some(i-1);
+                return Some(i - 1);
             } else {
                 pipe_found = true;
             }

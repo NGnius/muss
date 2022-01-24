@@ -3,7 +3,9 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
 use crate::lang::utility::assert_token;
-use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsLanguageDictionary, MpsOp, MpsIteratorItem};
+use crate::lang::{
+    MpsFunctionFactory, MpsFunctionStatementFactory, MpsIteratorItem, MpsLanguageDictionary, MpsOp,
+};
 use crate::lang::{RuntimeError, SyntaxError};
 use crate::tokens::MpsToken;
 use crate::MpsContext;

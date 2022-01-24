@@ -3,9 +3,9 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 use std::marker::PhantomData;
 
-use crate::lang::utility::{assert_token_raw, check_name, assert_name};
+use crate::lang::utility::{assert_name, assert_token_raw, check_name};
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::{BoxedMpsOpFactory, MpsOp, PseudoOp, MpsIteratorItem};
+use crate::lang::{BoxedMpsOpFactory, MpsIteratorItem, MpsOp, PseudoOp};
 use crate::lang::{RuntimeError, SyntaxError};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -13,7 +13,11 @@ use crate::MpsContext;
 const SORTER_ITEM_CACHE_SIZE: usize = 8;
 
 pub trait MpsSorter: Clone + Debug + Display {
-    fn sort(&mut self, iterator: &mut dyn MpsOp, item_buf: &mut VecDeque<MpsIteratorItem>) -> Result<(), RuntimeError>;
+    fn sort(
+        &mut self,
+        iterator: &mut dyn MpsOp,
+        item_buf: &mut VecDeque<MpsIteratorItem>,
+    ) -> Result<(), RuntimeError>;
 }
 
 pub trait MpsSorterFactory<S: MpsSorter + 'static> {
@@ -62,7 +66,9 @@ impl<S: MpsSorter + 'static> MpsOp for MpsSortStatement<S> {
     fn is_resetable(&self) -> bool {
         if let Ok(iter) = self.iterable.try_real_ref() {
             iter.is_resetable()
-        } else {false}
+        } else {
+            false
+        }
     }
 
     fn reset(&mut self) -> Result<(), RuntimeError> {
@@ -80,7 +86,7 @@ impl<S: MpsSorter + 'static> Iterator for MpsSortStatement<S> {
             Err(e) => return Some(Err(e)),
         };
         match self.orderer.sort(real_op.as_mut(), &mut self.item_cache) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(e) => return Some(Err(e)),
         }
         self.item_cache.pop_front()
@@ -92,9 +98,7 @@ pub struct MpsSortStatementFactory<S: MpsSorter + 'static, F: MpsSorterFactory<S
     idc: PhantomData<S>,
 }
 
-impl<S: MpsSorter + 'static, F: MpsSorterFactory<S> + 'static>
-    MpsSortStatementFactory<S, F>
-{
+impl<S: MpsSorter + 'static, F: MpsSorterFactory<S> + 'static> MpsSortStatementFactory<S, F> {
     pub fn new(factory: F) -> Self {
         Self {
             sort_factory: factory,
@@ -103,7 +107,7 @@ impl<S: MpsSorter + 'static, F: MpsSorterFactory<S> + 'static>
     }
 }
 
-impl <S: MpsSorter + 'static, F: MpsSorterFactory<S> + 'static> BoxedMpsOpFactory
+impl<S: MpsSorter + 'static, F: MpsSorterFactory<S> + 'static> BoxedMpsOpFactory
     for MpsSortStatementFactory<S, F>
 {
     fn is_op_boxed(&self, tokens: &VecDeque<MpsToken>) -> bool {
@@ -112,18 +116,20 @@ impl <S: MpsSorter + 'static, F: MpsSorterFactory<S> + 'static> BoxedMpsOpFactor
             // iterable~(sorter)
             if tokens_len > tilde_location + 2 {
                 let tokens2: VecDeque<&MpsToken> =
-                    VecDeque::from_iter(tokens.range(tilde_location+2..tokens_len-1));
-                tokens[tokens_len-1].is_close_bracket()
-                    && self.sort_factory.is_sorter(&tokens2)
-            } else {false}
+                    VecDeque::from_iter(tokens.range(tilde_location + 2..tokens_len - 1));
+                tokens[tokens_len - 1].is_close_bracket() && self.sort_factory.is_sorter(&tokens2)
+            } else {
+                false
+            }
         } else if let Some(dot_location) = last_dot_sort(tokens, 1) {
             // iterable.sort(sorter)
             if tokens_len > dot_location + 3 {
                 let tokens2: VecDeque<&MpsToken> =
-                    VecDeque::from_iter(tokens.range(dot_location+3..tokens_len-1));
-                tokens[tokens_len-1].is_close_bracket()
-                    && self.sort_factory.is_sorter(&tokens2)
-            } else {false}
+                    VecDeque::from_iter(tokens.range(dot_location + 3..tokens_len - 1));
+                tokens[tokens_len - 1].is_close_bracket() && self.sort_factory.is_sorter(&tokens2)
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -150,21 +156,19 @@ impl <S: MpsSorter + 'static, F: MpsSorterFactory<S> + 'static> BoxedMpsOpFactor
             return Err(SyntaxError {
                 line: 0,
                 token: MpsToken::Name(".|~".into()),
-                got: tokens.pop_front()
-            })
+                got: tokens.pop_front(),
+            });
         }
         assert_token_raw(MpsToken::OpenBracket, tokens)?;
-        let end_tokens = tokens.split_off(tokens.len()-1);
+        let end_tokens = tokens.split_off(tokens.len() - 1);
         let sorter = self.sort_factory.build_sorter(tokens, dict)?;
         tokens.extend(end_tokens);
         assert_token_raw(MpsToken::CloseBracket, tokens)?;
-        Ok(Box::new(
-            MpsSortStatement {
-                orderer: sorter,
-                iterable: inner_op.into(),
-                item_cache: VecDeque::with_capacity(SORTER_ITEM_CACHE_SIZE),
-            }
-        ))
+        Ok(Box::new(MpsSortStatement {
+            orderer: sorter,
+            iterable: inner_op.into(),
+            item_cache: VecDeque::with_capacity(SORTER_ITEM_CACHE_SIZE),
+        }))
     }
 }
 
@@ -177,7 +181,7 @@ fn last_tilde(tokens: &VecDeque<MpsToken>, target_depth: usize) -> Option<usize>
         } else if current_token.is_open_bracket() && bracket_depth != 0 {
             bracket_depth -= 1;
         } else if current_token.is_tilde() && bracket_depth == target_depth {
-            return Some(i)
+            return Some(i);
         }
     }
     None
@@ -196,7 +200,7 @@ fn last_dot_sort(tokens: &VecDeque<MpsToken>, target_depth: usize) -> Option<usi
                 } else {
                     None
                 }
-            }
+            };
         } else if bracket_found {
             if check_name("sort", current_token) {
                 sort_found = true;

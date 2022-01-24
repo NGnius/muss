@@ -258,10 +258,12 @@ impl ReaderStateMachine {
                 '#' => Self::Octothorpe { out: input },
                 '`' => Self::StartTickLiteral {},
                 '"' => Self::StartQuoteLiteral {},
-                '\n'| '\r' | '\t' | ' ' => Self::EndToken {},
+                '\n' | '\r' | '\t' | ' ' => Self::EndToken {},
                 ';' => Self::EndStatement {},
                 '\0' => Self::EndOfFile {},
-                '(' | ')' | ',' | '=' | '<' | '>' | '.' | '!' | '?' | '|' | ':' => Self::SingleCharToken { out: input },
+                '(' | ')' | ',' | '=' | '<' | '>' | '.' | '!' | '?' | '|' | ':' => {
+                    Self::SingleCharToken { out: input }
+                }
                 _ => Self::Regular { out: input },
             },
             Self::Escaped { inside } => match inside {

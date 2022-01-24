@@ -1,11 +1,11 @@
 use std::collections::VecDeque;
 
 use super::utility::assert_comparison_operator;
-use super::{FieldFilter, FieldFilterErrorHandling, field_filter::VariableOrValue};
-use crate::lang::utility::{assert_token, assert_type, check_is_type, assert_token_raw};
+use super::{field_filter::VariableOrValue, FieldFilter, FieldFilterErrorHandling};
+use crate::lang::utility::{assert_token, assert_token_raw, assert_type, check_is_type};
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::{MpsFilterFactory, MpsFilterStatementFactory};
 use crate::lang::SyntaxError;
+use crate::lang::{MpsFilterFactory, MpsFilterStatementFactory};
 use crate::tokens::MpsToken;
 
 pub struct FieldFilterMaybeFactory;
@@ -80,7 +80,8 @@ impl MpsFilterFactory<FieldFilter> for FieldFilterMaybeFactory {
     }
 }
 
-pub type FieldFilterMaybeStatementFactory = MpsFilterStatementFactory<FieldFilter, FieldFilterMaybeFactory>;
+pub type FieldFilterMaybeStatementFactory =
+    MpsFilterStatementFactory<FieldFilter, FieldFilterMaybeFactory>;
 
 #[inline(always)]
 pub fn field_filter_maybe() -> FieldFilterMaybeStatementFactory {

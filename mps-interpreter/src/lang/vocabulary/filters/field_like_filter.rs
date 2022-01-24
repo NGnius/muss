@@ -1,8 +1,8 @@
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use super::field_filter::{VariableOrValue, FieldFilterErrorHandling};
-use crate::lang::utility::{assert_token, check_name, assert_name, assert_token_raw};
+use super::field_filter::{FieldFilterErrorHandling, VariableOrValue};
+use crate::lang::utility::{assert_name, assert_token, assert_token_raw, check_name};
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::MpsTypePrimitive;
 use crate::lang::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatementFactory};
@@ -51,7 +51,7 @@ impl MpsFilterPredicate for FieldLikeFilter {
                 line: 0,
                 op: op(),
                 msg: format!("Value is not type String"),
-            })
+            }),
         }?;
         if let Some(field) = music_item_lut.field(&self.field_name) {
             let field_str = field.as_str().to_lowercase();
@@ -150,7 +150,8 @@ impl MpsFilterFactory<FieldLikeFilter> for FieldLikeFilterFactory {
     }
 }
 
-pub type FieldLikeFilterStatementFactory = MpsFilterStatementFactory<FieldLikeFilter, FieldLikeFilterFactory>;
+pub type FieldLikeFilterStatementFactory =
+    MpsFilterStatementFactory<FieldLikeFilter, FieldLikeFilterFactory>;
 
 #[inline(always)]
 pub fn field_like_filter() -> FieldLikeFilterStatementFactory {

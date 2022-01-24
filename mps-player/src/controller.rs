@@ -26,8 +26,14 @@ impl MpsController {
         let (playback_tx, playback_rx) = channel();
         let mut sys_ctrl = SystemControlWrapper::new(control_tx.clone());
         sys_ctrl.init(playback_rx);
-        let handle =
-            MpsPlayerServer::spawn(player_gen, control_tx.clone(), control_rx, event_tx, playback_tx, false);
+        let handle = MpsPlayerServer::spawn(
+            player_gen,
+            control_tx.clone(),
+            control_rx,
+            event_tx,
+            playback_tx,
+            false,
+        );
         Self {
             control: control_tx,
             event: event_rx,
@@ -44,8 +50,14 @@ impl MpsController {
         let (playback_tx, playback_rx) = channel();
         let mut sys_ctrl = SystemControlWrapper::new(control_tx.clone());
         sys_ctrl.init(playback_rx);
-        let handle =
-            MpsPlayerServer::spawn(player_gen, control_tx.clone(), control_rx, event_tx, playback_tx, true);
+        let handle = MpsPlayerServer::spawn(
+            player_gen,
+            control_tx.clone(),
+            control_rx,
+            event_tx,
+            playback_tx,
+            true,
+        );
         Self {
             control: control_tx,
             event: event_rx,

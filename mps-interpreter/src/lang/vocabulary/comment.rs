@@ -7,8 +7,8 @@ use crate::MpsContext;
 
 use crate::lang::utility::assert_token;
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::{BoxedMpsOpFactory, MpsOp, MpsOpFactory, SimpleMpsOpFactory, MpsIteratorItem};
 use crate::lang::SyntaxError;
+use crate::lang::{BoxedMpsOpFactory, MpsIteratorItem, MpsOp, MpsOpFactory, SimpleMpsOpFactory};
 
 #[derive(Debug)]
 pub struct CommentStatement {

@@ -1,12 +1,12 @@
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::{MpsLanguageDictionary, MpsTypePrimitive};
-use crate::lang::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatementFactory};
-use crate::lang::{RuntimeError, SyntaxError};
-use crate::lang::Lookup;
 use crate::lang::utility::assert_token_raw;
-use crate::processing::{OpGetter, general::MpsType};
+use crate::lang::Lookup;
+use crate::lang::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatementFactory};
+use crate::lang::{MpsLanguageDictionary, MpsTypePrimitive};
+use crate::lang::{RuntimeError, SyntaxError};
+use crate::processing::{general::MpsType, OpGetter};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsItem;
@@ -23,10 +23,21 @@ pub struct RangeFilter {
 
 impl Display for RangeFilter {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "{}{}{}",
-            if let Some(start) = &self.start {format!("{}", start)} else {"".into()},
-            if self.inclusive_end {"="} else {""},
-            if let Some(end) = &self.end {format!("{}", end)} else {"".into()},)
+        write!(
+            f,
+            "{}{}{}",
+            if let Some(start) = &self.start {
+                format!("{}", start)
+            } else {
+                "".into()
+            },
+            if self.inclusive_end { "=" } else { "" },
+            if let Some(end) = &self.end {
+                format!("{}", end)
+            } else {
+                "".into()
+            },
+        )
     }
 }
 
@@ -39,7 +50,9 @@ impl MpsFilterPredicate for RangeFilter {
     ) -> Result<bool, RuntimeError> {
         let start_index = if let Some(start) = &self.start {
             lookup_to_index(start.get(ctx, op)?, op)?
-        } else {0};
+        } else {
+            0
+        };
         let current = self.current;
         self.current += 1;
         if current >= start_index {
@@ -87,13 +100,13 @@ fn lookup_to_index(item: &MpsType, op: &mut OpGetter) -> Result<u64, RuntimeErro
                 line: 0,
                 op: op(),
                 msg: format!("Cannot use {} as index", val),
-            })
+            }),
         },
         val => Err(RuntimeError {
             line: 0,
             op: op(),
             msg: format!("Cannot use {} as index", val),
-        })
+        }),
     }
 }
 
@@ -103,44 +116,38 @@ impl MpsFilterFactory<RangeFilter> for RangeFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
         (
             // ..
-            tokens.len() == 2
-            && tokens[0].is_dot()
-            && tokens[1].is_dot()
-        ) || (
-            tokens.len() == 3
+            tokens.len() == 2 && tokens[0].is_dot() && tokens[1].is_dot()
+        ) || (tokens.len() == 3
             && ((
                 // ..number
-                tokens[0].is_dot()
-                && tokens[1].is_dot()
-                && Lookup::check_is(&tokens[2])
+                tokens[0].is_dot() && tokens[1].is_dot() && Lookup::check_is(&tokens[2])
             ) || (
                 // number..
-                Lookup::check_is(&tokens[0])
-                && tokens[1].is_dot()
-                && tokens[2].is_dot()
-            ))
-        ) || (
-            tokens.len() == 4
-            && (( // number..number
-                Lookup::check_is(&tokens[0])
-                && tokens[1].is_dot()
-                && tokens[2].is_dot()
-                && Lookup::check_is(&tokens[3])
-            ) || ( // ..=number
-                tokens[0].is_dot()
-                && tokens[1].is_dot()
-                && tokens[2].is_equals()
-                && Lookup::check_is(&tokens[3])
-            ))
-        ) || (
-            // number..=number
-            tokens.len() == 5
-            && Lookup::check_is(&tokens[0])
-            && tokens[1].is_dot()
-            && tokens[2].is_dot()
-            && tokens[3].is_equals()
-            && Lookup::check_is(&tokens[4])
-        )
+                Lookup::check_is(&tokens[0]) && tokens[1].is_dot() && tokens[2].is_dot()
+            )))
+            || (tokens.len() == 4
+                && ((
+                    // number..number
+                    Lookup::check_is(&tokens[0])
+                        && tokens[1].is_dot()
+                        && tokens[2].is_dot()
+                        && Lookup::check_is(&tokens[3])
+                ) || (
+                    // ..=number
+                    tokens[0].is_dot()
+                        && tokens[1].is_dot()
+                        && tokens[2].is_equals()
+                        && Lookup::check_is(&tokens[3])
+                )))
+            || (
+                // number..=number
+                tokens.len() == 5
+                    && Lookup::check_is(&tokens[0])
+                    && tokens[1].is_dot()
+                    && tokens[2].is_dot()
+                    && tokens[3].is_equals()
+                    && Lookup::check_is(&tokens[4])
+            )
     }
 
     fn build_filter(
@@ -151,7 +158,9 @@ impl MpsFilterFactory<RangeFilter> for RangeFilterFactory {
         // start index
         let start = if Lookup::check_is(&tokens[0]) {
             Some(Lookup::parse(tokens)?)
-        } else {None};
+        } else {
+            None
+        };
         // ..
         assert_token_raw(MpsToken::Dot, tokens)?;
         assert_token_raw(MpsToken::Dot, tokens)?;
@@ -166,7 +175,9 @@ impl MpsFilterFactory<RangeFilter> for RangeFilterFactory {
         // end index
         let end = if !tokens.is_empty() {
             Some(Lookup::parse(tokens)?)
-        } else {None};
+        } else {
+            None
+        };
 
         Ok(RangeFilter {
             start: start,

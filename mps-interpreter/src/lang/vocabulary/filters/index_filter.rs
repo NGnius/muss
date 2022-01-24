@@ -1,11 +1,11 @@
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::{MpsLanguageDictionary, MpsTypePrimitive};
+use crate::lang::{utility::assert_token_raw, Lookup};
 use crate::lang::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatementFactory};
+use crate::lang::{MpsLanguageDictionary, MpsTypePrimitive};
 use crate::lang::{RuntimeError, SyntaxError};
-use crate::lang::{Lookup, utility::assert_token_raw};
-use crate::processing::{OpGetter, general::MpsType};
+use crate::processing::{general::MpsType, OpGetter};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsItem;
@@ -37,17 +37,21 @@ impl MpsFilterPredicate for IndexFilter {
                 MpsTypePrimitive::Int(i) => *i as u64,
                 MpsTypePrimitive::UInt(u) => *u,
                 MpsTypePrimitive::Float(f) => *f as u64,
-                val => return Err(RuntimeError {
+                val => {
+                    return Err(RuntimeError {
+                        line: 0,
+                        op: op(),
+                        msg: format!("Cannot use {} as index", val),
+                    })
+                }
+            },
+            val => {
+                return Err(RuntimeError {
                     line: 0,
                     op: op(),
                     msg: format!("Cannot use {} as index", val),
                 })
-            },
-            val => return Err(RuntimeError {
-                line: 0,
-                op: op(),
-                msg: format!("Cannot use {} as index", val),
-            })
+            }
         };
         if self.current == index && !self.is_opposite {
             self.current += 1;
@@ -77,14 +81,8 @@ pub struct IndexFilterFactory;
 
 impl MpsFilterFactory<IndexFilter> for IndexFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
-        (
-            tokens.len() == 1
-            && Lookup::check_is(&tokens[0])
-        ) || (
-            tokens.len() == 2
-            && tokens[0].is_exclamation()
-            && Lookup::check_is(&tokens[1])
-        )
+        (tokens.len() == 1 && Lookup::check_is(&tokens[0]))
+            || (tokens.len() == 2 && tokens[0].is_exclamation() && Lookup::check_is(&tokens[1]))
     }
 
     fn build_filter(
@@ -95,7 +93,9 @@ impl MpsFilterFactory<IndexFilter> for IndexFilterFactory {
         let is_inverted = if tokens[0].is_exclamation() {
             assert_token_raw(MpsToken::Exclamation, tokens)?;
             true
-        } else {false};
+        } else {
+            false
+        };
         let lookup = Lookup::parse(tokens)?;
         Ok(IndexFilter {
             index: lookup,

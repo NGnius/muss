@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use regex::Regex;
 
 use super::OpGetter;
-use crate::lang::{RuntimeError, MpsTypePrimitive};
+use crate::lang::{MpsTypePrimitive, RuntimeError};
 use crate::MpsItem;
 
 const DEFAULT_REGEX: &str = r"/(?P<artist>[^/]+)/(?P<album>[^/]+)/(?:(?:(?P<disc>\d+)\s+)?(?P<track>\d+)\.?\s+)?(?P<title>[^/]+)\.(?P<format>(?:mp3)|(?:wav)|(?:ogg)|(?:flac)|(?:mp4)|(?:aac))$";
@@ -100,11 +100,12 @@ impl FileIter {
         } else {
             Vec::with_capacity(DEFAULT_VEC_CACHE_SIZE)
         };
-        let pattern_re = Regex::new(pattern.unwrap_or(DEFAULT_REGEX)).map_err(|e| RuntimeError {
-            line: 0,
-            op: op(),
-            msg: format!("Regex compile error: {}", e),
-        })?;
+        let pattern_re =
+            Regex::new(pattern.unwrap_or(DEFAULT_REGEX)).map_err(|e| RuntimeError {
+                line: 0,
+                op: op(),
+                msg: format!("Regex compile error: {}", e),
+            })?;
         Ok(Self {
             root: root_path,
             pattern: pattern_re,
@@ -182,12 +183,12 @@ impl FileIter {
                     }
                 }
                 Some(item)
-            },
+            }
             Err(_) => {
                 let mut item = MpsItem::new();
                 self.populate_item_impl_simple(&mut item, path_str, captures, capture_names);
                 Some(item)
-            },
+            }
         }
     }
 
@@ -214,7 +215,10 @@ impl FileIter {
         // populates fields from named capture groups
         while let Some(name_maybe) = capture_names.next() {
             if let Some(name) = name_maybe {
-                if let Some(value) = captures.name(name).and_then(|m| Some(m.as_str().to_string())) {
+                if let Some(value) = captures
+                    .name(name)
+                    .and_then(|m| Some(m.as_str().to_string()))
+                {
                     item.set_field(name, MpsTypePrimitive::parse(value));
                 }
             }

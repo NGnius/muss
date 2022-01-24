@@ -56,7 +56,7 @@ pub fn repl(args: CliArgs) {
                     while let Err(e) = player.save_m3u8(&mut playlist_writer) {
                         eprintln!("{}", e.message());
                     }
-                },
+                }
             }
             playlist_writer
                 .flush()
@@ -111,7 +111,7 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                 } else {
                     state.in_literal = Some(read_buf[0] as char);
                 }
-            },
+            }
             '(' => state.bracket_depth += 1,
             ')' => state.bracket_depth -= 1,
             ';' => {
@@ -123,7 +123,7 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                     execute();
                     state.statement_buf.clear();
                 }
-            },
+            }
             '\n' => {
                 let statement_result = std::str::from_utf8(state.statement_buf.as_slice());
                 if statement_result.is_ok() && statement_result.unwrap().trim().starts_with("?") {
@@ -140,8 +140,8 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                     state.statement_buf.clear();
                 }
                 prompt(&mut state.line_number, args);
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 }

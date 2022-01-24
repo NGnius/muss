@@ -1,8 +1,8 @@
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::{MpsSorter, MpsSorterFactory, MpsSortStatementFactory};
-use crate::lang::{MpsLanguageDictionary, MpsIteratorItem, MpsOp};
+use crate::lang::{MpsIteratorItem, MpsLanguageDictionary, MpsOp};
+use crate::lang::{MpsSortStatementFactory, MpsSorter, MpsSorterFactory};
 use crate::lang::{RuntimeError, SyntaxError};
 use crate::tokens::MpsToken;
 
@@ -10,7 +10,11 @@ use crate::tokens::MpsToken;
 pub struct EmptySorter;
 
 impl MpsSorter for EmptySorter {
-    fn sort(&mut self, iterator: &mut dyn MpsOp, item_buf: &mut VecDeque<MpsIteratorItem>) -> Result<(), RuntimeError> {
+    fn sort(
+        &mut self,
+        iterator: &mut dyn MpsOp,
+        item_buf: &mut VecDeque<MpsIteratorItem>,
+    ) -> Result<(), RuntimeError> {
         if let Some(item) = iterator.next() {
             item_buf.push_back(item)
         }

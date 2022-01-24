@@ -1,7 +1,7 @@
 //! Basic types for MPS
 
+use std::cmp::{Ord, Ordering};
 use std::fmt::{Debug, Display, Error, Formatter};
-use std::cmp::{Ordering, Ord};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum MpsTypePrimitive {
@@ -38,7 +38,7 @@ impl MpsTypePrimitive {
             Self::UInt(x) => format!("{}", x),
             Self::Int(x) => format!("{}", x),
             Self::Float(x) => format!("{}", x),
-            Self::Bool(x) => format!("{}", x)
+            Self::Bool(x) => format!("{}", x),
         }
     }
 
@@ -61,7 +61,7 @@ impl MpsTypePrimitive {
     }
 
     pub fn parse(s: String) -> Self {
-        if  let Ok(i) = s.parse::<i64>() {
+        if let Ok(i) = s.parse::<i64>() {
             Self::Int(i)
         } else if let Ok(u) = s.parse::<u64>() {
             Self::UInt(u)
@@ -117,9 +117,7 @@ impl PartialOrd for MpsTypePrimitive {
                 _ => None,
             },
             Self::Float(f1) => match other {
-                Self::Float(f2) => Some(
-                    f1.partial_cmp(f2).unwrap_or(std::cmp::Ordering::Less),
-                ),
+                Self::Float(f2) => Some(f1.partial_cmp(f2).unwrap_or(std::cmp::Ordering::Less)),
                 Self::Int(f2) => Some(
                     f1.partial_cmp(&(*f2 as f64))
                         .unwrap_or(std::cmp::Ordering::Less),

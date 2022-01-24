@@ -8,7 +8,7 @@ use crate::MpsContext;
 use crate::lang::repeated_tokens;
 use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsOp, MpsIteratorItem};
+use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsIteratorItem, MpsOp};
 use crate::lang::{RuntimeError, SyntaxError};
 use crate::processing::general::FileIter;
 

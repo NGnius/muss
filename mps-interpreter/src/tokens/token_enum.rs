@@ -45,7 +45,9 @@ impl MpsToken {
             _ => {
                 // name validation
                 let mut ok = true;
-                for invalid_c in ["-", "+", ",", " ", "/", "\n", "\r", "!", "?", "=", ".", "&", "|"] {
+                for invalid_c in [
+                    "-", "+", ",", " ", "/", "\n", "\r", "!", "?", "=", ".", "&", "|",
+                ] {
                     if s.contains(invalid_c) {
                         ok = false;
                         break;

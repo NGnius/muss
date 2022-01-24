@@ -7,7 +7,9 @@ use crate::MpsContext;
 
 use crate::lang::utility::{assert_token, assert_token_raw, assert_type, check_is_type};
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::{BoxedMpsOpFactory, MpsOp, MpsOpFactory, MpsTypePrimitive, PseudoOp, MpsIteratorItem};
+use crate::lang::{
+    BoxedMpsOpFactory, MpsIteratorItem, MpsOp, MpsOpFactory, MpsTypePrimitive, PseudoOp,
+};
 use crate::lang::{RuntimeError, SyntaxError};
 use crate::processing::general::MpsType;
 

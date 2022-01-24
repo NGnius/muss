@@ -40,9 +40,12 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
         //println!("Enqueuing up to {} items", count);
         match self.player.enqueue(count) {
             Err(e) => self.event.send(PlayerAction::Exception(e)).unwrap(),
-            Ok(items) => for item in items { // notify of new items that have been enqueued
-                self.playback.send(PlaybackAction::Enqueued(item)).unwrap();
-            },
+            Ok(items) => {
+                for item in items {
+                    // notify of new items that have been enqueued
+                    self.playback.send(PlaybackAction::Enqueued(item)).unwrap();
+                }
+            }
         }
     }
 

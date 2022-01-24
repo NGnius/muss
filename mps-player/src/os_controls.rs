@@ -1,10 +1,10 @@
 #[allow(unused_imports)]
-use std::sync::mpsc::{channel, Sender, Receiver};
+use std::sync::mpsc::{channel, Receiver, Sender};
 #[cfg(all(target_os = "linux", feature = "os-controls"))]
 use std::thread::JoinHandle;
 
 #[cfg(all(target_os = "linux", feature = "os-controls"))]
-use mpris_player::{MprisPlayer, PlaybackStatus, Metadata};
+use mpris_player::{Metadata, MprisPlayer, PlaybackStatus};
 
 #[cfg(all(target_os = "linux", feature = "os-controls"))]
 use mps_interpreter::MpsItem;
@@ -21,7 +21,6 @@ pub struct SystemControlWrapper {
     dbus_ctrl: Option<Sender<DbusControl>>,
     playback_event_handler: Option<JoinHandle<()>>,
     playback_event_handler_killer: Option<Sender<()>>,
-
 }
 
 /// OS-specific APIs for media controls.
@@ -135,27 +134,25 @@ impl SystemControlWrapper {
             loop {
                 dbus_conn.poll(5);
                 match dbus_ctrl.try_recv() {
-                    Err(_) => {},
+                    Err(_) => {}
                     Ok(DbusControl::Die) => break,
                     Ok(DbusControl::SetMetadata(meta)) => {
                         dbus_conn.set_metadata(meta);
-                    },
+                    }
                 }
             }
         }));
         let (tx, rx) = channel();
         self.playback_event_handler_killer = Some(tx);
-        self.playback_event_handler = Some(std::thread::spawn(move || {
-            loop {
-                if let Ok(_) = rx.try_recv() {
-                    break;
-                }
-                match playback.recv() {
-                    Err(_) => break,
-                    Ok(PlaybackAction::Exit) => break,
-                    Ok(PlaybackAction::Enqueued(item)) => Self::enqueued(item, &dbus_ctrl_tx_clone),
-                    Ok(PlaybackAction::Empty) => Self::empty(&dbus_ctrl_tx_clone),
-                }
+        self.playback_event_handler = Some(std::thread::spawn(move || loop {
+            if let Ok(_) = rx.try_recv() {
+                break;
+            }
+            match playback.recv() {
+                Err(_) => break,
+                Ok(PlaybackAction::Exit) => break,
+                Ok(PlaybackAction::Enqueued(item)) => Self::enqueued(item, &dbus_ctrl_tx_clone),
+                Ok(PlaybackAction::Empty) => Self::empty(&dbus_ctrl_tx_clone),
             }
         }));
     }
@@ -179,35 +176,48 @@ impl SystemControlWrapper {
 
     fn enqueued(item: MpsItem, dbus_ctrl: &Sender<DbusControl>) {
         //println!("Got enqueued item {}", &item.title);
-        dbus_ctrl.send(DbusControl::SetMetadata(Metadata {
-            length: None,
-            art_url: None,
-            album: item.field("album").and_then(|x| x.to_owned().to_str()),
-            album_artist: None, // TODO maybe?
-            artist: item.field("artist").and_then(|x| x.to_owned().to_str()).map(|x| vec![x]),
-            composer: None,
-            disc_number: None,
-            genre: item.field("genre").and_then(|x| x.to_owned().to_str()).map(|genre| vec![genre]),
-            title: item.field("title").and_then(|x| x.to_owned().to_str()),
-            track_number: item.field("track").and_then(|x| x.to_owned().to_i64()).map(|track| track as i32),
-            url: item.field("filename").and_then(|x| x.to_owned().to_str()),
-        })).unwrap_or(());
+        dbus_ctrl
+            .send(DbusControl::SetMetadata(Metadata {
+                length: None,
+                art_url: None,
+                album: item.field("album").and_then(|x| x.to_owned().to_str()),
+                album_artist: None, // TODO maybe?
+                artist: item
+                    .field("artist")
+                    .and_then(|x| x.to_owned().to_str())
+                    .map(|x| vec![x]),
+                composer: None,
+                disc_number: None,
+                genre: item
+                    .field("genre")
+                    .and_then(|x| x.to_owned().to_str())
+                    .map(|genre| vec![genre]),
+                title: item.field("title").and_then(|x| x.to_owned().to_str()),
+                track_number: item
+                    .field("track")
+                    .and_then(|x| x.to_owned().to_i64())
+                    .map(|track| track as i32),
+                url: item.field("filename").and_then(|x| x.to_owned().to_str()),
+            }))
+            .unwrap_or(());
     }
 
     fn empty(dbus_ctrl: &Sender<DbusControl>) {
-        dbus_ctrl.send(DbusControl::SetMetadata(Metadata {
-            length: None,
-            art_url: None,
-            album: None,
-            album_artist: None, // TODO maybe?
-            artist: None,
-            composer: None,
-            disc_number: None,
-            genre: None,
-            title: None,
-            track_number: None,
-            url: None,
-        })).unwrap_or(());
+        dbus_ctrl
+            .send(DbusControl::SetMetadata(Metadata {
+                length: None,
+                art_url: None,
+                album: None,
+                album_artist: None, // TODO maybe?
+                artist: None,
+                composer: None,
+                disc_number: None,
+                genre: None,
+                title: None,
+                track_number: None,
+                url: None,
+            }))
+            .unwrap_or(());
     }
 }
 
@@ -216,7 +226,7 @@ impl SystemControlWrapper {
     pub fn new(control: Sender<ControlAction>) -> Self {
         Self {
             control: control,
-            playback_receiver: None
+            playback_receiver: None,
         }
     }
 

@@ -8,7 +8,9 @@ use crate::MpsItem;
 
 use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsOp, PseudoOp, MpsIteratorItem};
+use crate::lang::{
+    MpsFunctionFactory, MpsFunctionStatementFactory, MpsIteratorItem, MpsOp, PseudoOp,
+};
 use crate::lang::{RuntimeError, SyntaxError};
 
 #[derive(Debug)]
@@ -28,7 +30,11 @@ impl Display for RepeatStatement {
         if self.loop_forever {
             write!(f, "repeat({})", self.inner_statement)
         } else {
-            write!(f, "repeat({}, {})", self.inner_statement, self.original_repetitions)
+            write!(
+                f,
+                "repeat({}, {})",
+                self.inner_statement, self.original_repetitions
+            )
         }
     }
 }
