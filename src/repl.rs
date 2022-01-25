@@ -159,6 +159,7 @@ fn repl_commands(command_str: &str) {
         "?help" => println!("{}", super::help::HELP_STRING),
         "?function" | "?functions" => println!("{}", super::help::FUNCTIONS),
         "?filter" | "?filters" => println!("{}", super::help::FILTERS),
+        "?sort" | "?sorter" | "?sorters" => println!("{}", super::help::SORTERS),
         _ => println!("Unknown command, try ?help"),
     }
 }

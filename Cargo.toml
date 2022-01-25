@@ -5,6 +5,8 @@ edition = "2021"
 authors = ["NGnius (Graham) <ngniusness@gmail.com>"]
 description = "Music Playlist Scripting language (MPS)"
 license = "LGPL-2.1-only OR GPL-2.0-or-later"
+repository = "https://github.com/NGnius/mps"
+keywords = ["audio", "playlist", "scripting", "language"]
 readme = "README.md"
 
 [workspace]
