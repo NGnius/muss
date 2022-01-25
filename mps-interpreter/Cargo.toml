@@ -13,8 +13,10 @@ symphonia = { version = "0.4.0", optional = true, features = [
 dirs = { version = "4.0.0" }
 regex = { version = "1" }
 shellexpand = { version = "2.1", optional = true }
+bliss-audio = { version = "0.4", optional = true }
 
 [features]
-default = [ "music_library", "ergonomics" ]
+default = [ "music_library", "ergonomics", "advanced" ]
 music_library = [ "symphonia" ] # song metadata parsing and database auto-population
-ergonomics = ["shellexpand"]
+ergonomics = ["shellexpand"] # niceties like ~ in pathes
+advanced = ["bliss-audio"] # advanced language features like bliss playlist generation

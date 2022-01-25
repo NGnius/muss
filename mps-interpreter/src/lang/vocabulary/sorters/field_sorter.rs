@@ -6,6 +6,7 @@ use crate::lang::utility::assert_token;
 use crate::lang::{MpsIteratorItem, MpsLanguageDictionary, MpsOp};
 use crate::lang::{MpsSortStatementFactory, MpsSorter, MpsSorterFactory};
 use crate::lang::{RuntimeError, SyntaxError};
+use crate::processing::OpGetter;
 use crate::tokens::MpsToken;
 
 #[derive(Debug, Clone)]
@@ -20,6 +21,7 @@ impl MpsSorter for FieldSorter {
         &mut self,
         iterator: &mut dyn MpsOp,
         item_buf: &mut VecDeque<MpsIteratorItem>,
+        _op: &mut OpGetter,
     ) -> Result<(), RuntimeError> {
         let buf_len_old = item_buf.len(); // save buffer length before modifying buffer
         if item_buf.len() < self.up_to {
@@ -45,7 +47,6 @@ impl MpsSorter for FieldSorter {
                 }
                 self.default_order
             });
-            println!("Field-sorted item_buf: {:?}", item_buf);
         }
         Ok(())
     }
@@ -80,7 +81,7 @@ impl MpsSorterFactory<FieldSorter> for FieldSorterFactory {
         Ok(FieldSorter {
             field_name: name,
             up_to: usize::MAX,
-            default_order: Ordering::Equal,
+            default_order: Ordering::Greater,
         })
     }
 }

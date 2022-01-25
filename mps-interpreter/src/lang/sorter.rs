@@ -7,16 +7,18 @@ use crate::lang::utility::{assert_name, assert_token_raw, check_name};
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::{BoxedMpsOpFactory, MpsIteratorItem, MpsOp, PseudoOp};
 use crate::lang::{RuntimeError, SyntaxError};
+use crate::processing::OpGetter;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 
 const SORTER_ITEM_CACHE_SIZE: usize = 8;
 
 pub trait MpsSorter: Clone + Debug + Display {
-    fn sort(
+    fn sort<'a>(
         &mut self,
         iterator: &mut dyn MpsOp,
         item_buf: &mut VecDeque<MpsIteratorItem>,
+        op: &'a mut OpGetter,
     ) -> Result<(), RuntimeError>;
 }
 
@@ -81,11 +83,16 @@ impl<S: MpsSorter + 'static> Iterator for MpsSortStatement<S> {
     type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let pseudo_self = PseudoOp::from_printable(self);
         let real_op = match self.iterable.try_real() {
             Ok(op) => op,
             Err(e) => return Some(Err(e)),
         };
-        match self.orderer.sort(real_op.as_mut(), &mut self.item_cache) {
+        match self
+            .orderer
+            .sort(real_op.as_mut(), &mut self.item_cache, &mut move || {
+                pseudo_self.clone()
+            }) {
             Ok(_) => {}
             Err(e) => return Some(Err(e)),
         }

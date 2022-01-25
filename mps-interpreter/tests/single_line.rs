@@ -358,3 +358,12 @@ fn execute_fieldsort_line() -> Result<(), Box<dyn MpsLanguageError>> {
         true,
     )
 }
+
+#[test]
+fn execute_blisssort_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(distance bliss)",
+        false,
+        true,
+    )
+}

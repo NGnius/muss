@@ -4,9 +4,10 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use crate::lang::{MpsIteratorItem, MpsLanguageDictionary, MpsOp};
 use crate::lang::{MpsSortStatementFactory, MpsSorter, MpsSorterFactory};
 use crate::lang::{RuntimeError, SyntaxError};
+use crate::processing::OpGetter;
 use crate::tokens::MpsToken;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct EmptySorter;
 
 impl MpsSorter for EmptySorter {
@@ -14,6 +15,7 @@ impl MpsSorter for EmptySorter {
         &mut self,
         iterator: &mut dyn MpsOp,
         item_buf: &mut VecDeque<MpsIteratorItem>,
+        _op: &mut OpGetter,
     ) -> Result<(), RuntimeError> {
         if let Some(item) = iterator.next() {
             item_buf.push_back(item)
