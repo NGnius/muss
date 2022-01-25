@@ -167,10 +167,6 @@ impl MpsSorter for BlissSorter {
                             if let Some(MpsTypePrimitive::String(b_path)) = b.field("filename") {
                                 if let Some(float_a) = self.get_or_wait(a_path) {
                                     if let Some(float_b) = self.get_or_wait(b_path) {
-                                        println!(
-                                            "A:{} distance {}, B:{} distance {}",
-                                            a_path, float_a, b_path, float_b
-                                        );
                                         return float_a
                                             .partial_cmp(&float_b)
                                             .unwrap_or(DEFAULT_ORDER);
