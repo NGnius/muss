@@ -1,3 +1,6 @@
 [submodule "mpris-player"]
 	path = mpris-player
 	url = https://github.com/NGnius/mpris-player
+[submodule "bliss-rs"]
+	path = bliss-rs
+	url = https://github.com/NGnius/bliss-rs
