@@ -1,5 +1,7 @@
 # mps
 
+![repl_demo](https://raw.githubusercontent.com/NGnius/mps/master/extras/demo.png)
+
 A language all about iteration to play your music files.
 This project implements the interpreter (mps-interpreter), music player (mps-player), and CLI interface for MPS (root).
 The CLI interface includes a REPL for running scripts.
@@ -30,4 +32,6 @@ One day I'll add pretty REPL example pictures and some script files...
 **No**. Technically, it was designed to be one, but it doesn't meet the requirements of a scripting language (yet). One day, I would like it be Turing-complete and then it could be considered a scripting language. At the moment it is barely a query language.
 
 
-License: LGPL-2.1-only OR GPL-2.0-or-later
+### Contribution
+
+This is a hobby project, so any contribution may take a while to be acknowledged and accepted.
