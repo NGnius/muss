@@ -48,6 +48,8 @@ E.g. `files(folder="~/Music/", recursive=true).(title == "Romantic Traffic");` i
 
 #### field == something
 
+#### field like something
+
 #### field != something
 
 #### field >= something

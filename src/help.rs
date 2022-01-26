@@ -38,6 +38,7 @@ pub const FILTERS: &str =
 Operations to reduce the items in an iterable: iterable.(filter)
 
  field == something
+ field like something
  field != something
  field >= something
  field > something

@@ -46,6 +46,8 @@
 //!
 //! ### field == something
 //!
+//! ### field like something
+//!
 //! ### field != something
 //!
 //! ### field >= something
