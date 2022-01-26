@@ -129,9 +129,9 @@
 //!
 //! Sort by a MpsItem field. Valid field names change depending on what information is available when the MpsItem is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
 //!
-//! ### distance bliss -- e.g. iterable~(distance bliss)
+//! ### advanced bliss -- e.g. iterable~(advanced bliss)
 //!
-//! Sort by the distance (similarity) between songs. Songs which are more similar (lower distance) to the first song in the iterator will be placed closer to the first song, while less similar songs will be sorted to the end. This uses the [bliss music analyser](https://github.com/polochon-street/bliss-rs), which is a very slow operation and can cause music playback interruptions for large iterators.
+//! Sort by the distance (similarity) between songs. Songs which are more similar (lower distance) to the first song in the iterator will be placed closer to the first song, while less similar songs will be sorted to the end. This uses the [bliss music analyser](https://github.com/polochon-street/bliss-rs), which is a very slow operation and can cause music playback interruptions for large iterators. This requires the `advanced` feature to be enabled (without the feature enabled this is still valid syntax but doesn't change the order).
 //!
 
 mod context;

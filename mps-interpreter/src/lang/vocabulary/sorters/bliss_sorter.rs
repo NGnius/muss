@@ -210,7 +210,7 @@ pub struct BlissSorterFactory;
 
 impl MpsSorterFactory<BlissSorter> for BlissSorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
-        tokens.len() == 2 && check_name("distance", &tokens[0]) && check_name("bliss", &tokens[1])
+        tokens.len() == 2 && check_name("advanced", &tokens[0]) && check_name("bliss", &tokens[1])
     }
 
     fn build_sorter(
@@ -218,7 +218,7 @@ impl MpsSorterFactory<BlissSorter> for BlissSorterFactory {
         tokens: &mut VecDeque<MpsToken>,
         _dict: &MpsLanguageDictionary,
     ) -> Result<BlissSorter, SyntaxError> {
-        assert_name("distance", tokens)?;
+        assert_name("advanced", tokens)?;
         assert_name("bliss", tokens)?;
         Ok(BlissSorter::default())
     }

@@ -362,7 +362,7 @@ fn execute_fieldsort_line() -> Result<(), Box<dyn MpsLanguageError>> {
 #[test]
 fn execute_blisssort_line() -> Result<(), Box<dyn MpsLanguageError>> {
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(distance bliss)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(advanced bliss)",
         false,
         true,
     )
