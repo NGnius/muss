@@ -16,7 +16,8 @@ const DEFAULT_VEC_CACHE_SIZE: usize = 4;
 #[derive(Debug)]
 pub struct FileIter {
     root: PathBuf,
-    pattern: Regex,
+    pattern: Option<Regex>,
+    tags_pattern: Regex,
     recursive: bool,
     dir_iters: Vec<SortedReadDir>,
     is_complete: bool,
@@ -67,7 +68,7 @@ impl Display for FileIter {
             f,
             "root=`{}`, pattern={}, recursive={}",
             self.root.to_str().unwrap_or(""),
-            self.pattern,
+            self.pattern.as_ref().map(|re| re.to_string()).unwrap_or("[none]".to_string()),
             self.recursive
         )
     }
@@ -100,15 +101,22 @@ impl FileIter {
         } else {
             Vec::with_capacity(DEFAULT_VEC_CACHE_SIZE)
         };
-        let pattern_re =
-            Regex::new(pattern.unwrap_or(DEFAULT_REGEX)).map_err(|e| RuntimeError {
+        let pattern_re = if let Some(pattern) = pattern {
+            Some(Regex::new(pattern).map_err(|e| RuntimeError {
                 line: 0,
                 op: op(),
                 msg: format!("Regex compile error: {}", e),
-            })?;
+            })?)
+        } else {None};
+        let tags_re = Regex::new(DEFAULT_REGEX).map_err(|e| RuntimeError {
+            line: 0,
+            op: op(),
+            msg: format!("Regex compile error: {}", e),
+        })?;
         Ok(Self {
             root: root_path,
             pattern: pattern_re,
+            tags_pattern: tags_re,
             recursive: recurse,
             dir_iters: dir_vec,
             is_complete: false,
@@ -122,7 +130,8 @@ impl FileIter {
         dir_vec.push(read_dir.into());
         Self {
             root: root_path,
-            pattern: Regex::new(DEFAULT_REGEX).unwrap(),
+            pattern: None,
+            tags_pattern: Regex::new(DEFAULT_REGEX).unwrap(),
             recursive: recurse,
             dir_iters: dir_vec,
             is_complete: false,
@@ -136,10 +145,17 @@ impl FileIter {
         if !path.is_file() {
             panic!("Got non-file path `{}` when building music item", path_str)
         }
-        let captures = self.pattern.captures(path_str)?;
-        let capture_names = self.pattern.capture_names();
-        // populate fields
-        self.populate_item_impl(path, path_str, captures, capture_names)
+        if let Some(pattern) = &self.pattern {
+            let captures = pattern.captures(path_str)?;
+            let capture_names = pattern.capture_names();
+            // populate fields
+            self.populate_item_impl(path, path_str, Some(captures), capture_names)
+        } else {
+            let captures = self.tags_pattern.captures(path_str);
+            let capture_names = self.tags_pattern.capture_names();
+            self.populate_item_impl(path, path_str, captures, capture_names)
+        }
+
     }
 
     #[cfg(feature = "music_library")]
@@ -147,7 +163,7 @@ impl FileIter {
         &self,
         path: &Path,
         path_str: &str,
-        captures: regex::Captures,
+        captures: Option<regex::Captures>,
         capture_names: regex::CaptureNames,
     ) -> Option<MpsItem> {
         match crate::music::MpsLibrary::read_media_tags(path) {
@@ -196,7 +212,7 @@ impl FileIter {
     fn populate_item_impl(
         &self,
         path_str: &str,
-        captures: regex::Captures,
+        captures: Option<regex::Captures>,
         capture_names: regex::CaptureNames,
     ) -> Option<MpsItem> {
         let mut item = MpsItem::new();
@@ -209,17 +225,19 @@ impl FileIter {
         &self,
         item: &mut MpsItem,
         path_str: &str,
-        captures: regex::Captures,
+        captures: Option<regex::Captures>,
         mut capture_names: regex::CaptureNames,
     ) {
         // populates fields from named capture groups
-        while let Some(name_maybe) = capture_names.next() {
-            if let Some(name) = name_maybe {
-                if let Some(value) = captures
-                    .name(name)
-                    .and_then(|m| Some(m.as_str().to_string()))
-                {
-                    item.set_field(name, MpsTypePrimitive::parse(value));
+        if let Some(captures) = captures {
+            while let Some(name_maybe) = capture_names.next() {
+                if let Some(name) = name_maybe {
+                    if let Some(value) = captures
+                        .name(name)
+                        .and_then(|m| Some(m.as_str().to_string()))
+                    {
+                        item.set_field(name, MpsTypePrimitive::parse(value));
+                    }
                 }
             }
         }
@@ -238,6 +256,7 @@ impl FileIter {
 impl Iterator for FileIter {
     type Item = Result<MpsItem, String>;
 
+    //#[recursion_limit = "1024"]
     fn next(&mut self) -> Option<Self::Item> {
         if self.is_complete {
             None
@@ -262,7 +281,7 @@ impl Iterator for FileIter {
             } else {
                 while !self.dir_iters.is_empty() {
                     let mut dir_iter = self.dir_iters.pop().unwrap();
-                    while let Some(path_result) = dir_iter.next() {
+                    'inner: while let Some(path_result) = dir_iter.next() {
                         match path_result {
                             Ok(dir_entry) => {
                                 if dir_entry.path().is_dir() {
@@ -277,7 +296,8 @@ impl Iterator for FileIter {
                                                 )))
                                             }
                                         });
-                                        return self.next();
+                                        //return self.next();
+                                        break 'inner;
                                     }
                                 } else {
                                     if let Some(item) = self.build_item(dir_entry.path()) {
@@ -285,7 +305,7 @@ impl Iterator for FileIter {
                                         return Some(Ok(item));
                                     }
                                 }
-                            }
+                            },
                             Err(e) => {
                                 self.dir_iters.push(dir_iter);
                                 return Some(Err(format!("Path read error: {}", e)));

@@ -1,5 +1,6 @@
 use std::fs;
 use std::io;
+use std::path::PathBuf;
 
 use rodio::{decoder::Decoder, OutputStream, OutputStreamHandle, Sink};
 
@@ -39,17 +40,29 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
                     if let Some(filename) =
                         music.field("filename").and_then(|x| x.to_owned().to_str())
                     {
-                        let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
-                        let stream = io::BufReader::new(file);
-                        let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
-                        self.sink.append(source);
+                        let path: PathBuf = filename.into();
+                        if let Some(ext) = path.extension().and_then(|x| x.to_str()) {
+                            match ext {
+                                "mp3"
+                                | "wav"
+                                | "flac"
+                                | "aac"
+                                | "ogg" => {
+                                    let file = fs::File::open(path).map_err(PlaybackError::from_err)?;
+                                    let stream = io::BufReader::new(file);
+                                    let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
+                                    self.sink.append(source);
+                                },
+                                _ => {}
+                            }
+                        }
                         Ok(())
                     } else {
                         Err(PlaybackError::from_err(
                             "Field `filename` does not exist on item",
                         ))
                     }
-                }
+                },
                 Err(e) => Err(PlaybackError::from_err(e)),
             }?;
         }
@@ -66,10 +79,22 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
                     if let Some(filename) =
                         music.field("filename").and_then(|x| x.to_owned().to_str())
                     {
-                        let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
-                        let stream = io::BufReader::new(file);
-                        let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
-                        self.sink.append(source);
+                        let path: PathBuf = filename.into();
+                        if let Some(ext) = path.extension().and_then(|x| x.to_str()) {
+                            match ext {
+                                "mp3"
+                                | "wav"
+                                | "flac"
+                                | "aac"
+                                | "ogg" => {
+                                    let file = fs::File::open(path).map_err(PlaybackError::from_err)?;
+                                    let stream = io::BufReader::new(file);
+                                    let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
+                                    self.sink.append(source);
+                                },
+                                _ => {}
+                            }
+                        }
                         Ok(())
                     } else {
                         Err(PlaybackError::from_err(
@@ -92,14 +117,27 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
         for item in &mut self.runner {
             match item {
                 Ok(music) => {
-                    enqueued.push(music.clone());
                     if let Some(filename) =
                         music.field("filename").and_then(|x| x.to_owned().to_str())
                     {
-                        let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
-                        let stream = io::BufReader::new(file);
-                        let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
-                        self.sink.append(source);
+                        let path: PathBuf = filename.into();
+                        if let Some(ext) = path.extension().and_then(|x| x.to_str()) {
+                            match ext {
+                                "mp3"
+                                | "wav"
+                                | "flac"
+                                | "aac"
+                                | "ogg" => {
+                                    enqueued.push(music.clone());
+                                    let file = fs::File::open(path).map_err(PlaybackError::from_err)?;
+                                    let stream = io::BufReader::new(file);
+                                    let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
+                                    self.sink.append(source);
+                                    items_left -= 1;
+                                },
+                                _ => {}
+                            }
+                        }
                         Ok(())
                     } else {
                         Err(PlaybackError::from_err(
@@ -109,7 +147,6 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
                 }
                 Err(e) => Err(PlaybackError::from_err(e)),
             }?;
-            items_left -= 1;
             if items_left == 0 {
                 break;
             }
