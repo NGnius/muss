@@ -6,7 +6,7 @@ license = "LGPL-2.1-only OR GPL-2.0-or-later"
 readme = "README.md"
 
 [dependencies]
-rusqlite = { version = "0.26.3" }
+rusqlite = { version = "0.26.3", features = ["bundled"] }
 symphonia = { version = "0.4.0", optional = true, features = [
     "aac", "flac", "mp3", "pcm", "vorbis", "isomp4", "ogg", "wav"
 ] }
