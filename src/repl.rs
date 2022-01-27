@@ -51,10 +51,10 @@ pub fn repl(args: CliArgs) {
             match player.save_m3u8(&mut playlist_writer) {
                 Ok(_) => {}
                 Err(e) => {
-                    eprintln!("{}", e.message());
+                    error_prompt(e, &args);
                     // consume any further errors (this shouldn't actually write anything)
                     while let Err(e) = player.save_m3u8(&mut playlist_writer) {
-                        eprintln!("{}", e.message());
+                        error_prompt(e, &args);
                     }
                 }
             }
@@ -69,7 +69,7 @@ pub fn repl(args: CliArgs) {
             if args.wait {
                 match ctrl.wait_for_empty() {
                     Ok(_) => {}
-                    Err(e) => eprintln!("{}", e.message()),
+                    Err(e) => error_prompt(e, &args),
                 }
             } else {
                 // consume all incoming errors
@@ -77,7 +77,7 @@ pub fn repl(args: CliArgs) {
                 while had_err {
                     let mut new_had_err = false;
                     for e in ctrl.check_ack() {
-                        eprintln!("{}", e.message());
+                        error_prompt(e, &args);
                         new_had_err = true;
                     }
                     had_err = new_had_err;
@@ -127,7 +127,7 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
             '\n' => {
                 let statement_result = std::str::from_utf8(state.statement_buf.as_slice());
                 if statement_result.is_ok() && statement_result.unwrap().trim().starts_with("?") {
-                    println!("Got {}", statement_result.unwrap());
+                    //println!("Got {}", statement_result.unwrap());
                     repl_commands(statement_result.unwrap().trim());
                     state.statement_buf.clear();
                 } else if state.bracket_depth == 0 && state.in_literal.is_none() {
@@ -151,6 +151,11 @@ fn prompt(line: &mut usize, args: &CliArgs) {
     print!("{}{}", line, args.prompt);
     *line += 1;
     std::io::stdout().flush().expect("Failed to flush stdout");
+}
+
+#[inline(always)]
+fn error_prompt(error: mps_player::PlaybackError, args: &CliArgs) {
+    eprintln!("E{}{}", args.prompt, error.message());
 }
 
 fn repl_commands(command_str: &str) {

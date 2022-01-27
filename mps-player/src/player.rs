@@ -1,6 +1,5 @@
 use std::fs;
 use std::io;
-use std::path::PathBuf;
 
 use rodio::{decoder::Decoder, OutputStream, OutputStreamHandle, Sink};
 
@@ -40,22 +39,11 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
                     if let Some(filename) =
                         music.field("filename").and_then(|x| x.to_owned().to_str())
                     {
-                        let path: PathBuf = filename.into();
-                        if let Some(ext) = path.extension().and_then(|x| x.to_str()) {
-                            match ext {
-                                "mp3"
-                                | "wav"
-                                | "flac"
-                                | "aac"
-                                | "ogg" => {
-                                    let file = fs::File::open(path).map_err(PlaybackError::from_err)?;
-                                    let stream = io::BufReader::new(file);
-                                    let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
-                                    self.sink.append(source);
-                                },
-                                _ => {}
-                            }
-                        }
+                        // NOTE: Default rodio::Decoder hangs here when decoding large files, but symphonia does not
+                        let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
+                        let stream = io::BufReader::new(file);
+                        let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
+                        self.sink.append(source);
                         Ok(())
                     } else {
                         Err(PlaybackError::from_err(
@@ -79,22 +67,11 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
                     if let Some(filename) =
                         music.field("filename").and_then(|x| x.to_owned().to_str())
                     {
-                        let path: PathBuf = filename.into();
-                        if let Some(ext) = path.extension().and_then(|x| x.to_str()) {
-                            match ext {
-                                "mp3"
-                                | "wav"
-                                | "flac"
-                                | "aac"
-                                | "ogg" => {
-                                    let file = fs::File::open(path).map_err(PlaybackError::from_err)?;
-                                    let stream = io::BufReader::new(file);
-                                    let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
-                                    self.sink.append(source);
-                                },
-                                _ => {}
-                            }
-                        }
+                        // NOTE: Default rodio::Decoder hangs here when decoding large files, but symphonia does not
+                        let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
+                        let stream = io::BufReader::new(file);
+                        let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
+                        self.sink.append(source);
                         Ok(())
                     } else {
                         Err(PlaybackError::from_err(
@@ -120,24 +97,13 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
                     if let Some(filename) =
                         music.field("filename").and_then(|x| x.to_owned().to_str())
                     {
-                        let path: PathBuf = filename.into();
-                        if let Some(ext) = path.extension().and_then(|x| x.to_str()) {
-                            match ext {
-                                "mp3"
-                                | "wav"
-                                | "flac"
-                                | "aac"
-                                | "ogg" => {
-                                    enqueued.push(music.clone());
-                                    let file = fs::File::open(path).map_err(PlaybackError::from_err)?;
-                                    let stream = io::BufReader::new(file);
-                                    let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
-                                    self.sink.append(source);
-                                    items_left -= 1;
-                                },
-                                _ => {}
-                            }
-                        }
+                        enqueued.push(music.clone());
+                        // NOTE: Default rodio::Decoder hangs here when decoding large files, but symphonia does not
+                        let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
+                        let stream = io::BufReader::new(file);
+                        let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
+                        self.sink.append(source);
+                        items_left -= 1;
                         Ok(())
                     } else {
                         Err(PlaybackError::from_err(

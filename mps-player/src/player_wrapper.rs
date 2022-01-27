@@ -39,7 +39,9 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
     fn enqeue_some(&mut self, count: usize) {
         //println!("Enqueuing up to {} items", count);
         match self.player.enqueue(count) {
-            Err(e) => self.event.send(PlayerAction::Exception(e)).unwrap(),
+            Err(e) => {
+                self.event.send(PlayerAction::Exception(e)).unwrap();
+            },
             Ok(items) => {
                 for item in items {
                     // notify of new items that have been enqueued
@@ -152,7 +154,7 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
         playback: Sender<PlaybackAction>,
         keep_alive: bool,
     ) -> JoinHandle<()> {
-        thread::spawn(move || Self::unblocking_timer_loop(ctrl_tx, 50));
+        thread::spawn(move || Self::unblocking_timer_loop(ctrl_tx, 100));
         thread::spawn(move || {
             let player = factory();
             let mut server_obj = Self::new(player, ctrl_rx, event, playback, keep_alive);

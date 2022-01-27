@@ -6,7 +6,7 @@ license = "LGPL-2.1-only OR GPL-2.0-or-later"
 readme = "README.md"
 
 [dependencies]
-rodio = { version = "^0.14"}
+rodio = { version = "^0.15", features = ["symphonia"]}
 m3u8-rs = { version = "^3.0.0" }
 
 # local
