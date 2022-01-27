@@ -124,6 +124,10 @@
 //!
 //! Retrieve all files from a folder, matching a regex pattern.
 //!
+//! ### empty();
+//!
+//! Empty iterator. Useful for deleting items using replacement filters.
+//!
 //! ## Sorters
 //! Operations to sort the items in an iterable: iterable~(sorter) OR iterable.sort(sorter)
 //!

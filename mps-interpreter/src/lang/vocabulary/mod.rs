@@ -1,4 +1,5 @@
 mod comment;
+mod empty;
 mod files;
 mod repeat;
 mod sql_init;
@@ -7,6 +8,7 @@ mod sql_simple_query;
 mod variable_assign;
 
 pub use comment::{CommentStatement, CommentStatementFactory};
+pub use empty::{empty_function_factory, EmptyStatementFactory};
 pub use files::{files_function_factory, FilesStatementFactory};
 pub use repeat::{repeat_function_factory, RepeatStatementFactory};
 pub use sql_init::{sql_init_function_factory, SqlInitStatementFactory};

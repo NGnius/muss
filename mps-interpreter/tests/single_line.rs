@@ -367,3 +367,12 @@ fn execute_blisssort_line() -> Result<(), Box<dyn MpsLanguageError>> {
         true,
     )
 }
+
+#[test]
+fn execute_emptyfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "empty()",
+        true,
+        true,
+    )
+}

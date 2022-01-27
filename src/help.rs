@@ -31,7 +31,10 @@ These always return an iterable which can be manipulated.
     Repeat the iterable count times, or infinite times if count is omitted.
 
  files(folder = `path/to/music`, recursive = true|false, regex = `pattern`)
-    Retrieve all files from a folder, matching a regex pattern.";
+    Retrieve all files from a folder, matching a regex pattern.
+
+ empty()
+    Empty iterator. Useful for deleting items using replacement filters.";
 
 pub const FILTERS: &str =
 "FILTERS (?filters)
