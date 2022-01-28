@@ -360,9 +360,18 @@ fn execute_fieldsort_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_blisssort_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_blissfirstsort_line() -> Result<(), Box<dyn MpsLanguageError>> {
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(advanced bliss)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(advanced bliss_first)",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_blissnextsort_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(advanced bliss_next)",
         false,
         true,
     )

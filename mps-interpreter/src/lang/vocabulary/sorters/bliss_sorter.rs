@@ -202,7 +202,7 @@ pub type BlissSorter = crate::lang::vocabulary::sorters::EmptySorter;
 #[cfg(feature = "bliss-audio")]
 impl Display for BlissSorter {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "distance bliss")
+        write!(f, "advanced bliss_first")
     }
 }
 
@@ -210,7 +210,7 @@ pub struct BlissSorterFactory;
 
 impl MpsSorterFactory<BlissSorter> for BlissSorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
-        tokens.len() == 2 && check_name("advanced", &tokens[0]) && check_name("bliss", &tokens[1])
+        tokens.len() == 2 && check_name("advanced", &tokens[0]) && check_name("bliss_first", &tokens[1])
     }
 
     fn build_sorter(
@@ -219,7 +219,7 @@ impl MpsSorterFactory<BlissSorter> for BlissSorterFactory {
         _dict: &MpsLanguageDictionary,
     ) -> Result<BlissSorter, SyntaxError> {
         assert_name("advanced", tokens)?;
-        assert_name("bliss", tokens)?;
+        assert_name("bliss_first", tokens)?;
         Ok(BlissSorter::default())
     }
 }

@@ -24,7 +24,7 @@ impl Display for MpsType {
 }
 
 pub trait MpsVariableStorer: Debug {
-    fn get(&self, name: &str, op: &mut OpGetter) -> Result<&MpsType, RuntimeError> {
+    fn get(&self, name: &str, op: &mut OpGetter) -> Result<&'_ MpsType, RuntimeError> {
         match self.get_opt(name) {
             Some(item) => Ok(item),
             None => Err(RuntimeError {
@@ -35,9 +35,9 @@ pub trait MpsVariableStorer: Debug {
         }
     }
 
-    fn get_opt(&self, name: &str) -> Option<&MpsType>;
+    fn get_opt(&self, name: &str) -> Option<&'_ MpsType>;
 
-    fn get_mut(&mut self, name: &str, op: &mut OpGetter) -> Result<&mut MpsType, RuntimeError> {
+    fn get_mut(&mut self, name: &str, op: &mut OpGetter) -> Result<&'_ mut MpsType, RuntimeError> {
         match self.get_mut_opt(name) {
             Some(item) => Ok(item),
             None => Err(RuntimeError {
@@ -48,7 +48,7 @@ pub trait MpsVariableStorer: Debug {
         }
     }
 
-    fn get_mut_opt(&mut self, name: &str) -> Option<&mut MpsType>;
+    fn get_mut_opt(&mut self, name: &str) -> Option<&'_ mut MpsType>;
 
     fn assign(&mut self, name: &str, value: MpsType, op: &mut OpGetter)
         -> Result<(), RuntimeError>;

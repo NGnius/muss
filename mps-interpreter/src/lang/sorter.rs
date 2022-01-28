@@ -20,6 +20,8 @@ pub trait MpsSorter: Clone + Debug + Display {
         item_buf: &mut VecDeque<MpsIteratorItem>,
         op: &'a mut OpGetter,
     ) -> Result<(), RuntimeError>;
+
+    fn reset(&mut self) {}
 }
 
 pub trait MpsSorterFactory<S: MpsSorter + 'static> {
@@ -75,6 +77,7 @@ impl<S: MpsSorter + 'static> MpsOp for MpsSortStatement<S> {
 
     fn reset(&mut self) -> Result<(), RuntimeError> {
         self.item_cache.clear();
+        self.orderer.reset();
         self.iterable.try_real()?.reset()
     }
 }

@@ -167,6 +167,7 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
         .add(crate::lang::vocabulary::sorters::empty_sort())
         .add(crate::lang::vocabulary::sorters::field_sort())
         .add(crate::lang::vocabulary::sorters::bliss_sort())
+        .add(crate::lang::vocabulary::sorters::bliss_next_sort())
         // functions and misc
         .add(crate::lang::vocabulary::sql_function_factory())
         .add(crate::lang::vocabulary::simple_sql_function_factory())

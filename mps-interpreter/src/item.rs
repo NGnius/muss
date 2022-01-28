@@ -16,7 +16,7 @@ impl MpsItem {
         Self::default()
     }
 
-    pub fn field(&self, name: &str) -> Option<&MpsTypePrimitive> {
+    pub fn field(&self, name: &str) -> Option<&'_ MpsTypePrimitive> {
         self.fields.get(name)
     }
 

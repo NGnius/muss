@@ -135,9 +135,13 @@
 //!
 //! Sort by a MpsItem field. Valid field names change depending on what information is available when the MpsItem is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
 //!
-//! ### advanced bliss -- e.g. iterable~(advanced bliss)
+//! ### advanced bliss_first -- e.g. iterable~(advanced bliss_first)
 //!
-//! Sort by the distance (similarity) between songs. Songs which are more similar (lower distance) to the first song in the iterator will be placed closer to the first song, while less similar songs will be sorted to the end. This uses the [bliss music analyser](https://github.com/polochon-street/bliss-rs), which is a very slow operation and can cause music playback interruptions for large iterators. This requires the `advanced` feature to be enabled (without the feature enabled this is still valid syntax but doesn't change the order).
+//! Sort by the distance (similarity) from the first song in the iterator. Songs which are more similar (lower distance) to the first song in the iterator will be placed closer to the first song, while less similar songs will be sorted to the end. This uses the [bliss music analyser](https://github.com/polochon-street/bliss-rs), which is a very slow operation and can cause music playback interruptions for large iterators. This requires the `advanced` feature to be enabled (without the feature enabled this is still valid syntax but doesn't change the order).
+//!
+//! ### advanced bliss_next -- e.g. iterable~(advanced bliss_next)
+//!
+//! Sort by the distance (similarity) between the last played song in the iterator. Similar to bliss_first. The song which is the most similar (lower distance) to the previous song in the iterator will be placed next to it, then the process is repeated. This uses the [bliss music analyser](https://github.com/polochon-street/bliss-rs), which is a very slow operation and can cause music playback interruptions for large iterators. This requires the `advanced` feature to be enabled (without the feature enabled this is still valid syntax but doesn't change the order).
 //!
 
 mod context;
