@@ -13,7 +13,8 @@ exclude = ["extras/"]
 [workspace]
 members = [
     "mps-interpreter",
-    "mps-player"
+    "mps-player",
+    "mps-m3u8"
 ]
 
 [dependencies]

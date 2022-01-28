@@ -1140,6 +1140,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "mps-m3u8"
+version = "0.4.0"
+dependencies = [
+ "clap 3.0.12",
+ "m3u8-rs",
+ "mps-interpreter",
+]
+
+[[package]]
 name = "mps-player"
 version = "0.4.0"
 dependencies = [
