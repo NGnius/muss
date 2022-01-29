@@ -68,7 +68,7 @@ impl MpsFilterPredicate for FieldFilter {
         op: &mut OpGetter,
     ) -> Result<bool, RuntimeError> {
         let variable = match &self.val {
-            VariableOrValue::Variable(name) => match ctx.variables.get(&name, op)? {
+            VariableOrValue::Variable(name) => match ctx.variables.get(name, op)? {
                 MpsType::Primitive(t) => Ok(t),
                 _ => Err(RuntimeError {
                     line: 0,
@@ -131,12 +131,12 @@ impl MpsFilterFactory<FieldFilter> for FieldFilterFactory {
         (tokens_len == 3 // field > variable OR field < variable
             && tokens[0].is_name()
             && (tokens[1].is_open_angle_bracket() || tokens[1].is_close_angle_bracket())
-            && (tokens[2].is_name() || check_is_type(&tokens[2])))
+            && (tokens[2].is_name() || check_is_type(tokens[2])))
             || (tokens_len == 4 // field >= variable OR field <= variable OR field != variable
             && tokens[0].is_name()
             && (tokens[1].is_open_angle_bracket() || tokens[1].is_close_angle_bracket() || tokens[1].is_equals() || tokens[1].is_exclamation())
             && tokens[2].is_equals()
-            && (tokens[3].is_name() || check_is_type(&tokens[3])))
+            && (tokens[3].is_name() || check_is_type(tokens[3])))
     }
 
     fn build_filter(

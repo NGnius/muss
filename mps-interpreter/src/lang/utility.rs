@@ -23,7 +23,7 @@ pub fn assert_token<T, F: FnOnce(MpsToken) -> Option<T>>(
     } else {
         Err(SyntaxError {
             line: 0,
-            token: token,
+            token,
             got: Some(result),
         })
     }
@@ -46,7 +46,7 @@ pub fn assert_token_raw(
     } else {
         Err(SyntaxError {
             line: 0,
-            token: token,
+            token,
             got: Some(result),
         })
     }
@@ -69,7 +69,7 @@ pub fn assert_token_raw_back(
     } else {
         Err(SyntaxError {
             line: 0,
-            token: token,
+            token,
             got: Some(result),
         })
     }

@@ -81,7 +81,7 @@ impl SimpleMpsOpFactory<CommentStatement> for CommentStatementFactory {
             tokens,
         )?;
         Ok(CommentStatement {
-            comment: comment,
+            comment,
             context: None,
         })
     }

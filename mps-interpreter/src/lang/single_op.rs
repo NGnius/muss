@@ -16,7 +16,7 @@ impl SingleItem {
     pub fn new(item: Result<MpsItem, RuntimeError>) -> Self {
         Self {
             context: None,
-            item: item,
+            item,
             is_complete: false,
         }
     }

@@ -37,7 +37,7 @@ impl MpsFilterPredicate for FieldLikeFilter {
         op: &mut OpGetter,
     ) -> Result<bool, RuntimeError> {
         let variable = match &self.val {
-            VariableOrValue::Variable(name) => match ctx.variables.get(&name, op)? {
+            VariableOrValue::Variable(name) => match ctx.variables.get(name, op)? {
                 MpsType::Primitive(MpsTypePrimitive::String(s)) => Ok(s),
                 _ => Err(RuntimeError {
                     line: 0,
@@ -50,7 +50,7 @@ impl MpsFilterPredicate for FieldLikeFilter {
             _ => Err(RuntimeError {
                 line: 0,
                 op: op(),
-                msg: format!("Value is not type String"),
+                msg: "Value is not type String".to_string(),
             }),
         }?;
         if let Some(field) = music_item_lut.field(&self.field_name) {
@@ -85,12 +85,12 @@ impl MpsFilterFactory<FieldLikeFilter> for FieldLikeFilterFactory {
         let tokens_len = tokens.len();
         (tokens_len == 3 // field like variable
             && tokens[0].is_name()
-            && check_name("like", &tokens[1])
+            && check_name("like", tokens[1])
             && (tokens[2].is_name() || tokens[2].is_literal()))
             || (tokens_len == 4 // field? like variable OR field! like variable
             && tokens[0].is_name()
             && (tokens[1].is_interrogation() || tokens[1].is_exclamation())
-            && check_name("like", &tokens[2])
+            && check_name("like", tokens[2])
             && (tokens[3].is_name() || tokens[3].is_literal()))
     }
 

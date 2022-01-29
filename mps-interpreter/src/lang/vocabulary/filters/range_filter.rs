@@ -120,33 +120,33 @@ impl MpsFilterFactory<RangeFilter> for RangeFilterFactory {
         ) || (tokens.len() == 3
             && ((
                 // ..number
-                tokens[0].is_dot() && tokens[1].is_dot() && Lookup::check_is(&tokens[2])
+                tokens[0].is_dot() && tokens[1].is_dot() && Lookup::check_is(tokens[2])
             ) || (
                 // number..
-                Lookup::check_is(&tokens[0]) && tokens[1].is_dot() && tokens[2].is_dot()
+                Lookup::check_is(tokens[0]) && tokens[1].is_dot() && tokens[2].is_dot()
             )))
             || (tokens.len() == 4
                 && ((
                     // number..number
-                    Lookup::check_is(&tokens[0])
+                    Lookup::check_is(tokens[0])
                         && tokens[1].is_dot()
                         && tokens[2].is_dot()
-                        && Lookup::check_is(&tokens[3])
+                        && Lookup::check_is(tokens[3])
                 ) || (
                     // ..=number
                     tokens[0].is_dot()
                         && tokens[1].is_dot()
                         && tokens[2].is_equals()
-                        && Lookup::check_is(&tokens[3])
+                        && Lookup::check_is(tokens[3])
                 )))
             || (
                 // number..=number
                 tokens.len() == 5
-                    && Lookup::check_is(&tokens[0])
+                    && Lookup::check_is(tokens[0])
                     && tokens[1].is_dot()
                     && tokens[2].is_dot()
                     && tokens[3].is_equals()
-                    && Lookup::check_is(&tokens[4])
+                    && Lookup::check_is(tokens[4])
             )
     }
 
@@ -180,8 +180,8 @@ impl MpsFilterFactory<RangeFilter> for RangeFilterFactory {
         };
 
         Ok(RangeFilter {
-            start: start,
-            end: end,
+            start,
+            end,
             inclusive_end: equals_at_end,
             current: 0,
             complete: false,

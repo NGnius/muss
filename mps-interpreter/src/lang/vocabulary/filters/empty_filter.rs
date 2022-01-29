@@ -41,7 +41,7 @@ pub struct EmptyFilterFactory;
 
 impl MpsFilterFactory<EmptyFilter> for EmptyFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
-        tokens.len() == 0
+        tokens.is_empty()
     }
 
     fn build_filter(

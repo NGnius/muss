@@ -34,7 +34,7 @@ impl SqlStatement {
             } else {
                 //Some(rows[self.current].clone())
                 match &rows[self.current] {
-                    Ok(item) => Some(Ok(item.clone().into())),
+                    Ok(item) => Some(Ok(item.clone())),
                     Err(e) => Some(Err(RuntimeError {
                         line: e.line,
                         op: (Box::new(self.clone()) as Box<dyn MpsOp>).into(),
@@ -46,7 +46,7 @@ impl SqlStatement {
             Some(Err(RuntimeError {
                 line: 0,
                 op: (Box::new(self.clone()) as Box<dyn MpsOp>).into(),
-                msg: format!("Context error: rows is None").into(),
+                msg: "Context error: rows is None".to_string(),
             }))
         }
     }
@@ -99,7 +99,7 @@ impl Iterator for SqlStatement {
             }) {
                 Err(e) => {
                     self.rows = Some(Vec::with_capacity(0));
-                    return Some(Err(e));
+                    Some(Err(e))
                 }
                 Ok(rows) => {
                     self.rows = Some(rows);

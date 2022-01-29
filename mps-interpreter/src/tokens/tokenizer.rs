@@ -29,7 +29,7 @@ where
 {
     pub fn new(reader: R) -> Self {
         Self {
-            reader: reader,
+            reader,
             fsm: ReaderStateMachine::Start {},
             line: 0,
             column: 0,
@@ -73,7 +73,7 @@ where
                     bigger_buf.clear();
                 }
                 ReaderStateMachine::EndToken {} => {
-                    if bigger_buf.len() != 0 {
+                    if !bigger_buf.is_empty() {
                         // ignore consecutive end tokens
                         let token = String::from_utf8(bigger_buf.clone())
                             .map_err(|e| self.error(format!("UTF-8 encoding error: {}", e)))?;
@@ -86,7 +86,7 @@ where
                 }
                 ReaderStateMachine::SingleCharToken { .. } => {
                     let out = bigger_buf.pop().unwrap(); // bracket or comma token
-                    if bigger_buf.len() != 0 {
+                    if !bigger_buf.is_empty() {
                         // bracket tokens can be beside other tokens, without separator
                         let token = String::from_utf8(bigger_buf.clone())
                             .map_err(|e| self.error(format!("UTF-8 encoding error: {}", e)))?;
@@ -118,7 +118,7 @@ where
                     bigger_buf.clear();
                     buf.clear();
                     return match invalid_char {
-                        0 => Err(self.error(format!("EOF"))),
+                        0 => Err(self.error("EOF".to_string())),
                         _ => Err(self.error(format!(
                             "character {:?} ({})",
                             invalid_char as char, invalid_char
@@ -139,7 +139,7 @@ where
             self.fsm = self.fsm.next_state(byte_buf[0]);
         }
         // handle end statement
-        if bigger_buf.len() != 0 {
+        if !bigger_buf.is_empty() {
             // also end of token
             // note: never also end of literal, since those have explicit closing characters
             let token = String::from_utf8(bigger_buf.clone())
@@ -168,7 +168,7 @@ where
         ParseError {
             line: self.current_line(),
             column: self.current_column(),
-            item: item,
+            item,
         }
     }
 }

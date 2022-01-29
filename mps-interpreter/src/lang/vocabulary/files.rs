@@ -56,7 +56,7 @@ impl std::clone::Clone for FilesStatement {
             context: None,
             folder: self.folder.clone(),
             regex: self.regex.clone(),
-            recursive: self.recursive.clone(),
+            recursive: self.recursive,
             file_iter: None,
             has_tried: self.has_tried,
         }
@@ -86,7 +86,7 @@ impl Iterator for FilesStatement {
             });
         }
         match self.file_iter.as_mut().unwrap().next() {
-            Some(Ok(item)) => Some(Ok(item.into())),
+            Some(Ok(item)) => Some(Ok(item)),
             Some(Err(e)) => Some(Err(RuntimeError {
                 line: 0,
                 op: (Box::new(self.clone()) as Box<dyn MpsOp>).into(),
@@ -134,7 +134,7 @@ impl MpsFunctionFactory<FilesStatement> for FilesFunctionFactory {
         let mut root_path = None;
         let mut pattern = None;
         let mut recursive = None;
-        if tokens.len() != 0 {
+        if !tokens.is_empty() {
             if tokens[0].is_literal() {
                 // folder is specified without keyword
                 root_path = Some(assert_token(
@@ -232,7 +232,7 @@ impl MpsFunctionFactory<FilesStatement> for FilesFunctionFactory {
             context: None,
             folder: root_path,
             regex: pattern,
-            recursive: recursive,
+            recursive,
             file_iter: None,
             has_tried: false,
         })

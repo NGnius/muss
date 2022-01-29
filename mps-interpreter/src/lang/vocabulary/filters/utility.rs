@@ -8,7 +8,7 @@ pub fn assert_comparison_operator(tokens: &mut VecDeque<MpsToken>) -> Result<[i8
     let token1 = tokens.pop_front().unwrap();
     match token1 {
         MpsToken::Equals => {
-            if tokens.len() != 0 && tokens[0].is_equals() {
+            if !tokens.is_empty() && tokens[0].is_equals() {
                 // tokens: ==
                 assert_token_raw(MpsToken::Equals, tokens)?;
                 Ok([0, 0])
@@ -16,7 +16,7 @@ pub fn assert_comparison_operator(tokens: &mut VecDeque<MpsToken>) -> Result<[i8
                 Err(SyntaxError {
                     line: 0,
                     token: MpsToken::Equals,
-                    got: if tokens.len() != 0 {
+                    got: if !tokens.is_empty() {
                         Some(tokens[0].clone())
                     } else {
                         None
@@ -25,7 +25,7 @@ pub fn assert_comparison_operator(tokens: &mut VecDeque<MpsToken>) -> Result<[i8
             }
         }
         MpsToken::OpenAngleBracket => {
-            if tokens.len() != 0 && tokens[0].is_equals() {
+            if !tokens.is_empty() && tokens[0].is_equals() {
                 // tokens: <=
                 assert_token_raw(MpsToken::Equals, tokens)?;
                 Ok([0, -1])
@@ -35,7 +35,7 @@ pub fn assert_comparison_operator(tokens: &mut VecDeque<MpsToken>) -> Result<[i8
             }
         }
         MpsToken::CloseAngleBracket => {
-            if tokens.len() != 0 && tokens[0].is_equals() {
+            if !tokens.is_empty() && tokens[0].is_equals() {
                 // tokens: >=
                 assert_token_raw(MpsToken::Equals, tokens)?;
                 Ok([0, 1])

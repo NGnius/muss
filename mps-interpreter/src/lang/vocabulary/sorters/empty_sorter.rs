@@ -34,7 +34,7 @@ pub struct EmptySorterFactory;
 
 impl MpsSorterFactory<EmptySorter> for EmptySorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
-        tokens.len() == 0
+        tokens.is_empty()
     }
 
     fn build_sorter(

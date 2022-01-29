@@ -36,7 +36,7 @@ impl<T: MpsTokenReader> MpsRunner<T> {
             interpretor.context(ctx);
         }
         Self {
-            interpretor: interpretor,
+            interpretor,
             new_statement: true,
         }
     }

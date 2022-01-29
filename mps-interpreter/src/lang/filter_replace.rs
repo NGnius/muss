@@ -166,7 +166,7 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
                     .as_mut()
                     .unwrap()
                     .variables
-                    .remove(&variable_name, &mut op_getter)
+                    .remove(variable_name, &mut op_getter)
                 {
                     Ok(MpsType::Op(op)) => op,
                     Ok(x) => {
@@ -186,7 +186,7 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
                 let item = variable.next();
                 self.context = Some(variable.escape());
                 match self.context.as_mut().unwrap().variables.declare(
-                    &variable_name,
+                    variable_name,
                     MpsType::Op(variable),
                     &mut op_getter,
                 ) {
@@ -228,7 +228,7 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
                                             Ok(_) => {}
                                         }
                                     }
-                                    while let Some(item) = real_op.next() {
+                                    for item in real_op.by_ref() {
                                         self.item_cache.push_back(item);
                                     }
                                     self.context = Some(real_op.escape());
@@ -275,7 +275,7 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
                                             Ok(_) => {}
                                         }
                                     }
-                                    while let Some(item) = real_op.next() {
+                                    for item in real_op.by_ref() {
                                         self.item_cache.push_back(item);
                                     }
                                     self.context = Some(real_op.escape());
@@ -303,7 +303,7 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
                             Some(Ok(item))
                         }
                     }
-                    Err(e) => return Some(Err(e)),
+                    Err(e) => Some(Err(e)),
                 }
             }
             Some(Err(e)) => Some(Err(e)),

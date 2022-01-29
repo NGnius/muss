@@ -17,13 +17,13 @@ impl MpsFilterFactory<FieldFilter> for FieldFilterMaybeFactory {
             && tokens[0].is_name()
             && (tokens[1].is_interrogation() || tokens[1].is_exclamation())
             && (tokens[2].is_open_angle_bracket() || tokens[2].is_close_angle_bracket())
-            && (tokens[3].is_name() || check_is_type(&tokens[3])))
+            && (tokens[3].is_name() || check_is_type(tokens[3])))
             || (tokens_len == 5 // field >= variable OR field <= variable OR field != variable
             && tokens[0].is_name()
             && (tokens[1].is_interrogation() || tokens[1].is_exclamation())
             && (tokens[2].is_open_angle_bracket() || tokens[2].is_close_angle_bracket() || tokens[2].is_equals() || tokens[2].is_exclamation())
             && tokens[3].is_equals()
-            && (tokens[4].is_name() || check_is_type(&tokens[4])))
+            && (tokens[4].is_name() || check_is_type(tokens[4])))
     }
 
     fn build_filter(

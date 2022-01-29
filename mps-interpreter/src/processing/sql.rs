@@ -45,7 +45,7 @@ pub struct MpsSQLiteExecutor {
 impl MpsSQLiteExecutor {
     #[inline]
     fn gen_db_maybe(&mut self, op: &mut QueryOp) -> Result<(), RuntimeError> {
-        if let None = self.sqlite_connection {
+        if self.sqlite_connection.is_none() {
             // connection needs to be created
             match generate_default_db() {
                 Ok(conn) => {
@@ -55,7 +55,7 @@ impl MpsSQLiteExecutor {
                     return Err(RuntimeError {
                         line: 0,
                         op: op(),
-                        msg: format!("SQL connection error: {}", e).into(),
+                        msg: format!("SQL connection error: {}", e),
                     })
                 }
             }
@@ -78,7 +78,7 @@ impl MpsSQLiteExecutor {
                     item.map_err(|e| RuntimeError {
                         line: 0,
                         op: op(),
-                        msg: format!("SQL item mapping error: {}", e).into(),
+                        msg: format!("SQL item mapping error: {}", e),
                     })
                 })
                 .collect()),
@@ -103,7 +103,7 @@ impl MpsDatabaseQuerier for MpsSQLiteExecutor {
                     item.map_err(|e| RuntimeError {
                         line: 0,
                         op: op(),
-                        msg: format!("SQL item mapping error: {}", e).into(),
+                        msg: format!("SQL item mapping error: {}", e),
                     })
                 })
                 .collect()),
@@ -248,8 +248,7 @@ impl std::convert::TryInto<rusqlite::Connection> for SqliteSettings {
 
     fn try_into(self) -> Result<rusqlite::Connection, Self::Error> {
         let music_path = self
-            .music_path
-            .and_then(|p| Some(std::path::PathBuf::from(p)))
+            .music_path.map(std::path::PathBuf::from)
             .unwrap_or_else(crate::lang::utility::music_folder);
         let sqlite_path = self
             .db_path

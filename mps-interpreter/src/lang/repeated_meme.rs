@@ -43,7 +43,7 @@ pub fn repeated_tokens<X, F1: FnMut(&mut VecDeque<MpsToken>) -> Result<Option<X>
     RepeatedTokens {
         pattern_ingest: ingestor,
         separator_ingest: move |tokens| {
-            if tokens.len() > 0 && check_token_raw(separator.clone(), &tokens[0]) {
+            if !tokens.is_empty() && check_token_raw(separator.clone(), &tokens[0]) {
                 assert_token_raw(separator.clone(), tokens)?;
                 Ok(true)
             } else {

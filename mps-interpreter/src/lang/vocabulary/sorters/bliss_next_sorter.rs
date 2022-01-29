@@ -31,13 +31,11 @@ impl BlissNextSorter {
     fn get_maybe(&mut self, op: &mut OpGetter) -> Option<MpsIteratorItem> {
         if self.algorithm_done {
             None
+        } else if let Ok(Some(item)) = self.rx.as_ref().unwrap().recv() {
+            Some(item.map_err(|e| bliss_err(e, op)))
         } else {
-            if let Ok(Some(item)) = self.rx.as_ref().unwrap().recv() {
-                Some(item.map_err(|e| bliss_err(e, op)))
-            } else {
-                self.algorithm_done = true;
-                None
-            }
+            self.algorithm_done = true;
+            None
         }
     }
 
@@ -127,7 +125,7 @@ impl BlissNextSorter {
 impl std::clone::Clone for BlissNextSorter {
     fn clone(&self) -> Self {
         Self {
-            up_to: self.up_to.clone(),
+            up_to: self.up_to,
             rx: None,
             algorithm_done: self.algorithm_done,
         }
@@ -205,7 +203,7 @@ pub struct BlissNextSorterFactory;
 
 impl MpsSorterFactory<BlissNextSorter> for BlissNextSorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
-        tokens.len() == 2 && check_name("advanced", &tokens[0]) && check_name("bliss_next", &tokens[1])
+        tokens.len() == 2 && check_name("advanced", tokens[0]) && check_name("bliss_next", tokens[1])
     }
 
     fn build_sorter(

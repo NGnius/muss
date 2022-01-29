@@ -33,8 +33,7 @@ impl Tags {
         self.data
             .get("TITLE")
             .unwrap_or(&TagType::Unknown)
-            .str()
-            .and_then(|s| Some(s.to_string()))
+            .str().map(|s| s.to_string())
             .unwrap_or_else(|| self.default_title())
     }
 
@@ -47,8 +46,7 @@ impl Tags {
             .unwrap_or("");
         self.filename
             .file_name()
-            .and_then(|file| file.to_str())
-            .and_then(|file| Some(file.replacen(&format!(".{}", extension), "", 1)))
+            .and_then(|file| file.to_str()).map(|file| file.replacen(&format!(".{}", extension), "", 1))
             .unwrap_or("Unknown Title".into())
     }
 
@@ -57,8 +55,7 @@ impl Tags {
         self.data
             .get("ARTIST")
             .unwrap_or(&TagType::Unknown)
-            .str()
-            .and_then(|s| Some(s.to_string()))
+            .str().map(|s| s.to_string())
     }
 
     #[inline]
@@ -66,8 +63,7 @@ impl Tags {
         self.data
             .get("ALBUM")
             .unwrap_or(&TagType::Unknown)
-            .str()
-            .and_then(|s| Some(s.to_string()))
+            .str().map(|s| s.to_string())
     }
 
     #[inline]
@@ -75,8 +71,7 @@ impl Tags {
         self.data
             .get("GENRE")
             .unwrap_or(&TagType::Unknown)
-            .str()
-            .and_then(|s| Some(s.to_string()))
+            .str().map(|s| s.to_string())
     }
 
     #[inline]
@@ -233,7 +228,7 @@ impl TagType {
 
     fn str(&self) -> Option<&str> {
         match self {
-            Self::Str(s) => Some(&s),
+            Self::Str(s) => Some(s),
             _ => None,
         }
     }

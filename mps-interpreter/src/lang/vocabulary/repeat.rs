@@ -69,7 +69,7 @@ impl Iterator for RepeatStatement {
         }
         if real_op.is_resetable() {
             while self.loop_forever || !self.inner_done {
-                while let Some(item) = real_op.next() {
+                for item in real_op.by_ref() {
                     return Some(item);
                 }
                 if !self.loop_forever {
@@ -124,28 +124,26 @@ impl Iterator for RepeatStatement {
             // inner is done
             if self.repetitions == 0 && !self.loop_forever {
                 None
-            } else {
-                if self.cache.len() == 0 {
-                    if self.loop_forever {
-                        Some(Err(RuntimeError {
-                            line: 0,
-                            op: (Box::new(self.clone()) as Box<dyn MpsOp>).into(),
-                            msg: "Cannot repeat nothing".into(),
-                        }))
-                    } else {
-                        None
-                    }
+            } else if self.cache.is_empty() {
+                if self.loop_forever {
+                    Some(Err(RuntimeError {
+                        line: 0,
+                        op: (Box::new(self.clone()) as Box<dyn MpsOp>).into(),
+                        msg: "Cannot repeat nothing".into(),
+                    }))
                 } else {
-                    let music_item = self.cache[self.cache_position].clone();
-                    self.cache_position += 1;
-                    if self.cache_position == self.cache.len() {
-                        if self.repetitions != 0 {
-                            self.repetitions -= 1;
-                        }
-                        self.cache_position = 0;
-                    }
-                    Some(Ok(music_item))
+                    None
                 }
+            } else {
+                let music_item = self.cache[self.cache_position].clone();
+                self.cache_position += 1;
+                if self.cache_position == self.cache.len() {
+                    if self.repetitions != 0 {
+                        self.repetitions -= 1;
+                    }
+                    self.cache_position = 0;
+                }
+                Some(Ok(music_item))
             }
         }
     }
@@ -183,19 +181,17 @@ impl MpsOp for RepeatStatement {
                 self.repetitions = self.original_repetitions - 1;
                 self.inner_done = false;
             }
+        } else if self.inner_done {
+            self.repetitions = self.original_repetitions;
+            self.cache_position = 0;
         } else {
-            if self.inner_done {
-                self.repetitions = self.original_repetitions;
-                self.cache_position = 0;
-            } else {
-                return Err(RuntimeError {
-                    line: 0,
-                    op: PseudoOp::from_printable(self),
-                    msg:
-                        "Cannot reset part way through repeat when inner statement is not resetable"
-                            .to_string(),
-                });
-            }
+            return Err(RuntimeError {
+                line: 0,
+                op: PseudoOp::from_printable(self),
+                msg:
+                    "Cannot reset part way through repeat when inner statement is not resetable"
+                        .to_string(),
+            });
         }
         Ok(())
     }
@@ -220,7 +216,7 @@ impl MpsFunctionFactory<RepeatStatement> for RepeatFunctionFactory {
         tokens.extend(end_tokens);
         let mut count: Option<usize> = None;
         let mut inner_done = false;
-        if tokens.len() != 0 {
+        if !tokens.is_empty() {
             // repititions specified
             assert_token_raw(MpsToken::Comma, tokens)?;
             count = Some(assert_token(
@@ -244,13 +240,13 @@ impl MpsFunctionFactory<RepeatStatement> for RepeatFunctionFactory {
         }
         Ok(RepeatStatement {
             inner_statement: inner_statement.into(),
-            inner_done: inner_done,
+            inner_done,
             context: None,
             cache: Vec::new(),
             cache_position: 0,
             repetitions: count.unwrap_or(0),
             loop_forever: count.is_none(),
-            original_repetitions: count.and_then(|c| Some(c + 1)).unwrap_or(0),
+            original_repetitions: count.map(|c| c + 1).unwrap_or(0),
         })
     }
 }

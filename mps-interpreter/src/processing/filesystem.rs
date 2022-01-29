@@ -35,7 +35,7 @@ impl Iterator for SortedReadDir {
 
     fn next(&mut self) -> Option<Self::Item> {
         if !self.dir_iter_complete {
-            while let Some(dir) = self.dir_iter.next() {
+            for dir in self.dir_iter.by_ref() {
                 match dir {
                     Ok(f) => self.cache.push(f),
                     Err(e) => return Some(Err(e)),
@@ -226,15 +226,14 @@ impl FileIter {
         item: &mut MpsItem,
         path_str: &str,
         captures: Option<regex::Captures>,
-        mut capture_names: regex::CaptureNames,
+        capture_names: regex::CaptureNames,
     ) {
         // populates fields from named capture groups
         if let Some(captures) = captures {
-            while let Some(name_maybe) = capture_names.next() {
+            for name_maybe in capture_names {
                 if let Some(name) = name_maybe {
                     if let Some(value) = captures
-                        .name(name)
-                        .and_then(|m| Some(m.as_str().to_string()))
+                        .name(name).map(|m| m.as_str().to_string())
                     {
                         item.set_field(name, MpsTypePrimitive::parse(value));
                     }
@@ -260,62 +259,55 @@ impl Iterator for FileIter {
     fn next(&mut self) -> Option<Self::Item> {
         if self.is_complete {
             None
-        } else {
-            if self.dir_iters.is_empty() {
-                if self.root.is_file() {
-                    self.is_complete = true;
-                    match self.build_item(&self.root) {
-                        None => None,
-                        Some(item) => Some(Ok(item)),
-                    }
-                } else {
-                    self.dir_iters.push(match self.root.read_dir() {
-                        Ok(x) => x.into(),
-                        Err(e) => {
-                            self.is_complete = true;
-                            return Some(Err(format!("Directory read error: {}", e)));
-                        }
-                    });
-                    return self.next();
-                }
-            } else {
-                while !self.dir_iters.is_empty() {
-                    let mut dir_iter = self.dir_iters.pop().unwrap();
-                    'inner: while let Some(path_result) = dir_iter.next() {
-                        match path_result {
-                            Ok(dir_entry) => {
-                                if dir_entry.path().is_dir() {
-                                    if self.recursive {
-                                        self.dir_iters.push(dir_iter);
-                                        self.dir_iters.push(match dir_entry.path().read_dir() {
-                                            Ok(x) => x.into(),
-                                            Err(e) => {
-                                                return Some(Err(format!(
-                                                    "Directory read error: {}",
-                                                    e
-                                                )))
-                                            }
-                                        });
-                                        //return self.next();
-                                        break 'inner;
-                                    }
-                                } else {
-                                    if let Some(item) = self.build_item(dir_entry.path()) {
-                                        self.dir_iters.push(dir_iter);
-                                        return Some(Ok(item));
-                                    }
-                                }
-                            },
-                            Err(e) => {
-                                self.dir_iters.push(dir_iter);
-                                return Some(Err(format!("Path read error: {}", e)));
-                            }
-                        }
-                    }
-                }
+        } else if self.dir_iters.is_empty() {
+            if self.root.is_file() {
                 self.is_complete = true;
-                None
+                self.build_item(&self.root).map(Ok)
+            } else {
+                self.dir_iters.push(match self.root.read_dir() {
+                    Ok(x) => x.into(),
+                    Err(e) => {
+                        self.is_complete = true;
+                        return Some(Err(format!("Directory read error: {}", e)));
+                    }
+                });
+                self.next()
             }
+        } else {
+            while !self.dir_iters.is_empty() {
+                let mut dir_iter = self.dir_iters.pop().unwrap();
+                'inner: while let Some(path_result) = dir_iter.next() {
+                    match path_result {
+                        Ok(dir_entry) => {
+                            if dir_entry.path().is_dir() {
+                                if self.recursive {
+                                    self.dir_iters.push(dir_iter);
+                                    self.dir_iters.push(match dir_entry.path().read_dir() {
+                                        Ok(x) => x.into(),
+                                        Err(e) => {
+                                            return Some(Err(format!(
+                                                "Directory read error: {}",
+                                                e
+                                            )))
+                                        }
+                                    });
+                                    //return self.next();
+                                    break 'inner;
+                                }
+                            } else if let Some(item) = self.build_item(dir_entry.path()) {
+                                self.dir_iters.push(dir_iter);
+                                return Some(Ok(item));
+                            }
+                        },
+                        Err(e) => {
+                            self.dir_iters.push(dir_iter);
+                            return Some(Err(format!("Path read error: {}", e)));
+                        }
+                    }
+                }
+            }
+            self.is_complete = true;
+            None
         }
     }
 }

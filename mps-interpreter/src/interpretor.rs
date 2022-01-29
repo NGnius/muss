@@ -32,7 +32,7 @@ where
 {
     pub fn with_vocab(tokenizer: T, vocab: MpsLanguageDictionary) -> Self {
         Self {
-            tokenizer: tokenizer,
+            tokenizer,
             buffer: VecDeque::new(),
             current_stmt: None,
             vocabulary: vocab,
@@ -42,7 +42,7 @@ where
 
     pub fn with_standard_vocab(tokenizer: T) -> Self {
         let mut result = Self {
-            tokenizer: tokenizer,
+            tokenizer,
             buffer: VecDeque::new(),
             current_stmt: None,
             vocabulary: MpsLanguageDictionary::default(),
@@ -66,7 +66,7 @@ impl MpsInterpretor<crate::tokens::MpsTokenizer<File>> {
         let file = File::open(path)?;
         let tokenizer = crate::tokens::MpsTokenizer::new(file);
         let mut result = Self {
-            tokenizer: tokenizer,
+            tokenizer,
             buffer: VecDeque::new(),
             current_stmt: None,
             vocabulary: MpsLanguageDictionary::default(),
@@ -90,12 +90,7 @@ where
             if next_item.is_none() {
                 is_stmt_done = true;
             }
-            match next_item {
-                Some(item) => {
-                    Some(item.map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line())))
-                }
-                None => None,
-            }
+            next_item.map(|item| item.map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line())))
         } else {
             /*if self.tokenizer.end_of_file() {
                 return None;
@@ -110,28 +105,23 @@ where
                 Ok(_) => {}
                 Err(x) => return Some(Err(x)),
             }
-            if self.tokenizer.end_of_file() && self.buffer.len() == 0 {
+            if self.tokenizer.end_of_file() && self.buffer.is_empty() {
                 return None;
             }
             let stmt = self.vocabulary.try_build_statement(&mut self.buffer);
             match stmt {
                 Ok(mut stmt) => {
                     #[cfg(debug_assertions)]
-                    if self.buffer.len() != 0 {
+                    if !self.buffer.is_empty() {
                         panic!("Token buffer was not emptied! (rem: {:?})", self.buffer)
                     }
-                    stmt.enter(self.context.take().unwrap_or_else(|| MpsContext::default()));
+                    stmt.enter(self.context.take().unwrap_or_default());
                     self.current_stmt = Some(stmt);
                     let next_item = self.current_stmt.as_mut().unwrap().next();
                     if next_item.is_none() {
                         is_stmt_done = true;
                     }
-                    match next_item {
-                        Some(item) => Some(
-                            item.map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line())),
-                        ),
-                        None => None,
-                    }
+                    next_item.map(|item| item.map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line())))
                 }
                 Err(e) => {
                     Some(Err(e).map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line())))

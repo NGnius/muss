@@ -295,7 +295,7 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                     }
                     maybe_result
                 }
-                Err(e) => return Some(Err(e)),
+                Err(e) => Some(Err(e)),
             },
             VariableOrOp::Variable(variable_name) => {
                 let mut variable = match self
@@ -303,13 +303,13 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                     .as_mut()
                     .unwrap()
                     .variables
-                    .remove(&variable_name, &mut op_getter)
+                    .remove(variable_name, &mut op_getter)
                 {
                     Ok(MpsType::Op(op)) => op,
                     Ok(x) => {
                         return Some(Err(RuntimeError {
                             line: 0,
-                            op: (Box::new(self_clone2.clone()) as Box<dyn MpsOp>).into(),
+                            op: (Box::new(self_clone2) as Box<dyn MpsOp>).into(),
                             msg: format!(
                                 "Expected operation/iterable type in variable {}, got {}",
                                 &variable_name, x
@@ -353,11 +353,11 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                     self.context = Some(variable.escape());
                 }
                 match self.context.as_mut().unwrap().variables.declare(
-                    &variable_name,
+                    variable_name,
                     MpsType::Op(variable),
                     &mut op_getter,
                 ) {
-                    Err(e) => return Some(Err(e)),
+                    Err(e) => Some(Err(e)),
                     Ok(_) => maybe_result,
                 }
             }
@@ -405,7 +405,7 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
                     // single filter
                     let tokens2: VecDeque<&MpsToken> =
                         VecDeque::from_iter(tokens.range(start_of_predicate..tokens_len - 1));
-                    if tokens2.len() != 0 && check_name("if", &tokens2[0]) {
+                    if !tokens2.is_empty() && check_name("if", tokens2[0]) {
                         // replacement filter
                         if let Some(colon_location) = first_colon2(&tokens2) {
                             let tokens3 = VecDeque::from_iter(tokens.range(
@@ -543,11 +543,7 @@ fn last_open_bracket_is_after_dot(tokens: &VecDeque<MpsToken>) -> bool {
                 inside_brackets -= 1;
             }
         } else if open_bracket_found {
-            if tokens[i].is_dot() {
-                return true;
-            } else {
-                return false;
-            }
+            return tokens[i].is_dot()
         }
     }
     false
