@@ -53,7 +53,7 @@ fn main() {
     if let Some(script_file) = &args.file {
         // interpret script
         // script file checks
-        if let Err(_) = file_checks(script_file) {
+        if file_checks(script_file).is_err() {
             return;
         }
         // build playback controller
@@ -61,18 +61,16 @@ fn main() {
         let player_builder = move || {
             let script_reader = io::BufReader::new(
                 std::fs::File::open(&script_file2)
-                    .expect(&format!("Abort: Cannot open file `{}`", &script_file2)),
+                    .unwrap_or_else(|_| panic!("Abort: Cannot open file `{}`", &script_file2)),
             );
             let runner = MpsRunner::with_stream(script_reader);
-            let player = MpsPlayer::new(runner).unwrap();
-            player
+            
+            MpsPlayer::new(runner).unwrap()
         };
         if let Some(playlist_file) = &args.playlist {
             // generate playlist
             let mut player = player_builder();
-            let mut writer = io::BufWriter::new(std::fs::File::create(playlist_file).expect(
-                &format!("Abort: Cannot create writeable file `{}`", playlist_file),
-            ));
+            let mut writer = io::BufWriter::new(std::fs::File::create(playlist_file).unwrap_or_else(|_| panic!("Abort: Cannot create writeable file `{}`", playlist_file)));
             match player.save_m3u8(&mut writer) {
                 Ok(_) => println!(
                     "Succes: Finished playlist `{}` from script `{}`",

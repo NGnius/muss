@@ -37,16 +37,14 @@ pub fn repl(args: CliArgs) {
     let (writer, reader) = channel_io();
     let player_builder = move || {
         let runner = MpsRunner::with_stream(reader);
-        let player = MpsPlayer::new(runner).unwrap();
-        player
+        
+        MpsPlayer::new(runner).unwrap()
     };
     let mut state = ReplState::new(writer);
     if let Some(playlist_file) = &args.playlist {
         println!("Playlist mode (output: `{}`)", playlist_file);
         let mut player = player_builder();
-        let mut playlist_writer = io::BufWriter::new(std::fs::File::create(playlist_file).expect(
-            &format!("Abort: Cannot create writeable file `{}`", playlist_file),
-        ));
+        let mut playlist_writer = io::BufWriter::new(std::fs::File::create(playlist_file).unwrap_or_else(|_| panic!("Abort: Cannot create writeable file `{}`", playlist_file)));
         read_loop(&args, &mut state, || {
             match player.save_m3u8(&mut playlist_writer) {
                 Ok(_) => {}
@@ -126,12 +124,12 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
             }
             '\n' => {
                 let statement_result = std::str::from_utf8(state.statement_buf.as_slice());
-                if statement_result.is_ok() && statement_result.unwrap().trim().starts_with("?") {
+                if statement_result.is_ok() && statement_result.unwrap().trim().starts_with('?') {
                     //println!("Got {}", statement_result.unwrap());
                     repl_commands(statement_result.unwrap().trim());
                     state.statement_buf.clear();
                 } else if state.bracket_depth == 0 && state.in_literal.is_none() {
-                    state.statement_buf.push(';' as u8);
+                    state.statement_buf.push(b';');
                     state
                         .writer
                         .write(state.statement_buf.as_slice())
@@ -159,7 +157,7 @@ fn error_prompt(error: mps_player::PlaybackError, args: &CliArgs) {
 }
 
 fn repl_commands(command_str: &str) {
-    let words: Vec<&str> = command_str.split(" ").map(|s| s.trim()).collect();
+    let words: Vec<&str> = command_str.split(' ').map(|s| s.trim()).collect();
     match words[0] {
         "?help" => println!("{}", super::help::HELP_STRING),
         "?function" | "?functions" => println!("{}", super::help::FUNCTIONS),
