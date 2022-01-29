@@ -1,12 +1,12 @@
 #[allow(unused_imports)]
 use std::sync::mpsc::{channel, Receiver, Sender};
-#[cfg(all(target_os = "linux", feature = "os-controls"))]
+#[cfg(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))]
 use std::thread::JoinHandle;
 
-#[cfg(all(target_os = "linux", feature = "os-controls"))]
+#[cfg(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))]
 use mpris_player::{Metadata, MprisPlayer, PlaybackStatus};
 
-#[cfg(all(target_os = "linux", feature = "os-controls"))]
+#[cfg(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))]
 use mps_interpreter::MpsItem;
 
 //use super::MpsController;
@@ -14,7 +14,7 @@ use super::player_wrapper::{ControlAction, PlaybackAction};
 
 /// OS-specific APIs for media controls.
 /// Currently only Linux (dbus) is supported.
-#[cfg(all(target_os = "linux", feature = "os-controls"))]
+#[cfg(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))]
 pub struct SystemControlWrapper {
     control: Sender<ControlAction>,
     dbus_handle: Option<JoinHandle<()>>, //std::sync::Arc<MprisPlayer>,
@@ -25,20 +25,20 @@ pub struct SystemControlWrapper {
 
 /// OS-specific APIs for media controls.
 /// Currently only Linux (dbus) is supported.
-#[cfg(not(feature = "os-controls"))]
+#[cfg(any(not(feature = "os-controls"), not(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))))]
 pub struct SystemControlWrapper {
     #[allow(dead_code)]
     control: Sender<ControlAction>,
     playback_receiver: Option<Receiver<PlaybackAction>>,
 }
 
-#[cfg(all(target_os = "linux", feature = "os-controls"))]
+#[cfg(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))]
 enum DbusControl {
     Die,
     SetMetadata(Metadata),
 }
 
-#[cfg(all(target_os = "linux", feature = "os-controls"))]
+#[cfg(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))]
 impl SystemControlWrapper {
     pub fn new(control: Sender<ControlAction>) -> Self {
         Self {
@@ -221,7 +221,7 @@ impl SystemControlWrapper {
     }
 }
 
-#[cfg(not(feature = "os-controls"))]
+#[cfg(any(not(feature = "os-controls"), not(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))))]
 impl SystemControlWrapper {
     pub fn new(control: Sender<ControlAction>) -> Self {
         Self {
