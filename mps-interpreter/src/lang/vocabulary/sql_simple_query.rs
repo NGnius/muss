@@ -170,6 +170,11 @@ impl Iterator for SimpleSqlStatement {
             }
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.rows.as_ref().map(|x| x.len());
+        (len.unwrap_or(0), len)
+    }
 }
 
 impl Display for SimpleSqlStatement {

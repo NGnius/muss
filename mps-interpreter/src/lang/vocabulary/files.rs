@@ -95,6 +95,10 @@ impl Iterator for FilesStatement {
             None => None,
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.file_iter.as_ref().map(|x| x.size_hint()).unwrap_or((0, None))
+    }
 }
 
 impl MpsOp for FilesStatement {

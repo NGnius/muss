@@ -310,6 +310,18 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
             None => None,
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match &self.iterable {
+            VariableOrOp::Variable(s) => self.context.as_ref()
+                .and_then(|x| x.variables.get_opt(s))
+                .and_then(|x| match x {
+                MpsType::Op(op) => Some(op.size_hint()),
+                _ => None
+            }),
+            VariableOrOp::Op(op) => op.try_real_ref().map(|x| x.size_hint()).ok()
+        }.unwrap_or((0, None))
+    }
 }
 
 fn declare_or_replace_item(

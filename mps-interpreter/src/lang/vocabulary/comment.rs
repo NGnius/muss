@@ -49,6 +49,10 @@ impl Iterator for CommentStatement {
     fn next(&mut self) -> Option<Self::Item> {
         None
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(0))
+    }
 }
 
 impl MpsOp for CommentStatement {

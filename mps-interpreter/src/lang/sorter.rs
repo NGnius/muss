@@ -101,6 +101,10 @@ impl<S: MpsSorter + 'static> Iterator for MpsSortStatement<S> {
         }
         self.item_cache.pop_front()
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iterable.try_real_ref().map(|x| x.size_hint()).unwrap_or((0, None))
+    }
 }
 
 pub struct MpsSortStatementFactory<S: MpsSorter + 'static, F: MpsSorterFactory<S> + 'static> {

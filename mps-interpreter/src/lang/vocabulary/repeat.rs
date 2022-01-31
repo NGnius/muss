@@ -147,6 +147,15 @@ impl Iterator for RepeatStatement {
             }
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        if self.inner_done {
+            let len = (self.cache.len() * (self.repetitions + 1)) - self.cache_position;
+            (len, Some(len))
+        } else {
+            (0, None)
+        }
+    }
 }
 
 impl MpsOp for RepeatStatement {

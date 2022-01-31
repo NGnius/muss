@@ -120,6 +120,10 @@ impl Iterator for AssignStatement {
             }
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(1))
+    }
 }
 
 impl MpsOp for AssignStatement {

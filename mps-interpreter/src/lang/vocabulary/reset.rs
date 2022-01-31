@@ -51,6 +51,10 @@ impl Iterator for ResetStatement {
         }
         None
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(0))
+    }
 }
 
 impl MpsOp for ResetStatement {

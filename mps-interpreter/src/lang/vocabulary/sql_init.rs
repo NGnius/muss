@@ -55,6 +55,10 @@ impl Iterator for SqlInitStatement {
             Err(e) => Some(Err(e)),
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(0))
+    }
 }
 
 impl MpsOp for SqlInitStatement {
