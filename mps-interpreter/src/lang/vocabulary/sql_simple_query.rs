@@ -5,8 +5,9 @@ use std::iter::Iterator;
 use crate::lang::utility::assert_token;
 use crate::lang::{
     MpsFunctionFactory, MpsFunctionStatementFactory, MpsIteratorItem, MpsLanguageDictionary, MpsOp,
+    PseudoOp,
 };
-use crate::lang::{RuntimeError, SyntaxError};
+use crate::lang::{RuntimeError, RuntimeMsg, RuntimeOp, SyntaxError};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsItem;
@@ -65,12 +66,13 @@ pub struct SimpleSqlStatement {
     query: String,
     mode: QueryMode,
     context: Option<MpsContext>,
-    rows: Option<Vec<Result<MpsItem, RuntimeError>>>,
+    rows: Option<Vec<Result<MpsItem, RuntimeMsg>>>,
     current: usize,
 }
 
 impl SimpleSqlStatement {
     fn get_item(&mut self, increment: bool) -> Option<MpsIteratorItem> {
+        let fake = PseudoOp::from_printable(self);
         if let Some(rows) = &self.rows {
             if increment {
                 if self.current == rows.len() {
@@ -82,19 +84,15 @@ impl SimpleSqlStatement {
                 None
             } else {
                 //Some(rows[self.current].clone())
-                match &rows[self.current] {
-                    Ok(item) => Some(Ok(item.clone())),
-                    Err(e) => Some(Err(RuntimeError {
-                        line: e.line,
-                        op: (Box::new(self.clone()) as Box<dyn MpsOp>).into(),
-                        msg: e.msg.clone(),
-                    })),
+                match rows[self.current].clone() {
+                    Ok(item) => Some(Ok(item)),
+                    Err(e) => Some(Err(e.with(RuntimeOp(fake)))),
                 }
             }
         } else {
             Some(Err(RuntimeError {
                 line: 0,
-                op: (Box::new(self.clone()) as Box<dyn MpsOp>).into(),
+                op: fake,
                 msg: "Context error: rows is None".to_string(),
             }))
         }
@@ -141,27 +139,19 @@ impl Iterator for SimpleSqlStatement {
             // query has executed, return another result
             self.get_item(true)
         } else {
-            let self_clone = self.clone();
+            let fake = PseudoOp::from_printable(self);
             let ctx = self.context.as_mut().unwrap();
             // query has not been executed yet
             let query_result = match self.mode {
-                QueryMode::Artist => ctx.database.artist_like(&self.query, &mut move || {
-                    (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()
-                }),
-                QueryMode::Album => ctx.database.album_like(&self.query, &mut move || {
-                    (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()
-                }),
-                QueryMode::Song => ctx.database.song_like(&self.query, &mut move || {
-                    (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()
-                }),
-                QueryMode::Genre => ctx.database.genre_like(&self.query, &mut move || {
-                    (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into()
-                }),
+                QueryMode::Artist => ctx.database.artist_like(&self.query),
+                QueryMode::Album => ctx.database.album_like(&self.query),
+                QueryMode::Song => ctx.database.song_like(&self.query),
+                QueryMode::Genre => ctx.database.genre_like(&self.query),
             };
             match query_result {
                 Err(e) => {
                     self.rows = Some(Vec::with_capacity(0));
-                    Some(Err(e))
+                    Some(Err(e.with(RuntimeOp(fake))))
                 }
                 Ok(rows) => {
                     self.rows = Some(rows);

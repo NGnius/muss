@@ -63,7 +63,7 @@ pub trait MpsLanguageError: Display + Debug {
 }
 
 // RuntimeError builder components
-
+#[derive(Debug, Clone)]
 pub struct RuntimeMsg(pub String);
 
 impl RuntimeMsg {
@@ -76,6 +76,7 @@ impl RuntimeMsg {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct RuntimeOp(pub PseudoOp);
 
 impl RuntimeOp {

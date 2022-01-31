@@ -9,8 +9,8 @@ use crate::MpsContext;
 use crate::lang::repeated_tokens;
 use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::MpsLanguageDictionary;
-use crate::lang::SyntaxError;
 use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsIteratorItem, MpsOp};
+use crate::lang::{PseudoOp, RuntimeOp, SyntaxError};
 
 #[derive(Debug)]
 pub struct SqlInitStatement {
@@ -41,18 +41,16 @@ impl Iterator for SqlInitStatement {
     type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let pseudo_clone = self.clone();
         // execute
         match self
             .context
             .as_mut()
             .unwrap()
             .database
-            .init_with_params(&self.params, &mut move || {
-                (Box::new(pseudo_clone.clone()) as Box<dyn MpsOp>).into()
-            }) {
+            .init_with_params(&self.params)
+        {
             Ok(_) => None,
-            Err(e) => Some(Err(e)),
+            Err(e) => Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self))))),
         }
     }
 
