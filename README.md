@@ -32,6 +32,12 @@ One day I'll add pretty REPL example pictures and some script files...
 **No**. Technically, it was designed to be one, but it doesn't meet the requirements of a scripting language (yet). One day, I would like it be Turing-complete and then it could be considered a scripting language. At the moment it is barely a query language.
 
 
-### Contribution
+## License
+
+LGPL-2.1-only OR GPL-3.0
+
+**NOTE**: When advanced features are enabled, GPL-3.0 must be used.
+
+## Contribution
 
 This is a hobby project, so any contribution may take a while to be acknowledged and accepted.
