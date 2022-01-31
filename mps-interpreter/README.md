@@ -126,6 +126,10 @@ Repeat the iterable count times, or infinite times if count is omitted.
 
 Retrieve all files from a folder, matching a regex pattern.
 
+#### reset(iterable);
+
+Explicitly reset an iterable. This useful for reusing an iterable variable.
+
 #### empty();
 
 Empty iterator. Useful for deleting items using replacement filters.
@@ -136,6 +140,11 @@ Operations to sort the items in an iterable: iterable~(sorter) OR iterable.sort(
 #### field -- e.g. iterable~(filename)
 
 Sort by a MpsItem field. Valid field names change depending on what information is available when the MpsItem is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
+
+#### shuffle
+#### random shuffle -- e.g. iterable~(shuffle)
+
+Shuffle the songs in the iterator. This is random for up to 2^16 items, and then the randomness degrades (but at that point you won't notice). The more verbose syntax is allowed in preparation for future randomisation strategies.
 
 #### advanced bliss_first -- e.g. iterable~(advanced bliss_first)
 

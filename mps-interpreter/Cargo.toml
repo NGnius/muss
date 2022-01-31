@@ -12,6 +12,7 @@ symphonia = { version = "0.4.0", optional = true, features = [
 ] }
 dirs = { version = "4.0.0" }
 regex = { version = "1" }
+rand = { version = "0.8" }
 shellexpand = { version = "2.1", optional = true }
 bliss-audio = { version = "0.4", optional = true, path = "../bliss-rs" }
 

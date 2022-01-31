@@ -385,3 +385,31 @@ fn execute_emptyfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
         true,
     )
 }
+
+#[test]
+fn execute_resetfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "reset(empty())",
+        true,
+        true,
+    )
+}
+
+#[test]
+fn execute_shufflesort_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(random shuffle)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(shuffle)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "empty()~(shuffle)",
+        true,
+        true,
+    )
+}

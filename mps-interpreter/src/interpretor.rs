@@ -155,10 +155,13 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
         .add(crate::lang::vocabulary::filters::field_like_filter())
         // sorters
         .add(crate::lang::vocabulary::sorters::empty_sort())
+        .add(crate::lang::vocabulary::sorters::shuffle_sort()) // accepts valid field ~(shuffle)
         .add(crate::lang::vocabulary::sorters::field_sort())
         .add(crate::lang::vocabulary::sorters::bliss_sort())
         .add(crate::lang::vocabulary::sorters::bliss_next_sort())
         // functions and misc
+        // functions don't enforce bracket coherence
+        // -- function().() is valid despite the ).( in between brackets
         .add(crate::lang::vocabulary::sql_function_factory())
         .add(crate::lang::vocabulary::simple_sql_function_factory())
         .add(crate::lang::vocabulary::CommentStatementFactory)
@@ -166,5 +169,6 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
         .add(crate::lang::vocabulary::AssignStatementFactory)
         .add(crate::lang::vocabulary::sql_init_function_factory())
         .add(crate::lang::vocabulary::files_function_factory())
-        .add(crate::lang::vocabulary::empty_function_factory());
+        .add(crate::lang::vocabulary::empty_function_factory())
+        .add(crate::lang::vocabulary::reset_function_factory());
 }
