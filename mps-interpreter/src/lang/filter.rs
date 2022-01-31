@@ -8,9 +8,8 @@ use crate::lang::MpsFilterReplaceStatement;
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::SingleItem;
 use crate::lang::{BoxedMpsOpFactory, MpsIteratorItem, MpsOp, PseudoOp};
-use crate::lang::{RuntimeError, SyntaxError};
+use crate::lang::{RuntimeError, RuntimeMsg, RuntimeOp, SyntaxError};
 use crate::processing::general::MpsType;
-use crate::processing::OpGetter;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsItem;
@@ -18,16 +17,11 @@ use crate::MpsItem;
 const INNER_VARIABLE_NAME: &str = "[inner variable]";
 
 pub trait MpsFilterPredicate: Clone + Debug + Display {
-    fn matches(
-        &mut self,
-        item: &MpsItem,
-        ctx: &mut MpsContext,
-        op: &mut OpGetter,
-    ) -> Result<bool, RuntimeError>;
+    fn matches(&mut self, item: &MpsItem, ctx: &mut MpsContext) -> Result<bool, RuntimeMsg>;
 
     fn is_complete(&self) -> bool;
 
-    fn reset(&mut self) -> Result<(), RuntimeError>;
+    fn reset(&mut self) -> Result<(), RuntimeMsg>;
 }
 
 pub trait MpsFilterFactory<P: MpsFilterPredicate + 'static> {
@@ -125,17 +119,19 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
 
     fn reset(&mut self) -> Result<(), RuntimeError> {
         let fake = PseudoOp::Fake(format!("{}", self));
-        self.predicate.reset()?;
+        self.predicate
+            .reset()
+            .map_err(|x| x.with(RuntimeOp(fake.clone())))?;
         match &mut self.iterable {
             VariableOrOp::Variable(s) => {
                 if self.context.as_mut().unwrap().variables.exists(s) {
-                    let fake_getter = &mut move || fake.clone();
                     let mut var = self
                         .context
                         .as_mut()
                         .unwrap()
                         .variables
-                        .remove(s, fake_getter)?;
+                        .remove(s)
+                        .map_err(|e| e.with(RuntimeOp(fake.clone())))?;
                     let result = if let MpsType::Op(var) = &mut var {
                         var.enter(self.context.take().unwrap());
                         let result = var.reset();
@@ -144,7 +140,7 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
                     } else {
                         Err(RuntimeError {
                             line: 0,
-                            op: fake_getter(),
+                            op: fake.clone(),
                             msg: "Cannot reset non-iterable filter variable".to_string(),
                         })
                     };
@@ -152,7 +148,8 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
                         .as_mut()
                         .unwrap()
                         .variables
-                        .declare(s, var, fake_getter)?;
+                        .declare(s, var)
+                        .map_err(|e| e.with(RuntimeOp(fake)))?;
                     result
                 } else {
                     Ok(())
@@ -190,7 +187,7 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
         }
         let self_clone = self.clone();
         let self_clone2 = self_clone.clone();
-        let mut op_getter = move || (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into();
+        let fake = PseudoOp::Fake(format!("{}", self));
         //let ctx = self.context.as_mut().unwrap();
         match &mut self.iterable {
             VariableOrOp::Op(op) => match op.try_real() {
@@ -208,11 +205,10 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                                 break;
                             }
                             Ok(item) => {
-                                let matches_result =
-                                    self.predicate.matches(&item, &mut ctx, &mut op_getter);
+                                let matches_result = self.predicate.matches(&item, &mut ctx);
                                 let matches = match matches_result {
                                     Err(e) => {
-                                        maybe_result = Some(Err(e));
+                                        maybe_result = Some(Err(e.with(RuntimeOp(fake.clone()))));
                                         self.context = Some(ctx);
                                         break;
                                     }
@@ -225,12 +221,12 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                                     match ctx.variables.declare(
                                         INNER_VARIABLE_NAME,
                                         MpsType::Op(Box::new(single_op)),
-                                        &mut op_getter,
                                     ) {
                                         Ok(x) => x,
                                         Err(e) => {
                                             //self.context = Some(op.escape());
-                                            maybe_result = Some(Err(e));
+                                            maybe_result =
+                                                Some(Err(e.with(RuntimeOp(fake.clone()))));
                                             self.context = Some(ctx);
                                             break;
                                         }
@@ -249,13 +245,14 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                                         Some(item) => {
                                             maybe_result = Some(item);
                                             ctx = inner_real.escape();
-                                            match ctx
-                                                .variables
-                                                .remove(INNER_VARIABLE_NAME, &mut op_getter)
-                                            {
+                                            match ctx.variables.remove(INNER_VARIABLE_NAME) {
                                                 Ok(_) => {}
                                                 Err(e) => match maybe_result {
-                                                    Some(Ok(_)) => maybe_result = Some(Err(e)),
+                                                    Some(Ok(_)) => {
+                                                        maybe_result = Some(Err(
+                                                            e.with(RuntimeOp(fake.clone()))
+                                                        ))
+                                                    }
                                                     Some(Err(e2)) => maybe_result = Some(Err(e2)), // already failing, do not replace error,
                                                     None => {} // impossible
                                                 },
@@ -265,14 +262,12 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                                         }
                                         None => {
                                             ctx = inner_real.escape(); // move ctx back to expected spot
-                                            match ctx
-                                                .variables
-                                                .remove(INNER_VARIABLE_NAME, &mut op_getter)
-                                            {
+                                            match ctx.variables.remove(INNER_VARIABLE_NAME) {
                                                 Ok(_) => {}
                                                 Err(e) => {
                                                     //self.context = Some(op.escape());
-                                                    maybe_result = Some(Err(e));
+                                                    maybe_result =
+                                                        Some(Err(e.with(RuntimeOp(fake.clone()))));
                                                     self.context = Some(ctx);
                                                     break;
                                                 }
@@ -303,7 +298,7 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                     .as_mut()
                     .unwrap()
                     .variables
-                    .remove(variable_name, &mut op_getter)
+                    .remove(variable_name)
                 {
                     Ok(MpsType::Op(op)) => op,
                     Ok(x) => {
@@ -316,7 +311,7 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                             ),
                         }))
                     }
-                    Err(e) => return Some(Err(e)),
+                    Err(e) => return Some(Err(e.with(RuntimeOp(fake.clone())))),
                 };
                 let mut maybe_result = None;
                 let ctx = self.context.take().unwrap();
@@ -330,11 +325,10 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                             break;
                         }
                         Ok(item) => {
-                            let matches_result =
-                                self.predicate.matches(&item, &mut ctx, &mut op_getter);
+                            let matches_result = self.predicate.matches(&item, &mut ctx);
                             let matches = match matches_result {
                                 Err(e) => {
-                                    maybe_result = Some(Err(e));
+                                    maybe_result = Some(Err(e.with(RuntimeOp(fake.clone()))));
                                     self.context = Some(ctx);
                                     break;
                                 }
@@ -352,12 +346,14 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                 if self.context.is_none() {
                     self.context = Some(variable.escape());
                 }
-                match self.context.as_mut().unwrap().variables.declare(
-                    variable_name,
-                    MpsType::Op(variable),
-                    &mut op_getter,
-                ) {
-                    Err(e) => Some(Err(e)),
+                match self
+                    .context
+                    .as_mut()
+                    .unwrap()
+                    .variables
+                    .declare(variable_name, MpsType::Op(variable))
+                {
+                    Err(e) => Some(Err(e.with(RuntimeOp(fake.clone())))),
                     Ok(_) => maybe_result,
                 }
             }

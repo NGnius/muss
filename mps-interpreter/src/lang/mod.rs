@@ -15,7 +15,7 @@ mod type_primitives;
 pub(crate) mod utility;
 
 pub use dictionary::MpsLanguageDictionary;
-pub use error::{MpsLanguageError, RuntimeError, SyntaxError};
+pub use error::{MpsLanguageError, RuntimeError, RuntimeMsg, RuntimeOp, SyntaxError};
 pub use filter::{
     MpsFilterFactory, MpsFilterPredicate, MpsFilterStatement, MpsFilterStatementFactory,
 };

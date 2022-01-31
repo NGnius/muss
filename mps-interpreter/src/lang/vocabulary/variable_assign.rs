@@ -10,7 +10,7 @@ use crate::lang::MpsLanguageDictionary;
 use crate::lang::{
     BoxedMpsOpFactory, MpsIteratorItem, MpsOp, MpsOpFactory, MpsTypePrimitive, PseudoOp,
 };
-use crate::lang::{RuntimeError, SyntaxError};
+use crate::lang::{RuntimeError, RuntimeOp, SyntaxError};
 use crate::processing::general::MpsType;
 
 #[derive(Debug)]
@@ -67,24 +67,25 @@ impl Iterator for AssignStatement {
                     Ok(real) => real,
                     Err(e) => return Some(Err(e)),
                 };
-                let pseudo_clone = self.clone();
                 let result;
                 if self.is_declaration {
-                    result = self.context.as_mut().unwrap().variables.declare(
-                        &self.variable_name,
-                        MpsType::Op(real),
-                        &mut move || (Box::new(pseudo_clone.clone()) as Box<dyn MpsOp>).into(),
-                    );
+                    result = self
+                        .context
+                        .as_mut()
+                        .unwrap()
+                        .variables
+                        .declare(&self.variable_name, MpsType::Op(real));
                 } else {
-                    result = self.context.as_mut().unwrap().variables.assign(
-                        &self.variable_name,
-                        MpsType::Op(real),
-                        &mut move || (Box::new(pseudo_clone.clone()) as Box<dyn MpsOp>).into(),
-                    );
+                    result = self
+                        .context
+                        .as_mut()
+                        .unwrap()
+                        .variables
+                        .assign(&self.variable_name, MpsType::Op(real));
                 }
                 match result {
                     Ok(_) => None,
-                    Err(e) => Some(Err(e)),
+                    Err(e) => Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self))))),
                 }
             }
         } else if !self.is_simple {
@@ -99,24 +100,25 @@ impl Iterator for AssignStatement {
             }))*/
         } else {
             let assign_type = self.assign_type.clone().unwrap();
-            let pseudo_clone = self.clone();
             let result;
             if self.is_declaration {
-                result = self.context.as_mut().unwrap().variables.declare(
-                    &self.variable_name,
-                    MpsType::Primitive(assign_type),
-                    &mut move || (Box::new(pseudo_clone.clone()) as Box<dyn MpsOp>).into(),
-                );
+                result = self
+                    .context
+                    .as_mut()
+                    .unwrap()
+                    .variables
+                    .declare(&self.variable_name, MpsType::Primitive(assign_type));
             } else {
-                result = self.context.as_mut().unwrap().variables.assign(
-                    &self.variable_name,
-                    MpsType::Primitive(assign_type),
-                    &mut move || (Box::new(pseudo_clone.clone()) as Box<dyn MpsOp>).into(),
-                );
+                result = self
+                    .context
+                    .as_mut()
+                    .unwrap()
+                    .variables
+                    .assign(&self.variable_name, MpsType::Primitive(assign_type));
             }
             match result {
                 Ok(_) => None,
-                Err(e) => Some(Err(e)),
+                Err(e) => Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self))))),
             }
         }
     }

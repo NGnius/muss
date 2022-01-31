@@ -6,9 +6,8 @@ use crate::lang::utility::{assert_name, assert_token, assert_token_raw, check_na
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::MpsTypePrimitive;
 use crate::lang::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatementFactory};
-use crate::lang::{RuntimeError, SyntaxError};
+use crate::lang::{RuntimeMsg, SyntaxError};
 use crate::processing::general::MpsType;
-use crate::processing::OpGetter;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsItem;
@@ -34,35 +33,25 @@ impl MpsFilterPredicate for FieldLikeFilter {
         &mut self,
         music_item_lut: &MpsItem,
         ctx: &mut MpsContext,
-        op: &mut OpGetter,
-    ) -> Result<bool, RuntimeError> {
+    ) -> Result<bool, RuntimeMsg> {
         let variable = match &self.val {
-            VariableOrValue::Variable(name) => match ctx.variables.get(name, op)? {
+            VariableOrValue::Variable(name) => match ctx.variables.get(name)? {
                 MpsType::Primitive(MpsTypePrimitive::String(s)) => Ok(s),
-                _ => Err(RuntimeError {
-                    line: 0,
-                    op: op(),
-                    msg: format!("Variable {} is not comparable", name),
-                }),
+                _ => Err(RuntimeMsg(format!("Variable {} is not comparable", name))),
             },
             VariableOrValue::Value(MpsTypePrimitive::String(s)) => Ok(s),
             // non-string values will be stopped at parse-time, so this should never occur
-            _ => Err(RuntimeError {
-                line: 0,
-                op: op(),
-                msg: "Value is not type String".to_string(),
-            }),
+            _ => Err(RuntimeMsg("Value is not type String".to_string())),
         }?;
         if let Some(field) = music_item_lut.field(&self.field_name) {
             let field_str = field.as_str().to_lowercase();
             Ok(field_str.contains(&variable.to_lowercase()))
         } else {
             match self.field_errors {
-                FieldFilterErrorHandling::Error => Err(RuntimeError {
-                    line: 0,
-                    op: op(),
-                    msg: format!("Field {} does not exist", &self.field_name),
-                }),
+                FieldFilterErrorHandling::Error => Err(RuntimeMsg(format!(
+                    "Field {} does not exist",
+                    &self.field_name
+                ))),
                 FieldFilterErrorHandling::Ignore => Ok(false),
                 FieldFilterErrorHandling::Include => Ok(true),
             }
@@ -73,7 +62,7 @@ impl MpsFilterPredicate for FieldLikeFilter {
         false
     }
 
-    fn reset(&mut self) -> Result<(), RuntimeError> {
+    fn reset(&mut self) -> Result<(), RuntimeMsg> {
         Ok(())
     }
 }

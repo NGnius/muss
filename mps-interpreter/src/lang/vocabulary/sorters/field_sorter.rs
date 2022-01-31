@@ -5,8 +5,7 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use crate::lang::utility::assert_token;
 use crate::lang::{MpsIteratorItem, MpsLanguageDictionary, MpsOp};
 use crate::lang::{MpsSortStatementFactory, MpsSorter, MpsSorterFactory};
-use crate::lang::{RuntimeError, SyntaxError};
-use crate::processing::OpGetter;
+use crate::lang::{RuntimeMsg, SyntaxError};
 use crate::tokens::MpsToken;
 
 #[derive(Debug, Clone)]
@@ -21,8 +20,7 @@ impl MpsSorter for FieldSorter {
         &mut self,
         iterator: &mut dyn MpsOp,
         item_buf: &mut VecDeque<MpsIteratorItem>,
-        _op: &mut OpGetter,
-    ) -> Result<(), RuntimeError> {
+    ) -> Result<(), RuntimeMsg> {
         let buf_len_old = item_buf.len(); // save buffer length before modifying buffer
         if item_buf.len() < self.up_to {
             for item in iterator {

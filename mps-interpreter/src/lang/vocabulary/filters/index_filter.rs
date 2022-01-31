@@ -4,8 +4,8 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use crate::lang::{utility::assert_token_raw, Lookup};
 use crate::lang::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatementFactory};
 use crate::lang::{MpsLanguageDictionary, MpsTypePrimitive};
-use crate::lang::{RuntimeError, SyntaxError};
-use crate::processing::{general::MpsType, OpGetter};
+use crate::lang::{RuntimeMsg, SyntaxError};
+use crate::processing::general::MpsType;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsItem;
@@ -26,32 +26,15 @@ impl Display for IndexFilter {
 }
 
 impl MpsFilterPredicate for IndexFilter {
-    fn matches(
-        &mut self,
-        _item: &MpsItem,
-        ctx: &mut MpsContext,
-        op: &mut OpGetter,
-    ) -> Result<bool, RuntimeError> {
-        let index: u64 = match self.index.get(ctx, op)? {
+    fn matches(&mut self, _item: &MpsItem, ctx: &mut MpsContext) -> Result<bool, RuntimeMsg> {
+        let index: u64 = match self.index.get(ctx)? {
             MpsType::Primitive(val) => match val {
                 MpsTypePrimitive::Int(i) => *i as u64,
                 MpsTypePrimitive::UInt(u) => *u,
                 MpsTypePrimitive::Float(f) => *f as u64,
-                val => {
-                    return Err(RuntimeError {
-                        line: 0,
-                        op: op(),
-                        msg: format!("Cannot use {} as index", val),
-                    })
-                }
+                val => return Err(RuntimeMsg(format!("Cannot use {} as index", val))),
             },
-            val => {
-                return Err(RuntimeError {
-                    line: 0,
-                    op: op(),
-                    msg: format!("Cannot use {} as index", val),
-                })
-            }
+            val => return Err(RuntimeMsg(format!("Cannot use {} as index", val))),
         };
         if self.current == index && !self.is_opposite {
             self.current += 1;
@@ -70,7 +53,7 @@ impl MpsFilterPredicate for IndexFilter {
         self.complete
     }
 
-    fn reset(&mut self) -> Result<(), RuntimeError> {
+    fn reset(&mut self) -> Result<(), RuntimeMsg> {
         self.current = 0;
         self.complete = false;
         Ok(())

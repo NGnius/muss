@@ -3,9 +3,8 @@ use std::fmt::{Display, Error, Formatter};
 
 //use super::MpsTypePrimitive;
 use super::utility::{assert_token, assert_type, check_is_type};
-use crate::lang::{RuntimeError, SyntaxError};
+use crate::lang::{RuntimeMsg, SyntaxError};
 use crate::processing::general::MpsType;
-use crate::processing::OpGetter;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 
@@ -43,22 +42,17 @@ impl Lookup {
     pub fn get_mut<'a, 'b: 'a>(
         &'b mut self,
         ctx: &'a mut MpsContext,
-        op: &mut OpGetter,
-    ) -> Result<&'a mut MpsType, RuntimeError> {
+    ) -> Result<&'a mut MpsType, RuntimeMsg> {
         match self {
             Self::Static(var) => Ok(var),
-            Self::Variable(name) => ctx.variables.get_mut(name, op),
+            Self::Variable(name) => ctx.variables.get_mut(name),
         }
     }
 
-    pub fn get<'a, 'b: 'a>(
-        &'b self,
-        ctx: &'a MpsContext,
-        op: &mut OpGetter,
-    ) -> Result<&'a MpsType, RuntimeError> {
+    pub fn get<'a, 'b: 'a>(&'b self, ctx: &'a MpsContext) -> Result<&'a MpsType, RuntimeMsg> {
         match self {
             Self::Static(var) => Ok(var),
-            Self::Variable(name) => ctx.variables.get(name, op),
+            Self::Variable(name) => ctx.variables.get(name),
         }
     }
 }

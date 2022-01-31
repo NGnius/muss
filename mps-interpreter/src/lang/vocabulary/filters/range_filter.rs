@@ -5,8 +5,8 @@ use crate::lang::utility::assert_token_raw;
 use crate::lang::Lookup;
 use crate::lang::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatementFactory};
 use crate::lang::{MpsLanguageDictionary, MpsTypePrimitive};
-use crate::lang::{RuntimeError, SyntaxError};
-use crate::processing::{general::MpsType, OpGetter};
+use crate::lang::{RuntimeMsg, SyntaxError};
+use crate::processing::general::MpsType;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsItem;
@@ -42,14 +42,9 @@ impl Display for RangeFilter {
 }
 
 impl MpsFilterPredicate for RangeFilter {
-    fn matches(
-        &mut self,
-        _item: &MpsItem,
-        ctx: &mut MpsContext,
-        op: &mut OpGetter,
-    ) -> Result<bool, RuntimeError> {
+    fn matches(&mut self, _item: &MpsItem, ctx: &mut MpsContext) -> Result<bool, RuntimeMsg> {
         let start_index = if let Some(start) = &self.start {
-            lookup_to_index(start.get(ctx, op)?, op)?
+            lookup_to_index(start.get(ctx)?)?
         } else {
             0
         };
@@ -57,7 +52,7 @@ impl MpsFilterPredicate for RangeFilter {
         self.current += 1;
         if current >= start_index {
             if let Some(end) = &self.end {
-                let end_index = lookup_to_index(end.get(ctx, op)?, op)?;
+                let end_index = lookup_to_index(end.get(ctx)?)?;
                 if self.inclusive_end && current <= end_index {
                     if current == end_index {
                         self.complete = true;
@@ -83,30 +78,22 @@ impl MpsFilterPredicate for RangeFilter {
         self.complete
     }
 
-    fn reset(&mut self) -> Result<(), RuntimeError> {
+    fn reset(&mut self) -> Result<(), RuntimeMsg> {
         self.current = 0;
         self.complete = false;
         Ok(())
     }
 }
 
-fn lookup_to_index(item: &MpsType, op: &mut OpGetter) -> Result<u64, RuntimeError> {
+fn lookup_to_index(item: &MpsType) -> Result<u64, RuntimeMsg> {
     match item {
         MpsType::Primitive(val) => match val {
             MpsTypePrimitive::Int(i) => Ok(*i as u64),
             MpsTypePrimitive::UInt(u) => Ok(*u),
             MpsTypePrimitive::Float(f) => Ok(*f as u64),
-            val => Err(RuntimeError {
-                line: 0,
-                op: op(),
-                msg: format!("Cannot use {} as index", val),
-            }),
+            val => Err(RuntimeMsg(format!("Cannot use {} as index", val))),
         },
-        val => Err(RuntimeError {
-            line: 0,
-            op: op(),
-            msg: format!("Cannot use {} as index", val),
-        }),
+        val => Err(RuntimeMsg(format!("Cannot use {} as index", val))),
     }
 }
 

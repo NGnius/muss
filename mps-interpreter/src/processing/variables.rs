@@ -4,9 +4,7 @@ use std::collections::HashMap;
 
 use crate::lang::MpsOp;
 use crate::lang::MpsTypePrimitive;
-use crate::lang::RuntimeError;
-
-use super::OpGetter;
+use crate::lang::RuntimeMsg;
 
 #[derive(Debug)]
 pub enum MpsType {
@@ -24,43 +22,29 @@ impl Display for MpsType {
 }
 
 pub trait MpsVariableStorer: Debug {
-    fn get(&self, name: &str, op: &mut OpGetter) -> Result<&'_ MpsType, RuntimeError> {
+    fn get(&self, name: &str) -> Result<&'_ MpsType, RuntimeMsg> {
         match self.get_opt(name) {
             Some(item) => Ok(item),
-            None => Err(RuntimeError {
-                line: 0,
-                op: op(),
-                msg: format!("Variable '{}' not found", name),
-            }),
+            None => Err(RuntimeMsg(format!("Variable '{}' not found", name))),
         }
     }
 
     fn get_opt(&self, name: &str) -> Option<&'_ MpsType>;
 
-    fn get_mut(&mut self, name: &str, op: &mut OpGetter) -> Result<&'_ mut MpsType, RuntimeError> {
+    fn get_mut(&mut self, name: &str) -> Result<&'_ mut MpsType, RuntimeMsg> {
         match self.get_mut_opt(name) {
             Some(item) => Ok(item),
-            None => Err(RuntimeError {
-                line: 0,
-                op: op(),
-                msg: format!("Variable '{}' not found", name),
-            }),
+            None => Err(RuntimeMsg(format!("Variable '{}' not found", name))),
         }
     }
 
     fn get_mut_opt(&mut self, name: &str) -> Option<&'_ mut MpsType>;
 
-    fn assign(&mut self, name: &str, value: MpsType, op: &mut OpGetter)
-        -> Result<(), RuntimeError>;
+    fn assign(&mut self, name: &str, value: MpsType) -> Result<(), RuntimeMsg>;
 
-    fn declare(
-        &mut self,
-        name: &str,
-        value: MpsType,
-        op: &mut OpGetter,
-    ) -> Result<(), RuntimeError>;
+    fn declare(&mut self, name: &str, value: MpsType) -> Result<(), RuntimeMsg>;
 
-    fn remove(&mut self, name: &str, op: &mut OpGetter) -> Result<MpsType, RuntimeError>;
+    fn remove(&mut self, name: &str) -> Result<MpsType, RuntimeMsg>;
 
     fn exists(&self, name: &str) -> bool {
         self.get_opt(name).is_some()
@@ -81,41 +65,38 @@ impl MpsVariableStorer for MpsOpStorage {
         self.storage.get_mut(key)
     }
 
-    fn assign(&mut self, key: &str, item: MpsType, op: &mut OpGetter) -> Result<(), RuntimeError> {
+    fn assign(&mut self, key: &str, item: MpsType) -> Result<(), RuntimeMsg> {
         if !self.storage.contains_key(key) {
-            Err(RuntimeError {
-                line: 0,
-                op: op(),
-                msg: format!("Cannot assign to non-existent variable '{}'", key),
-            })
+            Err(RuntimeMsg(format!(
+                "Cannot assign to non-existent variable '{}'",
+                key
+            )))
         } else {
             self.storage.insert(key.to_string(), item);
             Ok(())
         }
     }
 
-    fn declare(&mut self, key: &str, item: MpsType, op: &mut OpGetter) -> Result<(), RuntimeError> {
+    fn declare(&mut self, key: &str, item: MpsType) -> Result<(), RuntimeMsg> {
         if self.storage.contains_key(key) {
-            Err(RuntimeError {
-                line: 0,
-                op: op(),
-                msg: format!("Cannot overwrite existing variable '{}'", key),
-            })
+            Err(RuntimeMsg(format!(
+                "Cannot overwrite existing variable '{}'",
+                key
+            )))
         } else {
             self.storage.insert(key.to_string(), item);
             Ok(())
         }
     }
 
-    fn remove(&mut self, key: &str, op: &mut OpGetter) -> Result<MpsType, RuntimeError> {
+    fn remove(&mut self, key: &str) -> Result<MpsType, RuntimeMsg> {
         if self.storage.contains_key(key) {
             Ok(self.storage.remove(key).unwrap())
         } else {
-            Err(RuntimeError {
-                line: 0,
-                op: op(),
-                msg: format!("Cannot remove non-existing variable '{}'", key),
-            })
+            Err(RuntimeMsg(format!(
+                "Cannot remove non-existing variable '{}'",
+                key
+            )))
         }
     }
 }

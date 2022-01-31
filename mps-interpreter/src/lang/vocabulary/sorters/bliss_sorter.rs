@@ -13,10 +13,8 @@ use bliss_audio::Song;
 use crate::lang::utility::{assert_name, check_name};
 use crate::lang::SyntaxError;
 #[cfg(feature = "bliss-audio")]
-use crate::lang::{MpsIteratorItem, MpsOp, MpsSorter, MpsTypePrimitive, RuntimeError};
+use crate::lang::{MpsIteratorItem, MpsOp, MpsSorter, MpsTypePrimitive, RuntimeMsg};
 use crate::lang::{MpsLanguageDictionary, MpsSortStatementFactory, MpsSorterFactory};
-#[cfg(feature = "bliss-audio")]
-use crate::processing::OpGetter;
 use crate::tokens::MpsToken;
 
 #[cfg(feature = "bliss-audio")]
@@ -102,8 +100,7 @@ impl MpsSorter for BlissSorter {
         &mut self,
         iterator: &mut dyn MpsOp,
         item_buf: &mut VecDeque<MpsIteratorItem>,
-        op: &mut OpGetter,
-    ) -> Result<(), RuntimeError> {
+    ) -> Result<(), RuntimeMsg> {
         let buf_len_old = item_buf.len(); // save buffer length before modifying buffer
         if item_buf.len() < self.up_to {
             for item in iterator {
@@ -182,18 +179,15 @@ impl MpsSorter for BlissSorter {
         if self.errors.is_empty() {
             Ok(())
         } else {
-            Err(bliss_err(self.errors.pop().unwrap(), op))
+            Err(bliss_err(self.errors.pop().unwrap()))
         }
     }
 }
 
 #[cfg(feature = "bliss-audio")]
-fn bliss_err<D: Display>(error: D, op: &mut OpGetter) -> RuntimeError {
-    RuntimeError {
-        line: 0,
-        op: op(),
-        msg: format!("Bliss error: {}", error),
-    }
+#[inline]
+fn bliss_err<D: Display>(error: D) -> RuntimeMsg {
+    RuntimeMsg(format!("Bliss error: {}", error))
 }
 
 #[cfg(not(feature = "bliss-audio"))]

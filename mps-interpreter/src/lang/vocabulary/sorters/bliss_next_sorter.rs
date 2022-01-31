@@ -10,10 +10,8 @@ use bliss_audio::Song;
 use crate::lang::utility::{assert_name, check_name};
 use crate::lang::SyntaxError;
 #[cfg(feature = "bliss-audio")]
-use crate::lang::{MpsIteratorItem, MpsOp, MpsSorter, MpsTypePrimitive, RuntimeError};
+use crate::lang::{MpsIteratorItem, MpsOp, MpsSorter, MpsTypePrimitive, RuntimeMsg};
 use crate::lang::{MpsLanguageDictionary, MpsSortStatementFactory, MpsSorterFactory};
-#[cfg(feature = "bliss-audio")]
-use crate::processing::OpGetter;
 use crate::tokens::MpsToken;
 #[cfg(feature = "bliss-audio")]
 use crate::MpsItem;
@@ -28,11 +26,11 @@ pub struct BlissNextSorter {
 
 #[cfg(feature = "bliss-audio")]
 impl BlissNextSorter {
-    fn get_maybe(&mut self, op: &mut OpGetter) -> Option<MpsIteratorItem> {
+    fn get_maybe(&mut self) -> Option<Result<MpsItem, RuntimeMsg>> {
         if self.algorithm_done {
             None
         } else if let Ok(Some(item)) = self.rx.as_ref().unwrap().recv() {
-            Some(item.map_err(|e| bliss_err(e, op)))
+            Some(item.map_err(|e| bliss_err(e)))
         } else {
             self.algorithm_done = true;
             None
@@ -157,8 +155,7 @@ impl MpsSorter for BlissNextSorter {
         &mut self,
         iterator: &mut dyn MpsOp,
         item_buf: &mut VecDeque<MpsIteratorItem>,
-        op: &mut OpGetter,
-    ) -> Result<(), RuntimeError> {
+    ) -> Result<(), RuntimeMsg> {
         if self.rx.is_none() {
             // first run
             let mut items = VecDeque::new();
@@ -176,8 +173,8 @@ impl MpsSorter for BlissNextSorter {
             std::thread::spawn(move || Self::algorithm(items, tx));
             self.rx = Some(rx);
         }
-        if let Some(item) = self.get_maybe(op) {
-            item_buf.push_back(item);
+        if let Some(item) = self.get_maybe() {
+            item_buf.push_back(Ok(item?));
         }
         Ok(())
     }
@@ -189,12 +186,9 @@ impl MpsSorter for BlissNextSorter {
 }
 
 #[cfg(feature = "bliss-audio")]
-fn bliss_err<D: Display>(error: D, op: &mut OpGetter) -> RuntimeError {
-    RuntimeError {
-        line: 0,
-        op: op(),
-        msg: format!("Bliss error: {}", error),
-    }
+#[inline]
+fn bliss_err<D: Display>(error: D) -> RuntimeMsg {
+    RuntimeMsg(format!("Bliss error: {}", error))
 }
 
 #[cfg(not(feature = "bliss-audio"))]

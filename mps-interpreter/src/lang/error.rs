@@ -40,6 +40,12 @@ pub struct RuntimeError {
     pub msg: String,
 }
 
+impl RuntimeError {
+    pub fn decompose(self) -> (RuntimeOp, RuntimeMsg) {
+        (RuntimeOp(self.op), RuntimeMsg(self.msg))
+    }
+}
+
 impl Display for RuntimeError {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(f, "{} (line {}): {}", &self.msg, &self.line, &self.op)
@@ -54,4 +60,30 @@ impl MpsLanguageError for RuntimeError {
 
 pub trait MpsLanguageError: Display + Debug {
     fn set_line(&mut self, line: usize);
+}
+
+// RuntimeError builder components
+
+pub struct RuntimeMsg(pub String);
+
+impl RuntimeMsg {
+    pub fn with(self, op: RuntimeOp) -> RuntimeError {
+        RuntimeError {
+            line: 0,
+            op: op.0,
+            msg: self.0,
+        }
+    }
+}
+
+pub struct RuntimeOp(pub PseudoOp);
+
+impl RuntimeOp {
+    pub fn with(self, msg: RuntimeMsg) -> RuntimeError {
+        RuntimeError {
+            line: 0,
+            op: self.0,
+            msg: msg.0,
+        }
+    }
 }

@@ -3,8 +3,7 @@ use std::fmt::{Debug, Display, Error, Formatter};
 
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatementFactory};
-use crate::lang::{RuntimeError, SyntaxError};
-use crate::processing::OpGetter;
+use crate::lang::{RuntimeMsg, SyntaxError};
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 use crate::MpsItem;
@@ -19,12 +18,7 @@ impl Display for EmptyFilter {
 }
 
 impl MpsFilterPredicate for EmptyFilter {
-    fn matches(
-        &mut self,
-        _item: &MpsItem,
-        _ctx: &mut MpsContext,
-        _op: &mut OpGetter,
-    ) -> Result<bool, RuntimeError> {
+    fn matches(&mut self, _item: &MpsItem, _ctx: &mut MpsContext) -> Result<bool, RuntimeMsg> {
         Ok(true)
     }
 
@@ -32,7 +26,7 @@ impl MpsFilterPredicate for EmptyFilter {
         false
     }
 
-    fn reset(&mut self) -> Result<(), RuntimeError> {
+    fn reset(&mut self) -> Result<(), RuntimeMsg> {
         Ok(())
     }
 }

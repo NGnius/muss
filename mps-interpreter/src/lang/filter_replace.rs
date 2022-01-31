@@ -2,12 +2,11 @@ use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
-use crate::lang::RuntimeError;
 use crate::lang::SingleItem;
 use crate::lang::{filter::VariableOrOp, MpsFilterPredicate};
 use crate::lang::{MpsIteratorItem, MpsOp, PseudoOp};
+use crate::lang::{RuntimeError, RuntimeMsg, RuntimeOp};
 use crate::processing::general::MpsType;
-use crate::processing::OpGetter;
 use crate::MpsContext;
 use crate::MpsItem;
 
@@ -91,17 +90,19 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterReplaceStatement<P> {
     fn reset(&mut self) -> Result<(), RuntimeError> {
         self.item_cache.clear();
         let fake = PseudoOp::Fake(format!("{}", self));
-        self.predicate.reset()?;
+        self.predicate
+            .reset()
+            .map_err(|x| x.with(RuntimeOp(fake.clone())))?;
         match &mut self.iterable {
             VariableOrOp::Variable(s) => {
                 if self.context.as_mut().unwrap().variables.exists(s) {
-                    let fake_getter = &mut move || fake.clone();
                     let mut var = self
                         .context
                         .as_mut()
                         .unwrap()
                         .variables
-                        .remove(s, fake_getter)?;
+                        .remove(s)
+                        .map_err(|e| e.with(RuntimeOp(fake.clone())))?;
                     let result = if let MpsType::Op(var) = &mut var {
                         var.enter(self.context.take().unwrap());
                         let result = var.reset();
@@ -110,7 +111,7 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterReplaceStatement<P> {
                     } else {
                         Err(RuntimeError {
                             line: 0,
-                            op: fake_getter(),
+                            op: fake.clone(),
                             msg: "Cannot reset non-iterable filter variable".to_string(),
                         })
                     };
@@ -118,7 +119,8 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterReplaceStatement<P> {
                         .as_mut()
                         .unwrap()
                         .variables
-                        .declare(s, var, fake_getter)?;
+                        .declare(s, var)
+                        .map_err(|e| e.with(RuntimeOp(fake)))?;
                     result
                 } else {
                     Ok(())
@@ -146,8 +148,7 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
         if !self.item_cache.is_empty() {
             return self.item_cache.pop_front();
         }
-        let self_clone = self.clone();
-        let mut op_getter = move || (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into();
+        let fake = PseudoOp::Fake(format!("{}", self));
         // get next item in iterator
         let next_item = match &mut self.iterable {
             VariableOrOp::Op(op) => match op.try_real() {
@@ -166,31 +167,33 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
                     .as_mut()
                     .unwrap()
                     .variables
-                    .remove(variable_name, &mut op_getter)
+                    .remove(variable_name)
                 {
                     Ok(MpsType::Op(op)) => op,
                     Ok(x) => {
                         return Some(Err(RuntimeError {
                             line: 0,
-                            op: op_getter(),
+                            op: fake.clone(),
                             msg: format!(
                                 "Expected operation/iterable type in variable {}, got {}",
                                 &variable_name, x
                             ),
                         }))
                     }
-                    Err(e) => return Some(Err(e)),
+                    Err(e) => return Some(Err(e.with(RuntimeOp(fake)))),
                 };
                 let ctx = self.context.take().unwrap();
                 variable.enter(ctx);
                 let item = variable.next();
                 self.context = Some(variable.escape());
-                match self.context.as_mut().unwrap().variables.declare(
-                    variable_name,
-                    MpsType::Op(variable),
-                    &mut op_getter,
-                ) {
-                    Err(e) => return Some(Err(e)),
+                match self
+                    .context
+                    .as_mut()
+                    .unwrap()
+                    .variables
+                    .declare(variable_name, MpsType::Op(variable))
+                {
+                    Err(e) => return Some(Err(e.with(RuntimeOp(fake)))),
                     Ok(_) => {}
                 }
                 item
@@ -202,7 +205,7 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
                 //println!("item is now: `{}`", &item.filename);
                 match self
                     .predicate
-                    .matches(&item, self.context.as_mut().unwrap(), &mut op_getter)
+                    .matches(&item, self.context.as_mut().unwrap())
                 {
                     Ok(is_match) => {
                         if is_match {
@@ -214,11 +217,10 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
                                     //println!("Declaring item variable");
                                     let old_item = match declare_or_replace_item(
                                         single_op,
-                                        &mut op_getter,
                                         self.context.as_mut().unwrap(),
                                     ) {
                                         Ok(x) => x,
-                                        Err(e) => return Some(Err(e)), // probably shouldn't occur
+                                        Err(e) => return Some(Err(e.with(RuntimeOp(fake)))), // probably shouldn't occur
                                     };
                                     // invoke inner op
                                     real_op.enter(self.context.take().unwrap());
@@ -236,11 +238,10 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
                                     //println!("Removing item variable");
                                     match remove_or_replace_item(
                                         old_item,
-                                        &mut op_getter,
                                         self.context.as_mut().unwrap(),
                                     ) {
                                         Ok(_) => {}
-                                        Err(e) => return Some(Err(e)),
+                                        Err(e) => return Some(Err(e.with(RuntimeOp(fake)))),
                                     }
                                 }
                                 Err(e) => return Some(Err(e)), // probably shouldn't occur
@@ -261,11 +262,10 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
                                     //println!("Declaring item variable");
                                     let old_item = match declare_or_replace_item(
                                         single_op,
-                                        &mut op_getter,
                                         self.context.as_mut().unwrap(),
                                     ) {
                                         Ok(x) => x,
-                                        Err(e) => return Some(Err(e)), // probably shouldn't occur
+                                        Err(e) => return Some(Err(e.with(RuntimeOp(fake)))), // probably shouldn't occur
                                     };
                                     // invoke inner operation
                                     real_op.enter(self.context.take().unwrap());
@@ -283,11 +283,10 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
                                     //println!("Removing item variable");
                                     match remove_or_replace_item(
                                         old_item,
-                                        &mut op_getter,
                                         self.context.as_mut().unwrap(),
                                     ) {
                                         Ok(_) => {}
-                                        Err(e) => return Some(Err(e)),
+                                        Err(e) => return Some(Err(e.with(RuntimeOp(fake)))),
                                     }
                                 }
                                 Err(e) => return Some(Err(e)), // probably shouldn't occur
@@ -303,7 +302,7 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
                             Some(Ok(item))
                         }
                     }
-                    Err(e) => Some(Err(e)),
+                    Err(e) => Some(Err(e.with(RuntimeOp(fake.clone())))),
                 }
             }
             Some(Err(e)) => Some(Err(e)),
@@ -329,28 +328,26 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> 
 
 fn declare_or_replace_item(
     single: SingleItem,
-    op: &mut OpGetter,
     ctx: &mut MpsContext,
-) -> Result<Option<MpsType>, RuntimeError> {
+) -> Result<Option<MpsType>, RuntimeMsg> {
     let old_item: Option<MpsType>;
     if ctx.variables.exists(ITEM_VARIABLE_NAME) {
-        old_item = Some(ctx.variables.remove(ITEM_VARIABLE_NAME, op)?);
+        old_item = Some(ctx.variables.remove(ITEM_VARIABLE_NAME)?);
     } else {
         old_item = None;
     }
     ctx.variables
-        .declare(ITEM_VARIABLE_NAME, MpsType::Op(Box::new(single)), op)?;
+        .declare(ITEM_VARIABLE_NAME, MpsType::Op(Box::new(single)))?;
     Ok(old_item)
 }
 
 fn remove_or_replace_item(
     old_item: Option<MpsType>,
-    op: &mut OpGetter,
     ctx: &mut MpsContext,
-) -> Result<(), RuntimeError> {
-    ctx.variables.remove(ITEM_VARIABLE_NAME, op)?;
+) -> Result<(), RuntimeMsg> {
+    ctx.variables.remove(ITEM_VARIABLE_NAME)?;
     if let Some(old_item) = old_item {
-        ctx.variables.declare(ITEM_VARIABLE_NAME, old_item, op)?;
+        ctx.variables.declare(ITEM_VARIABLE_NAME, old_item)?;
     }
     Ok(())
 }

@@ -6,8 +6,7 @@ use rand::{thread_rng, Rng};
 use crate::lang::utility::{assert_name, check_name};
 use crate::lang::{MpsIteratorItem, MpsLanguageDictionary, MpsOp};
 use crate::lang::{MpsSortStatementFactory, MpsSorter, MpsSorterFactory};
-use crate::lang::{RuntimeError, SyntaxError};
-use crate::processing::OpGetter;
+use crate::lang::{RuntimeMsg, SyntaxError};
 use crate::tokens::MpsToken;
 
 const RNG_LIMIT_BITMASK: usize = 0xffff; // bits to preserve in RNG
@@ -22,8 +21,7 @@ impl MpsSorter for ShuffleSorter {
         &mut self,
         iterator: &mut dyn MpsOp,
         item_buf: &mut VecDeque<MpsIteratorItem>,
-        _op: &mut OpGetter,
-    ) -> Result<(), RuntimeError> {
+    ) -> Result<(), RuntimeMsg> {
         // iterative shuffling algorithm
         //
         // choose a random number r
