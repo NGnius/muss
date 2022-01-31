@@ -5,8 +5,7 @@ use std::path::{Path, PathBuf};
 
 use regex::Regex;
 
-use super::OpGetter;
-use crate::lang::{MpsTypePrimitive, RuntimeError};
+use crate::lang::{MpsTypePrimitive, RuntimeMsg};
 use crate::MpsItem;
 
 const DEFAULT_REGEX: &str = r"/(?P<artist>[^/]+)/(?P<album>[^/]+)/(?:(?:(?P<disc>\d+)\s+)?(?P<track>\d+)\.?\s+)?(?P<title>[^/]+)\.(?P<format>(?:mp3)|(?:wav)|(?:ogg)|(?:flac)|(?:mp4)|(?:aac))$";
@@ -82,8 +81,7 @@ impl FileIter {
         root: Option<P>,
         pattern: Option<&str>,
         recurse: bool,
-        op: &mut OpGetter,
-    ) -> Result<Self, RuntimeError> {
+    ) -> Result<Self, RuntimeMsg> {
         let root_path = match root {
             None => crate::lang::utility::music_folder(),
             Some(p) => p.as_ref().to_path_buf(),
@@ -93,11 +91,7 @@ impl FileIter {
             vec.push(
                 root_path
                     .read_dir()
-                    .map_err(|e| RuntimeError {
-                        line: 0,
-                        op: op(),
-                        msg: format!("Directory read error: {}", e),
-                    })?
+                    .map_err(|e| RuntimeMsg(format!("Directory read error: {}", e)))?
                     .into(),
             );
             vec
@@ -105,19 +99,15 @@ impl FileIter {
             Vec::with_capacity(DEFAULT_VEC_CACHE_SIZE)
         };
         let pattern_re = if let Some(pattern) = pattern {
-            Some(Regex::new(pattern).map_err(|e| RuntimeError {
-                line: 0,
-                op: op(),
-                msg: format!("Regex compile error: {}", e),
-            })?)
+            Some(
+                Regex::new(pattern)
+                    .map_err(|e| RuntimeMsg(format!("Regex compile error: {}", e)))?,
+            )
         } else {
             None
         };
-        let tags_re = Regex::new(DEFAULT_REGEX).map_err(|e| RuntimeError {
-            line: 0,
-            op: op(),
-            msg: format!("Regex compile error: {}", e),
-        })?;
+        let tags_re = Regex::new(DEFAULT_REGEX)
+            .map_err(|e| RuntimeMsg(format!("Regex compile error: {}", e)))?;
         Ok(Self {
             root: root_path,
             pattern: pattern_re,
@@ -320,23 +310,14 @@ pub trait MpsFilesystemQuerier: Debug {
         folder: Option<&str>,
         pattern: Option<&str>,
         recursive: bool,
-        op: &mut OpGetter,
-    ) -> Result<FileIter, RuntimeError>;
+    ) -> Result<FileIter, RuntimeMsg>;
 
-    fn expand(
-        &self,
-        folder: Option<&str>,
-        #[allow(unused_variables)] op: &mut OpGetter,
-    ) -> Result<Option<String>, RuntimeError> {
+    fn expand(&self, folder: Option<&str>) -> Result<Option<String>, RuntimeMsg> {
         #[cfg(feature = "shellexpand")]
         match folder {
             Some(path) => Ok(Some(
                 shellexpand::full(path)
-                    .map_err(|e| RuntimeError {
-                        line: 0,
-                        op: op(),
-                        msg: format!("Path expansion error: {}", e),
-                    })?
+                    .map_err(|e| RuntimeMsg(format!("Path expansion error: {}", e)))?
                     .into_owned(),
             )),
             None => Ok(None),
@@ -355,9 +336,8 @@ impl MpsFilesystemQuerier for MpsFilesystemExecutor {
         folder: Option<&str>,
         pattern: Option<&str>,
         recursive: bool,
-        op: &mut OpGetter,
-    ) -> Result<FileIter, RuntimeError> {
-        let folder = self.expand(folder, op)?;
-        FileIter::new(folder, pattern, recursive, op)
+    ) -> Result<FileIter, RuntimeMsg> {
+        let folder = self.expand(folder)?;
+        FileIter::new(folder, pattern, recursive)
     }
 }

@@ -9,7 +9,7 @@ use crate::lang::repeated_tokens;
 use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsIteratorItem, MpsOp};
-use crate::lang::{RuntimeError, SyntaxError};
+use crate::lang::{PseudoOp, RuntimeError, RuntimeOp, SyntaxError};
 use crate::processing::general::FileIter;
 
 #[derive(Debug)]
@@ -73,16 +73,14 @@ impl Iterator for FilesStatement {
             } else {
                 self.has_tried = true;
             }
-            let self_clone = self.clone();
             let iter = self.context.as_mut().unwrap().filesystem.raw(
                 self.folder.as_deref(),
                 self.regex.as_deref(),
                 self.recursive.unwrap_or(true),
-                &mut move || (Box::new(self_clone.clone()) as Box<dyn MpsOp>).into(),
             );
             self.file_iter = Some(match iter {
                 Ok(x) => x,
-                Err(e) => return Some(Err(e)),
+                Err(e) => return Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self))))),
             });
         }
         match self.file_iter.as_mut().unwrap().next() {
