@@ -45,7 +45,7 @@ impl Iterator for ResetStatement {
                 Err(e) => return Some(Err(e)),
             };
             match inner.reset() {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => return Some(Err(e)),
             };
         }
@@ -86,8 +86,7 @@ impl MpsFunctionFactory<ResetStatement> for ResetFunctionFactory {
     fn build_function_params(
         &self,
         _name: String,
-        #[allow(unused_variables)]
-        tokens: &mut VecDeque<MpsToken>,
+        #[allow(unused_variables)] tokens: &mut VecDeque<MpsToken>,
         dict: &MpsLanguageDictionary,
     ) -> Result<ResetStatement, SyntaxError> {
         // reset(var)
@@ -106,4 +105,3 @@ pub type ResetStatementFactory = MpsFunctionStatementFactory<ResetStatement, Res
 pub fn reset_function_factory() -> ResetStatementFactory {
     ResetStatementFactory::new(ResetFunctionFactory)
 }
-

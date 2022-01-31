@@ -41,7 +41,7 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
         match self.player.enqueue(count) {
             Err(e) => {
                 self.event.send(PlayerAction::Exception(e)).unwrap();
-            },
+            }
             Ok(items) => {
                 for item in items {
                     // notify of new items that have been enqueued

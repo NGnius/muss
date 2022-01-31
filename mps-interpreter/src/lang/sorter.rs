@@ -103,7 +103,10 @@ impl<S: MpsSorter + 'static> Iterator for MpsSortStatement<S> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iterable.try_real_ref().map(|x| x.size_hint()).unwrap_or((0, None))
+        self.iterable
+            .try_real_ref()
+            .map(|x| x.size_hint())
+            .unwrap_or((0, None))
     }
 }
 

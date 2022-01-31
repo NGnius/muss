@@ -37,14 +37,17 @@ pub fn repl(args: CliArgs) {
     let (writer, reader) = channel_io();
     let player_builder = move || {
         let runner = MpsRunner::with_stream(reader);
-        
+
         MpsPlayer::new(runner).unwrap()
     };
     let mut state = ReplState::new(writer);
     if let Some(playlist_file) = &args.playlist {
         println!("Playlist mode (output: `{}`)", playlist_file);
         let mut player = player_builder();
-        let mut playlist_writer = io::BufWriter::new(std::fs::File::create(playlist_file).unwrap_or_else(|_| panic!("Abort: Cannot create writeable file `{}`", playlist_file)));
+        let mut playlist_writer =
+            io::BufWriter::new(std::fs::File::create(playlist_file).unwrap_or_else(|_| {
+                panic!("Abort: Cannot create writeable file `{}`", playlist_file)
+            }));
         read_loop(&args, &mut state, || {
             match player.save_m3u8(&mut playlist_writer) {
                 Ok(_) => {}

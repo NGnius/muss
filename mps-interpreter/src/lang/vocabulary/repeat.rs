@@ -197,9 +197,8 @@ impl MpsOp for RepeatStatement {
             return Err(RuntimeError {
                 line: 0,
                 op: PseudoOp::from_printable(self),
-                msg:
-                    "Cannot reset part way through repeat when inner statement is not resetable"
-                        .to_string(),
+                msg: "Cannot reset part way through repeat when inner statement is not resetable"
+                    .to_string(),
             });
         }
         Ok(())

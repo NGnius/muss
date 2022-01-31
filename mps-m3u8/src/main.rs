@@ -6,8 +6,8 @@
 mod cli;
 
 use std::fs::File;
-use std::path::Path;
 use std::io::{BufReader, BufWriter, Cursor};
+use std::path::Path;
 
 use m3u8_rs::{MediaPlaylist, MediaSegment};
 
@@ -34,7 +34,7 @@ fn main() {
             match item {
                 Ok(music) => {
                     if let Some(filename) =
-                            music.field("filename").and_then(|x| x.to_owned().to_str())
+                        music.field("filename").and_then(|x| x.to_owned().to_str())
                     {
                         playlist.segments.push(MediaSegment {
                             uri: filename,
@@ -44,7 +44,7 @@ fn main() {
                     } else {
                         skipped_count += 1;
                     }
-                },
+                }
                 Err(e) => eprintln!("{}", e),
             }
         }
@@ -57,7 +57,7 @@ fn main() {
             match item {
                 Ok(music) => {
                     if let Some(filename) =
-                            music.field("filename").and_then(|x| x.to_owned().to_str())
+                        music.field("filename").and_then(|x| x.to_owned().to_str())
                     {
                         playlist.segments.push(MediaSegment {
                             uri: filename,
@@ -67,13 +67,16 @@ fn main() {
                     } else {
                         skipped_count += 1;
                     }
-                },
+                }
                 Err(e) => eprintln!("{}", e),
             }
         }
     }
     if skipped_count != 0 {
-        eprintln!("Skipped {} items due to missing `filename` field", skipped_count);
+        eprintln!(
+            "Skipped {} items due to missing `filename` field",
+            skipped_count
+        );
     }
     if let Err(e) = playlist.write_to(&mut out_file) {
         eprintln!("Playlist save error: {}", e);

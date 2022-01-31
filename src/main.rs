@@ -64,13 +64,16 @@ fn main() {
                     .unwrap_or_else(|_| panic!("Abort: Cannot open file `{}`", &script_file2)),
             );
             let runner = MpsRunner::with_stream(script_reader);
-            
+
             MpsPlayer::new(runner).unwrap()
         };
         if let Some(playlist_file) = &args.playlist {
             // generate playlist
             let mut player = player_builder();
-            let mut writer = io::BufWriter::new(std::fs::File::create(playlist_file).unwrap_or_else(|_| panic!("Abort: Cannot create writeable file `{}`", playlist_file)));
+            let mut writer =
+                io::BufWriter::new(std::fs::File::create(playlist_file).unwrap_or_else(|_| {
+                    panic!("Abort: Cannot create writeable file `{}`", playlist_file)
+                }));
             match player.save_m3u8(&mut writer) {
                 Ok(_) => println!(
                     "Succes: Finished playlist `{}` from script `{}`",

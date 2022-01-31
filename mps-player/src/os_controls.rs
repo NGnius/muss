@@ -25,7 +25,10 @@ pub struct SystemControlWrapper {
 
 /// OS-specific APIs for media controls.
 /// Currently only Linux (dbus) is supported.
-#[cfg(any(not(feature = "os-controls"), not(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))))]
+#[cfg(any(
+    not(feature = "os-controls"),
+    not(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))
+))]
 pub struct SystemControlWrapper {
     #[allow(dead_code)]
     control: Sender<ControlAction>,
@@ -221,7 +224,10 @@ impl SystemControlWrapper {
     }
 }
 
-#[cfg(any(not(feature = "os-controls"), not(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))))]
+#[cfg(any(
+    not(feature = "os-controls"),
+    not(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))
+))]
 impl SystemControlWrapper {
     pub fn new(control: Sender<ControlAction>) -> Self {
         Self {

@@ -24,9 +24,7 @@ impl Display for EmptyStatement {
 
 impl std::clone::Clone for EmptyStatement {
     fn clone(&self) -> Self {
-        Self {
-            context: None,
-        }
+        Self { context: None }
     }
 }
 
@@ -70,16 +68,13 @@ impl MpsFunctionFactory<EmptyStatement> for EmptyFunctionFactory {
     fn build_function_params(
         &self,
         _name: String,
-        #[allow(unused_variables)]
-        tokens: &mut VecDeque<MpsToken>,
+        #[allow(unused_variables)] tokens: &mut VecDeque<MpsToken>,
         _dict: &MpsLanguageDictionary,
     ) -> Result<EmptyStatement, SyntaxError> {
         // empty()
         #[cfg(debug_assertions)]
         assert_empty(tokens)?;
-        Ok(EmptyStatement {
-            context: None,
-        })
+        Ok(EmptyStatement { context: None })
     }
 }
 
@@ -89,4 +84,3 @@ pub type EmptyStatementFactory = MpsFunctionStatementFactory<EmptyStatement, Emp
 pub fn empty_function_factory() -> EmptyStatementFactory {
     EmptyStatementFactory::new(EmptyFunctionFactory)
 }
-

@@ -210,7 +210,9 @@ pub struct BlissSorterFactory;
 
 impl MpsSorterFactory<BlissSorter> for BlissSorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
-        tokens.len() == 2 && check_name("advanced", tokens[0]) && check_name("bliss_first", tokens[1])
+        tokens.len() == 2
+            && check_name("advanced", tokens[0])
+            && check_name("bliss_first", tokens[1])
     }
 
     fn build_sorter(

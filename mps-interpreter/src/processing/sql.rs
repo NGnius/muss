@@ -248,7 +248,8 @@ impl std::convert::TryInto<rusqlite::Connection> for SqliteSettings {
 
     fn try_into(self) -> Result<rusqlite::Connection, Self::Error> {
         let music_path = self
-            .music_path.map(std::path::PathBuf::from)
+            .music_path
+            .map(std::path::PathBuf::from)
             .unwrap_or_else(crate::lang::utility::music_folder);
         let sqlite_path = self
             .db_path

@@ -379,20 +379,12 @@ fn execute_blissnextsort_line() -> Result<(), Box<dyn MpsLanguageError>> {
 
 #[test]
 fn execute_emptyfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
-    execute_single_line(
-        "empty()",
-        true,
-        true,
-    )
+    execute_single_line("empty()", true, true)
 }
 
 #[test]
 fn execute_resetfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
-    execute_single_line(
-        "reset(empty())",
-        true,
-        true,
-    )
+    execute_single_line("reset(empty())", true, true)
 }
 
 #[test]
@@ -407,9 +399,5 @@ fn execute_shufflesort_line() -> Result<(), Box<dyn MpsLanguageError>> {
         false,
         true,
     )?;
-    execute_single_line(
-        "empty()~(shuffle)",
-        true,
-        true,
-    )
+    execute_single_line("empty()~(shuffle)", true, true)
 }

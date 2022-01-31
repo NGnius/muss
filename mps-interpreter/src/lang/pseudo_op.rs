@@ -35,10 +35,7 @@ impl PseudoOp {
 
     pub fn unwrap_real(self) -> Result<Box<dyn MpsOp>, RuntimeError> {
         match self {
-            Self::Real(op) => {
-                
-                Ok(op)
-            }
+            Self::Real(op) => Ok(op),
             Self::Fake(_) => Err(RuntimeError {
                 line: 0,
                 op: self.clone(),

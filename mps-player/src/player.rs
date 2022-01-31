@@ -50,7 +50,7 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
                             "Field `filename` does not exist on item",
                         ))
                     }
-                },
+                }
                 Err(e) => Err(PlaybackError::from_err(e)),
             }?;
         }

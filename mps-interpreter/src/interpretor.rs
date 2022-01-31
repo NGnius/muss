@@ -90,7 +90,8 @@ where
             if next_item.is_none() {
                 is_stmt_done = true;
             }
-            next_item.map(|item| item.map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line())))
+            next_item
+                .map(|item| item.map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line())))
         } else {
             /*if self.tokenizer.end_of_file() {
                 return None;
@@ -121,7 +122,9 @@ where
                     if next_item.is_none() {
                         is_stmt_done = true;
                     }
-                    next_item.map(|item| item.map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line())))
+                    next_item.map(|item| {
+                        item.map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line()))
+                    })
                 }
                 Err(e) => {
                     Some(Err(e).map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line())))

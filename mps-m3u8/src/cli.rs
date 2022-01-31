@@ -12,7 +12,7 @@ pub struct CliArgs {
 
     /// Parse input as MPS instead of as filename
     #[clap(long)]
-    pub raw: bool
+    pub raw: bool,
 }
 
 pub fn parse() -> CliArgs {

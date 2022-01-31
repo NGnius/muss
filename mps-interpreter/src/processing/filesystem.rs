@@ -68,7 +68,10 @@ impl Display for FileIter {
             f,
             "root=`{}`, pattern={}, recursive={}",
             self.root.to_str().unwrap_or(""),
-            self.pattern.as_ref().map(|re| re.to_string()).unwrap_or("[none]".to_string()),
+            self.pattern
+                .as_ref()
+                .map(|re| re.to_string())
+                .unwrap_or("[none]".to_string()),
             self.recursive
         )
     }
@@ -107,7 +110,9 @@ impl FileIter {
                 op: op(),
                 msg: format!("Regex compile error: {}", e),
             })?)
-        } else {None};
+        } else {
+            None
+        };
         let tags_re = Regex::new(DEFAULT_REGEX).map_err(|e| RuntimeError {
             line: 0,
             op: op(),
@@ -155,7 +160,6 @@ impl FileIter {
             let capture_names = self.tags_pattern.capture_names();
             self.populate_item_impl(path, path_str, captures, capture_names)
         }
-
     }
 
     #[cfg(feature = "music_library")]
@@ -232,9 +236,7 @@ impl FileIter {
         if let Some(captures) = captures {
             for name_maybe in capture_names {
                 if let Some(name) = name_maybe {
-                    if let Some(value) = captures
-                        .name(name).map(|m| m.as_str().to_string())
-                    {
+                    if let Some(value) = captures.name(name).map(|m| m.as_str().to_string()) {
                         item.set_field(name, MpsTypePrimitive::parse(value));
                     }
                 }
@@ -298,7 +300,7 @@ impl Iterator for FileIter {
                                 self.dir_iters.push(dir_iter);
                                 return Some(Ok(item));
                             }
-                        },
+                        }
                         Err(e) => {
                             self.dir_iters.push(dir_iter);
                             return Some(Err(format!("Path read error: {}", e)));

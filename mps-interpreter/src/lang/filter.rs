@@ -366,14 +366,17 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         match &self.iterable {
-            VariableOrOp::Variable(s) => self.context.as_ref()
+            VariableOrOp::Variable(s) => self
+                .context
+                .as_ref()
                 .and_then(|x| x.variables.get_opt(s))
                 .and_then(|x| match x {
-                MpsType::Op(op) => Some(op.size_hint()),
-                _ => None
-            }),
-            VariableOrOp::Op(op) => op.try_real_ref().map(|x| x.size_hint()).ok()
-        }.unwrap_or((0, None))
+                    MpsType::Op(op) => Some(op.size_hint()),
+                    _ => None,
+                }),
+            VariableOrOp::Op(op) => op.try_real_ref().map(|x| x.size_hint()).ok(),
+        }
+        .unwrap_or((0, None))
     }
 }
 
@@ -555,7 +558,7 @@ fn last_open_bracket_is_after_dot(tokens: &VecDeque<MpsToken>) -> bool {
                 inside_brackets -= 1;
             }
         } else if open_bracket_found {
-            return tokens[i].is_dot()
+            return tokens[i].is_dot();
         }
     }
     false

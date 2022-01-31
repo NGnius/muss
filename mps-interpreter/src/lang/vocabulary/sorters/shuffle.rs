@@ -3,16 +3,16 @@ use std::fmt::{Debug, Display, Error, Formatter};
 
 use rand::{thread_rng, Rng};
 
+use crate::lang::utility::{assert_name, check_name};
 use crate::lang::{MpsIteratorItem, MpsLanguageDictionary, MpsOp};
 use crate::lang::{MpsSortStatementFactory, MpsSorter, MpsSorterFactory};
 use crate::lang::{RuntimeError, SyntaxError};
-use crate::lang::utility::{check_name, assert_name};
 use crate::processing::OpGetter;
 use crate::tokens::MpsToken;
 
 const RNG_LIMIT_BITMASK: usize = 0xffff; // bits to preserve in RNG
-// imposes an upper limit in the name of optimisation which reduces randomness past this point
-// this is also an effective item_buf size limit, 2^16 - 1 seems reasonable
+                                         // imposes an upper limit in the name of optimisation which reduces randomness past this point
+                                         // this is also an effective item_buf size limit, 2^16 - 1 seems reasonable
 
 #[derive(Debug, Clone)]
 pub struct ShuffleSorter;
@@ -74,8 +74,9 @@ pub struct ShuffleSorterFactory;
 impl MpsSorterFactory<ShuffleSorter> for ShuffleSorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
         (tokens.len() == 1 && check_name("shuffle", &tokens[0]))
-        ||
-        (tokens.len() == 2 && check_name("random", &tokens[0]) && check_name("shuffle", &tokens[1]))
+            || (tokens.len() == 2
+                && check_name("random", &tokens[0])
+                && check_name("shuffle", &tokens[1]))
     }
 
     fn build_sorter(
@@ -91,7 +92,8 @@ impl MpsSorterFactory<ShuffleSorter> for ShuffleSorterFactory {
     }
 }
 
-pub type ShuffleSorterStatementFactory = MpsSortStatementFactory<ShuffleSorter, ShuffleSorterFactory>;
+pub type ShuffleSorterStatementFactory =
+    MpsSortStatementFactory<ShuffleSorter, ShuffleSorterFactory>;
 
 #[inline(always)]
 pub fn shuffle_sort() -> ShuffleSorterStatementFactory {

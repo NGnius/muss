@@ -39,14 +39,19 @@ impl BlissNextSorter {
         }
     }
 
-    fn algorithm(mut items: VecDeque<MpsItem>, results: Sender<Option<Result<MpsItem, bliss_audio::BlissError>>>) {
+    fn algorithm(
+        mut items: VecDeque<MpsItem>,
+        results: Sender<Option<Result<MpsItem, bliss_audio::BlissError>>>,
+    ) {
         let mut song_cache: Option<(Song, String)> = None;
         let items_len = items.len();
         for i in 0..items_len {
             let item = items.pop_front().unwrap();
             if let Some(MpsTypePrimitive::String(path)) = item.field("filename") {
-                if let Err(_) = results.send(Some(Ok(item.clone()))) {break;}
-                if i+2 < items_len {
+                if let Err(_) = results.send(Some(Ok(item.clone()))) {
+                    break;
+                }
+                if i + 2 < items_len {
                     let target_song = if let Some((_, ref cached_filename)) = song_cache {
                         if cached_filename == path {
                             Ok(song_cache.take().unwrap().0)
@@ -67,14 +72,16 @@ impl BlissNextSorter {
                         Err(e) => {
                             results.send(Some(Err(e))).unwrap_or(());
                             break;
-                        },
+                        }
                         Ok((next_song, index)) => {
                             if let Some(next_song) = next_song {
                                 if index != 0 {
                                     items.swap(0, index);
                                 }
                                 song_cache = Some((next_song, path.to_owned()));
-                            } else {break;}
+                            } else {
+                                break;
+                            }
                         }
                     }
                 }
@@ -83,7 +90,10 @@ impl BlissNextSorter {
         results.send(None).unwrap_or(());
     }
 
-    fn find_best(items: &VecDeque<MpsItem>, target: Song) -> Result<(Option<Song>, usize), bliss_audio::BlissError> {
+    fn find_best(
+        items: &VecDeque<MpsItem>,
+        target: Song,
+    ) -> Result<(Option<Song>, usize), bliss_audio::BlissError> {
         let mut best = None;
         let mut best_index = 0;
         let mut best_distance = f32::MAX;
@@ -94,15 +104,11 @@ impl BlissNextSorter {
                 let result_chann = tx.clone();
                 let target_clone = target.clone();
                 let path_clone = path.to_owned();
-                std::thread::spawn(move || {
-                    match Song::new(path_clone) {
-                        Err(e) => result_chann
-                            .send(Err(e))
-                            .unwrap_or(()),
-                        Ok(song) => result_chann
-                            .send(Ok((i, target_clone.distance(&song), song)))
-                            .unwrap_or(()),
-                    }
+                std::thread::spawn(move || match Song::new(path_clone) {
+                    Err(e) => result_chann.send(Err(e)).unwrap_or(()),
+                    Ok(song) => result_chann
+                        .send(Ok((i, target_clone.distance(&song), song)))
+                        .unwrap_or(()),
                 });
                 threads_spawned += 1;
             }
@@ -115,7 +121,9 @@ impl BlissNextSorter {
                     best_index = index;
                     best_distance = distance;
                 }
-            } else {break;}
+            } else {
+                break;
+            }
         }
         Ok((best, best_index))
     }
@@ -203,7 +211,9 @@ pub struct BlissNextSorterFactory;
 
 impl MpsSorterFactory<BlissNextSorter> for BlissNextSorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
-        tokens.len() == 2 && check_name("advanced", tokens[0]) && check_name("bliss_next", tokens[1])
+        tokens.len() == 2
+            && check_name("advanced", tokens[0])
+            && check_name("bliss_next", tokens[1])
     }
 
     fn build_sorter(
@@ -217,7 +227,8 @@ impl MpsSorterFactory<BlissNextSorter> for BlissNextSorterFactory {
     }
 }
 
-pub type BlissNextSorterStatementFactory = MpsSortStatementFactory<BlissNextSorter, BlissNextSorterFactory>;
+pub type BlissNextSorterStatementFactory =
+    MpsSortStatementFactory<BlissNextSorter, BlissNextSorterFactory>;
 
 #[inline(always)]
 pub fn bliss_next_sort() -> BlissNextSorterStatementFactory {
