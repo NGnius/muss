@@ -130,6 +130,14 @@ Retrieve all files from a folder, matching a regex pattern.
 
 Explicitly reset an iterable. This useful for reusing an iterable variable.
 
+#### interlace(iterable1, iterable2, ...);
+
+Combine multiple iterables in an interleaved pattern. This is a variant of union(...) where the first item in iterable1, then iterable2, ... is returned, then the second item, etc. until all iterables are depleted. There is no limit on the amount of iterables which can be provided as parameters.
+
+#### union(iterable1, iterable2, ...);
+
+Combine multiple iterables in a sequential pattern. All items in iterable1 are returned, then all items in iterable2, ... until all provided iterables are depleted. There is no limit on the amount of iterables which can be provided as parameters.
+
 #### empty();
 
 Empty iterator. Useful for deleting items using replacement filters.

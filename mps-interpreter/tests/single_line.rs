@@ -401,3 +401,27 @@ fn execute_shufflesort_line() -> Result<(), Box<dyn MpsLanguageError>> {
     )?;
     execute_single_line("empty()~(shuffle)", true, true)
 }
+
+#[test]
+fn execute_unionfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "union(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "u(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), union(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)))",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "interleave(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))",
+        false,
+        true
+    )?;
+    execute_single_line(
+        "interlace(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))",
+        false,
+        true
+    )
+}
