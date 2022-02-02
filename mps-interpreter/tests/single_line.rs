@@ -425,3 +425,17 @@ fn execute_unionfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
         true
     )
 }
+
+#[test]
+fn execute_regexfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(title matches `24K\\\\s+Magic`)", // note: quad-escape not required in scripts
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(artist? matches `Bruno Mars`)",
+        false,
+        true,
+    )
+}

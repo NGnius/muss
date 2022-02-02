@@ -51,6 +51,7 @@ Operations to reduce the items in an iterable: iterable.(filter)
 
  field == something
  field like something
+ field matches some_regex
  field != something
  field >= something
  field > something

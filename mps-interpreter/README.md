@@ -50,6 +50,8 @@ E.g. `files(folder="~/Music/", recursive=true).(title == "Romantic Traffic");` i
 
 #### field like something
 
+#### field matches some_regex
+
 #### field != something
 
 #### field >= something
@@ -61,6 +63,7 @@ E.g. `files(folder="~/Music/", recursive=true).(title == "Romantic Traffic");` i
 #### field < something -- e.g. `iterable.(title == "Romantic Traffic");`
 
 Compare all items, keeping only those that match the condition. Valid field names are those of the MpsMusicItem (title, artist, album, genre, track, etc.), though this will change when proper object support is added. Optionally, a ? or ! can be added to the end of the field name to skip items whose field is missing/incomparable, or keep all items whose field is missing/incomparable (respectively).
+
 
 #### start..end -- e.g. `iterable.(0..42);`
 
