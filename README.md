@@ -34,7 +34,7 @@ One day I'll add pretty REPL example pictures and some script files...
 
 ## License
 
-LGPL-2.1-only OR GPL-3.0
+LGPL-2.1-only OR GPL-3.0-only
 
 **NOTE**: When advanced features are enabled, GPL-3.0 must be used.
 
