@@ -100,7 +100,7 @@ impl Iterator for UnionStatement {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, Some(0))
+        (0, None)
     }
 }
 
@@ -179,7 +179,7 @@ pub fn union_function_factory() -> UnionStatementFactory {
     UnionStatementFactory::new(UnionFunctionFactory)
 }
 
-fn next_comma(tokens: &VecDeque<MpsToken>) -> Option<usize> {
+pub(super) fn next_comma(tokens: &VecDeque<MpsToken>) -> Option<usize> {
     let mut bracket_depth = 0;
     for i in 0..tokens.len() {
         let token = &tokens[i];

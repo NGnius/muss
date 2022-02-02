@@ -52,6 +52,21 @@ impl Display for RuntimeError {
     }
 }
 
+impl std::hash::Hash for RuntimeError {
+    fn hash<H>(&self, state: &mut H) where H: std::hash::Hasher {
+        self.line.hash(state);
+        self.msg.hash(state);
+    }
+}
+
+impl std::cmp::PartialEq for RuntimeError {
+    fn eq(&self, other: &Self) -> bool {
+        self.line == other.line && self.msg == other.msg
+    }
+}
+
+impl std::cmp::Eq for RuntimeError {}
+
 impl MpsLanguageError for RuntimeError {
     fn set_line(&mut self, line: usize) {
         self.line = line
@@ -63,7 +78,7 @@ pub trait MpsLanguageError: Display + Debug {
 }
 
 // RuntimeError builder components
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct RuntimeMsg(pub String);
 
 impl RuntimeMsg {

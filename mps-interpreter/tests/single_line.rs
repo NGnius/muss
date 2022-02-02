@@ -420,7 +420,7 @@ fn execute_unionfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
         true
     )?;
     execute_single_line(
-        "interlace(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))",
+        "interlace(empty(), files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))",
         false,
         true
     )
@@ -437,5 +437,29 @@ fn execute_regexfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(artist? matches `Bruno Mars`)",
         false,
         true,
+    )
+}
+
+#[test]
+fn execute_intersectionfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "intersection(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "n(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), n(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)))",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "intersection(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))",
+        false,
+        true
+    )?;
+    execute_single_line(
+        "n(empty(), files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))",
+        true,
+        true
     )
 }

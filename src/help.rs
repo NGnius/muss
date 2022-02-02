@@ -42,6 +42,9 @@ These always return an iterable which can be manipulated.
  union(iterable1, iterable2, ...)
     Combine multiple iterables in a sequential pattern. All items in iterable1 are returned, then all items in iterable2, ... until all provided iterables are depleted. There is no limit on the amount of iterables which can be provided as parameters.
 
+ intersection(iterable1, iterable2, ...);
+    Combine multiple iterables such that only items that exist in iterable1 and iterable2 and ... are returned. The order of items from iterable1 is maintained. There is no limit on the amount of iterables which can be provided as parameters.
+
  empty()
     Empty iterator. Useful for deleting items using replacement filters.";
 

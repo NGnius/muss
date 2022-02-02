@@ -40,6 +40,41 @@ impl Display for MpsItem {
     }
 }
 
+impl std::hash::Hash for MpsItem {
+    fn hash<H>(&self, state: &mut H) where H: std::hash::Hasher {
+        // hashing is order-dependent, so the pseudo-random sorting of HashMap keys
+        // prevents it from working correctly without sorting
+        let mut keys: Vec<_> = self.fields.keys().collect();
+        keys.as_mut_slice().sort();
+        for key in keys {
+            let val = self.fields.get(key).unwrap();
+            key.hash(state);
+            val.hash(state);
+        }
+    }
+}
+
+impl std::cmp::PartialEq for MpsItem {
+    /*fn eq(&self, other: &Self) -> bool {
+        for (key, val) in self.fields.iter() {
+            if let Some(other_val) = other.fields.get(key) {
+                if other_val != val {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        true
+    }*/
+
+    fn eq(&self, other: &Self) -> bool {
+        self.fields == other.fields
+    }
+}
+
+impl std::cmp::Eq for MpsItem {}
+
 /*pub(crate) trait MpsItemRuntimeUtil {
     fn get_field_runtime(&self, name: &str, op: &mut OpGetter) -> Result<&MpsTypePrimitive, RuntimeError>;
 }

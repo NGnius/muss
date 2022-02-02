@@ -144,6 +144,18 @@ impl PartialOrd for MpsTypePrimitive {
     }
 }
 
+impl std::hash::Hash for MpsTypePrimitive {
+    fn hash<H>(&self, state: &mut H) where H: std::hash::Hasher {
+        match self {
+            Self::String(s) => s.hash(state),
+            Self::Int(i) => i.hash(state),
+            Self::UInt(u) => u.hash(state),
+            Self::Float(f_) => (*f_ as u64).hash(state),
+            Self::Bool(b) => b.hash(state),
+        }
+    }
+}
+
 #[inline]
 fn map_ordering(ordering: std::cmp::Ordering) -> i8 {
     match ordering {

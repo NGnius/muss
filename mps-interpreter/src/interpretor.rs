@@ -175,5 +175,6 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
         .add(crate::lang::vocabulary::files_function_factory())
         .add(crate::lang::vocabulary::empty_function_factory())
         .add(crate::lang::vocabulary::reset_function_factory())
-        .add(crate::lang::vocabulary::union_function_factory());
+        .add(crate::lang::vocabulary::union_function_factory())
+        .add(crate::lang::vocabulary::intersection_function_factory());
 }
