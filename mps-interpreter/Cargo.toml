@@ -7,8 +7,8 @@ readme = "README.md"
 
 [dependencies]
 rusqlite = { version = "0.26.3", features = ["bundled"] }
-symphonia = { version = "0.4.0", optional = true, features = [
-    "aac", "flac", "mp3", "pcm", "vorbis", "isomp4", "ogg", "wav"
+symphonia = { version = "0.5.0", optional = true, features = [
+    "aac", "alac", "flac", "mp3", "pcm", "vorbis", "isomp4", "ogg", "wav"
 ] }
 dirs = { version = "4.0.0" }
 regex = { version = "1" }
