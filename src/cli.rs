@@ -18,6 +18,10 @@ pub struct CliArgs {
     /// In REPL mode, the prompt to display
     #[clap(long, default_value_t = String::from("|"))]
     pub prompt: String,
+
+    /// The volume at which to playback audio, out of 1.0
+    #[clap(long)]
+    pub volume: Option<f32>,
 }
 
 pub fn parse() -> CliArgs {

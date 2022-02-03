@@ -35,10 +35,15 @@ pub fn repl(args: CliArgs) {
     terminal.c_lflag &= !termios::ICANON; // no echo and canonical mode
     termios::tcsetattr(0, termios::TCSANOW, &mut terminal).unwrap();*/
     let (writer, reader) = channel_io();
+    let volume = args.volume.clone();
     let player_builder = move || {
         let runner = MpsRunner::with_stream(reader);
 
-        MpsPlayer::new(runner).unwrap()
+        let player = MpsPlayer::new(runner).unwrap();
+        if let Some(vol) = volume {
+            player.set_volume(vol);
+        }
+        player
     };
     let mut state = ReplState::new(writer);
     if let Some(playlist_file) = &args.playlist {

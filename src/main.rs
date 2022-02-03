@@ -58,6 +58,7 @@ fn main() {
         }
         // build playback controller
         let script_file2 = script_file.clone();
+        let volume = args.volume.clone();
         let player_builder = move || {
             let script_reader = io::BufReader::new(
                 std::fs::File::open(&script_file2)
@@ -65,7 +66,11 @@ fn main() {
             );
             let runner = MpsRunner::with_stream(script_reader);
 
-            MpsPlayer::new(runner).unwrap()
+            let player = MpsPlayer::new(runner).unwrap();
+            if let Some(vol) = volume {
+                player.set_volume(vol);
+            }
+            player
         };
         if let Some(playlist_file) = &args.playlist {
             // generate playlist
