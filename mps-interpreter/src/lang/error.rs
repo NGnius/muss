@@ -53,7 +53,10 @@ impl Display for RuntimeError {
 }
 
 impl std::hash::Hash for RuntimeError {
-    fn hash<H>(&self, state: &mut H) where H: std::hash::Hasher {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: std::hash::Hasher,
+    {
         self.line.hash(state);
         self.msg.hash(state);
     }

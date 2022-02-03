@@ -422,7 +422,7 @@ fn execute_unionfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
     execute_single_line(
         "interlace(empty(), files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))",
         false,
-        true
+        true,
     )
 }
 
@@ -460,6 +460,6 @@ fn execute_intersectionfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
     execute_single_line(
         "n(empty(), files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))",
         true,
-        true
+        true,
     )
 }

@@ -41,7 +41,10 @@ impl Display for MpsItem {
 }
 
 impl std::hash::Hash for MpsItem {
-    fn hash<H>(&self, state: &mut H) where H: std::hash::Hasher {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: std::hash::Hasher,
+    {
         // hashing is order-dependent, so the pseudo-random sorting of HashMap keys
         // prevents it from working correctly without sorting
         let mut keys: Vec<_> = self.fields.keys().collect();

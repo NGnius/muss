@@ -5,10 +5,10 @@ use std::iter::Iterator;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 
-use crate::lang::{MpsLanguageDictionary, PseudoOp};
-use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsIteratorItem, MpsOp};
-use crate::lang::{RuntimeError, SyntaxError};
 use crate::lang::repeated_tokens;
+use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsIteratorItem, MpsOp};
+use crate::lang::{MpsLanguageDictionary, PseudoOp};
+use crate::lang::{RuntimeError, SyntaxError};
 
 #[derive(Debug, Copy, Clone)]
 enum UnionStrategy {
@@ -52,23 +52,25 @@ impl Iterator for UnionStatement {
     type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.index == self.ops.len() {return None;}
+        if self.index == self.ops.len() {
+            return None;
+        }
         match self.strategy {
-            UnionStrategy::Sequential => {
-                loop {
-                    if self.index == self.ops.len() {return None;}
-                    let real_op = match self.ops[self.index].try_real() {
-                        Ok(x) => x,
-                        Err(e) => return Some(Err(e)),
-                    };
-                    real_op.enter(self.context.take().unwrap());
-                    while let Some(item) = real_op.next() {
-                        self.context = Some(real_op.escape());
-                        return Some(item);
-                    }
-                    self.context = Some(real_op.escape());
-                    self.index += 1;
+            UnionStrategy::Sequential => loop {
+                if self.index == self.ops.len() {
+                    return None;
                 }
+                let real_op = match self.ops[self.index].try_real() {
+                    Ok(x) => x,
+                    Err(e) => return Some(Err(e)),
+                };
+                real_op.enter(self.context.take().unwrap());
+                while let Some(item) = real_op.next() {
+                    self.context = Some(real_op.escape());
+                    return Some(item);
+                }
+                self.context = Some(real_op.escape());
+                self.index += 1;
             },
             UnionStrategy::Interleave => {
                 let mut none_count = 0;
@@ -128,7 +130,6 @@ impl MpsOp for UnionStatement {
             } else {
                 self.context = Some(real_op.escape());
             }
-
         }
         Ok(())
     }
@@ -148,16 +149,20 @@ impl MpsFunctionFactory<UnionStatement> for UnionFunctionFactory {
         dict: &MpsLanguageDictionary,
     ) -> Result<UnionStatement, SyntaxError> {
         // union(op1, op2, ...)
-        let operations = repeated_tokens(|tokens| {
-            if let Some(comma_pos) = next_comma(tokens) {
-                let end_tokens = tokens.split_off(comma_pos);
-                let op = dict.try_build_statement(tokens);
-                tokens.extend(end_tokens);
-                Ok(Some(PseudoOp::from(op?)))
-            } else {
-                Ok(Some(PseudoOp::from(dict.try_build_statement(tokens)?)))
-            }
-        }, MpsToken::Comma).ingest_all(tokens)?;
+        let operations = repeated_tokens(
+            |tokens| {
+                if let Some(comma_pos) = next_comma(tokens) {
+                    let end_tokens = tokens.split_off(comma_pos);
+                    let op = dict.try_build_statement(tokens);
+                    tokens.extend(end_tokens);
+                    Ok(Some(PseudoOp::from(op?)))
+                } else {
+                    Ok(Some(PseudoOp::from(dict.try_build_statement(tokens)?)))
+                }
+            },
+            MpsToken::Comma,
+        )
+        .ingest_all(tokens)?;
         let combine_strategy = if name == "u" || name == "union" {
             UnionStrategy::Sequential
         } else {

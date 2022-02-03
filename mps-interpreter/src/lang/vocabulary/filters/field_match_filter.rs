@@ -49,7 +49,8 @@ impl MpsFilterPredicate for FieldRegexFilter {
         let pattern = if let Some((_, regex_c)) = &self.regex_cache {
             regex_c
         } else {
-            let regex_c = Regex::new(variable).map_err(|e| RuntimeMsg(format!("Regex compile error: {}", e)))?;
+            let regex_c = Regex::new(variable)
+                .map_err(|e| RuntimeMsg(format!("Regex compile error: {}", e)))?;
             self.regex_cache = Some((variable.clone(), regex_c));
             &self.regex_cache.as_ref().unwrap().1
         };
@@ -128,7 +129,7 @@ impl MpsFilterFactory<FieldRegexFilter> for FieldRegexFilterFactory {
             let regex_c = Regex::new(&literal).map_err(|_| SyntaxError {
                 line: 0,
                 token: MpsToken::Literal("[valid regex]".to_string()),
-                got: Some(MpsToken::Literal(literal.clone()))
+                got: Some(MpsToken::Literal(literal.clone())),
             })?;
             let compiled_cache = (literal.clone(), regex_c);
             let value = VariableOrValue::Value(MpsTypePrimitive::String(literal));

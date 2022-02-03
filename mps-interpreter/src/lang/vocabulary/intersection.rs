@@ -1,15 +1,15 @@
-use std::collections::{VecDeque, HashSet};
+use std::collections::{HashSet, VecDeque};
 use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 
-use crate::lang::{MpsLanguageDictionary, PseudoOp};
-use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsIteratorItem, MpsOp};
-use crate::lang::{RuntimeError, SyntaxError};
 use crate::lang::repeated_tokens;
 use crate::lang::vocabulary::union::next_comma;
+use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsIteratorItem, MpsOp};
+use crate::lang::{MpsLanguageDictionary, PseudoOp};
+use crate::lang::{RuntimeError, SyntaxError};
 
 #[derive(Debug)]
 pub struct IntersectionStatement {
@@ -59,7 +59,8 @@ impl Iterator for IntersectionStatement {
             };
             real_op.enter(self.context.take().unwrap());
             let original_order: VecDeque<MpsIteratorItem> = real_op.collect();
-            let mut set: HashSet<MpsIteratorItem> = original_order.iter().map(|x| x.to_owned()).collect();
+            let mut set: HashSet<MpsIteratorItem> =
+                original_order.iter().map(|x| x.to_owned()).collect();
             self.context = Some(real_op.escape());
             if self.ops.len() != 1 && !set.is_empty() {
                 for i in 1..self.ops.len() {
@@ -119,7 +120,6 @@ impl MpsOp for IntersectionStatement {
             } else {
                 self.context = Some(real_op.escape());
             }
-
         }
         Ok(())
     }
@@ -139,16 +139,20 @@ impl MpsFunctionFactory<IntersectionStatement> for IntersectionFunctionFactory {
         dict: &MpsLanguageDictionary,
     ) -> Result<IntersectionStatement, SyntaxError> {
         // intersection(op1, op2, ...)
-        let operations = repeated_tokens(|tokens| {
-            if let Some(comma_pos) = next_comma(tokens) {
-                let end_tokens = tokens.split_off(comma_pos);
-                let op = dict.try_build_statement(tokens);
-                tokens.extend(end_tokens);
-                Ok(Some(PseudoOp::from(op?)))
-            } else {
-                Ok(Some(PseudoOp::from(dict.try_build_statement(tokens)?)))
-            }
-        }, MpsToken::Comma).ingest_all(tokens)?;
+        let operations = repeated_tokens(
+            |tokens| {
+                if let Some(comma_pos) = next_comma(tokens) {
+                    let end_tokens = tokens.split_off(comma_pos);
+                    let op = dict.try_build_statement(tokens);
+                    tokens.extend(end_tokens);
+                    Ok(Some(PseudoOp::from(op?)))
+                } else {
+                    Ok(Some(PseudoOp::from(dict.try_build_statement(tokens)?)))
+                }
+            },
+            MpsToken::Comma,
+        )
+        .ingest_all(tokens)?;
         Ok(IntersectionStatement {
             context: None,
             ops: operations,
@@ -159,7 +163,8 @@ impl MpsFunctionFactory<IntersectionStatement> for IntersectionFunctionFactory {
     }
 }
 
-pub type IntersectionStatementFactory = MpsFunctionStatementFactory<IntersectionStatement, IntersectionFunctionFactory>;
+pub type IntersectionStatementFactory =
+    MpsFunctionStatementFactory<IntersectionStatement, IntersectionFunctionFactory>;
 
 #[inline(always)]
 pub fn intersection_function_factory() -> IntersectionStatementFactory {
