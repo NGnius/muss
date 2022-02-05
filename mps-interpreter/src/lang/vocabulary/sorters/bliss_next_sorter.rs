@@ -1,16 +1,12 @@
 use std::collections::VecDeque;
 #[cfg(feature = "bliss-audio")]
 use std::fmt::{Debug, Display, Error, Formatter};
-#[cfg(feature = "bliss-audio")]
-use std::sync::mpsc::{channel, Receiver, Sender};
 
-#[cfg(feature = "bliss-audio")]
-use bliss_audio::Song;
 
 use crate::lang::utility::{assert_name, check_name};
 use crate::lang::SyntaxError;
 #[cfg(feature = "bliss-audio")]
-use crate::lang::{MpsIteratorItem, MpsOp, MpsSorter, MpsTypePrimitive, RuntimeMsg};
+use crate::lang::{MpsIteratorItem, MpsOp, MpsSorter, RuntimeMsg};
 use crate::lang::{MpsLanguageDictionary, MpsSortStatementFactory, MpsSorterFactory};
 use crate::tokens::MpsToken;
 #[cfg(feature = "bliss-audio")]
@@ -20,111 +16,9 @@ use crate::MpsItem;
 #[derive(Debug)]
 pub struct BlissNextSorter {
     up_to: usize,
-    rx: Option<Receiver<Option<Result<MpsItem, bliss_audio::BlissError>>>>,
     algorithm_done: bool,
-}
-
-#[cfg(feature = "bliss-audio")]
-impl BlissNextSorter {
-    fn get_maybe(&mut self) -> Option<Result<MpsItem, RuntimeMsg>> {
-        if self.algorithm_done {
-            None
-        } else if let Ok(Some(item)) = self.rx.as_ref().unwrap().recv() {
-            Some(item.map_err(|e| bliss_err(e)))
-        } else {
-            self.algorithm_done = true;
-            None
-        }
-    }
-
-    fn algorithm(
-        mut items: VecDeque<MpsItem>,
-        results: Sender<Option<Result<MpsItem, bliss_audio::BlissError>>>,
-    ) {
-        let mut song_cache: Option<(Song, String)> = None;
-        let items_len = items.len();
-        for i in 0..items_len {
-            let item = items.pop_front().unwrap();
-            if let Some(MpsTypePrimitive::String(path)) = item.field("filename") {
-                if let Err(_) = results.send(Some(Ok(item.clone()))) {
-                    break;
-                }
-                if i + 2 < items_len {
-                    let target_song = if let Some((_, ref cached_filename)) = song_cache {
-                        if cached_filename == path {
-                            Ok(song_cache.take().unwrap().0)
-                        } else {
-                            Song::new(path)
-                        }
-                    } else {
-                        Song::new(path)
-                    };
-                    let target_song = match target_song {
-                        Ok(x) => x,
-                        Err(e) => {
-                            results.send(Some(Err(e))).unwrap_or(());
-                            break;
-                        }
-                    };
-                    match Self::find_best(&items, target_song) {
-                        Err(e) => {
-                            results.send(Some(Err(e))).unwrap_or(());
-                            break;
-                        }
-                        Ok((next_song, index)) => {
-                            if let Some(next_song) = next_song {
-                                if index != 0 {
-                                    items.swap(0, index);
-                                }
-                                song_cache = Some((next_song, path.to_owned()));
-                            } else {
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        results.send(None).unwrap_or(());
-    }
-
-    fn find_best(
-        items: &VecDeque<MpsItem>,
-        target: Song,
-    ) -> Result<(Option<Song>, usize), bliss_audio::BlissError> {
-        let mut best = None;
-        let mut best_index = 0;
-        let mut best_distance = f32::MAX;
-        let (tx, rx) = channel();
-        let mut threads_spawned = 0;
-        for i in 0..items.len() {
-            if let Some(MpsTypePrimitive::String(path)) = items[i].field("filename") {
-                let result_chann = tx.clone();
-                let target_clone = target.clone();
-                let path_clone = path.to_owned();
-                std::thread::spawn(move || match Song::new(path_clone) {
-                    Err(e) => result_chann.send(Err(e)).unwrap_or(()),
-                    Ok(song) => result_chann
-                        .send(Ok((i, target_clone.distance(&song), song)))
-                        .unwrap_or(()),
-                });
-                threads_spawned += 1;
-            }
-        }
-        for _ in 0..threads_spawned {
-            if let Ok(result) = rx.recv() {
-                let (index, distance, song) = result?;
-                if distance < best_distance {
-                    best = Some(song);
-                    best_index = index;
-                    best_distance = distance;
-                }
-            } else {
-                break;
-            }
-        }
-        Ok((best, best_index))
-    }
+    init_done: bool,
+    item_buf: VecDeque<MpsItem>,
 }
 
 #[cfg(feature = "bliss-audio")]
@@ -132,8 +26,9 @@ impl std::clone::Clone for BlissNextSorter {
     fn clone(&self) -> Self {
         Self {
             up_to: self.up_to,
-            rx: None,
             algorithm_done: self.algorithm_done,
+            init_done: self.init_done,
+            item_buf: self.item_buf.clone(),
         }
     }
 }
@@ -143,8 +38,9 @@ impl Default for BlissNextSorter {
     fn default() -> Self {
         Self {
             up_to: usize::MAX,
-            rx: None,
             algorithm_done: false,
+            init_done: false,
+            item_buf: VecDeque::new()
         }
     }
 }
@@ -154,41 +50,88 @@ impl MpsSorter for BlissNextSorter {
     fn sort(
         &mut self,
         iterator: &mut dyn MpsOp,
-        item_buf: &mut VecDeque<MpsIteratorItem>,
+        items_out: &mut VecDeque<MpsIteratorItem>,
     ) -> Result<(), RuntimeMsg> {
-        if self.rx.is_none() {
+        if !self.init_done {
             // first run
-            let mut items = VecDeque::new();
-            for item in iterator {
+            self.init_done = true;
+            while let Some(item) = iterator.next() {
                 match item {
-                    Ok(item) => items.push_back(item),
-                    Err(e) => item_buf.push_back(Err(e)),
+                    Ok(item) => self.item_buf.push_back(item),
+                    Err(e) => items_out.push_back(Err(e)),
                 }
-                if items.len() + item_buf.len() >= self.up_to {
+                if self.item_buf.len() + items_out.len() >= self.up_to {
                     break;
                 }
             }
-            // start algorithm
-            let (tx, rx) = channel();
-            std::thread::spawn(move || Self::algorithm(items, tx));
-            self.rx = Some(rx);
-        }
-        if let Some(item) = self.get_maybe() {
-            item_buf.push_back(Ok(item?));
+            if !self.item_buf.is_empty() {
+                let first = &self.item_buf[0];
+                let mut ctx = iterator.escape();
+                for i in 1..self.item_buf.len() {
+                    let item = &self.item_buf[i];
+                    match ctx.analysis.prepare_distance(first, item) {
+                        Err(e) => {
+                            iterator.enter(ctx);
+                            return Err(e);
+                        },
+                        Ok(_) => {},
+                    }
+                }
+                iterator.enter(ctx);
+                items_out.push_back(Ok(first.to_owned()));
+            }
+        } else {
+            if self.item_buf.len() > 2 {
+                let last = self.item_buf.pop_front().unwrap();
+                let mut best_index = 0;
+                let mut best_distance = f64::MAX;
+                let mut ctx = iterator.escape();
+                for i in 0..self.item_buf.len() {
+                    let current_item = &self.item_buf[i];
+                    match ctx.analysis.get_distance(&last, current_item) {
+                        Err(e) => {
+                            iterator.enter(ctx);
+                            return Err(e);
+                        },
+                        Ok(distance) => {
+                            if distance < best_distance {
+                                best_index = i;
+                                best_distance = distance;
+                            }
+                        },
+                    }
+                }
+                if best_index != 0 {
+                    self.item_buf.swap(0, best_index);
+                }
+                items_out.push_back(Ok(self.item_buf[0].clone()));
+                let next = &self.item_buf[0];
+                for i in 1..self.item_buf.len() {
+                    let item = &self.item_buf[i];
+                    match ctx.analysis.prepare_distance(next, item) {
+                        Err(e) => {
+                            iterator.enter(ctx);
+                            return Err(e);
+                        },
+                        Ok(_) => {},
+                    }
+                }
+                iterator.enter(ctx);
+            } else if self.item_buf.len() == 2 {
+                self.item_buf.pop_front();
+                items_out.push_back(Ok(self.item_buf.pop_front().unwrap()));
+                // note item_buf is emptied here, so this will not proceed to len() == 1 case on next call
+            } else if !self.item_buf.is_empty() {
+                // edge case where item_buf only ever had 1 item
+                items_out.push_back(Ok(self.item_buf.pop_front().unwrap()));
+            }
         }
         Ok(())
     }
 
     fn reset(&mut self) {
-        self.algorithm_done = false;
-        self.rx = None;
+        self.init_done = false;
     }
-}
-
-#[cfg(feature = "bliss-audio")]
-#[inline]
-fn bliss_err<D: Display>(error: D) -> RuntimeMsg {
-    RuntimeMsg(format!("Bliss error: {}", error))
 }
 
 #[cfg(not(feature = "bliss-audio"))]

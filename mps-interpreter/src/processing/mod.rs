@@ -1,4 +1,6 @@
 mod filesystem;
+#[cfg(feature = "advanced")]
+mod music_analysis;
 mod sql;
 mod variables;
 
@@ -11,4 +13,9 @@ pub mod database {
 pub mod general {
     pub use super::filesystem::{FileIter, MpsFilesystemExecutor, MpsFilesystemQuerier};
     pub use super::variables::{MpsOpStorage, MpsType, MpsVariableStorer};
+}
+
+#[cfg(feature = "advanced")]
+pub mod advanced {
+    pub use super::music_analysis::{MpsMusicAnalyzer, MpsDefaultAnalyzer};
 }
