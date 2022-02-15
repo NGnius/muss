@@ -334,6 +334,67 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                                 }
                                 Ok(b) => b,
                             };
+                            if let Some(inner) = &mut self.other_filters {
+                                // handle other filters
+                                // make fake inner item
+                                let single_op = SingleItem::new_ok(item.clone());
+                                match ctx.variables.declare(
+                                    INNER_VARIABLE_NAME,
+                                    MpsType::Op(Box::new(single_op)),
+                                ) {
+                                    Ok(x) => x,
+                                    Err(e) => {
+                                        //self.context = Some(op.escape());
+                                        maybe_result =
+                                            Some(Err(e.with(RuntimeOp(fake.clone()))));
+                                        self.context = Some(ctx);
+                                        break;
+                                    }
+                                };
+                                let inner_real = match inner.try_real() {
+                                    Ok(x) => x,
+                                    Err(e) => {
+                                        //self.context = Some(op.escape());
+                                        maybe_result = Some(Err(e));
+                                        self.context = Some(ctx);
+                                        break;
+                                    }
+                                };
+                                inner_real.enter(ctx);
+                                match inner_real.next() {
+                                    Some(item) => {
+                                        maybe_result = Some(item);
+                                        ctx = inner_real.escape();
+                                        match ctx.variables.remove(INNER_VARIABLE_NAME) {
+                                            Ok(_) => {}
+                                            Err(e) => match maybe_result {
+                                                Some(Ok(_)) => {
+                                                    maybe_result = Some(Err(
+                                                        e.with(RuntimeOp(fake.clone()))
+                                                    ))
+                                                }
+                                                Some(Err(e2)) => maybe_result = Some(Err(e2)), // already failing, do not replace error,
+                                                None => {} // impossible
+                                            },
+                                        }
+                                        self.context = Some(ctx);
+                                        break;
+                                    }
+                                    None => {
+                                        ctx = inner_real.escape(); // move ctx back to expected spot
+                                        match ctx.variables.remove(INNER_VARIABLE_NAME) {
+                                            Ok(_) => {}
+                                            Err(e) => {
+                                                //self.context = Some(op.escape());
+                                                maybe_result =
+                                                    Some(Err(e.with(RuntimeOp(fake.clone()))));
+                                                self.context = Some(ctx);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                             if matches {
                                 maybe_result = Some(Ok(item));
                                 self.context = Some(ctx);
