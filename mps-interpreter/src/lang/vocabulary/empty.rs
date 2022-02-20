@@ -56,6 +56,10 @@ impl MpsOp for EmptyStatement {
     fn reset(&mut self) -> Result<(), RuntimeError> {
         Ok(())
     }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        Box::new(self.clone())
+    }
 }
 
 pub struct EmptyFunctionFactory;

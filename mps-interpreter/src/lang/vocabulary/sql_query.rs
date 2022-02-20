@@ -68,6 +68,15 @@ impl MpsOp for SqlStatement {
         self.current = 0;
         Ok(())
     }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        Box::new(Self {
+            query: self.query.clone(),
+            context: None,
+            rows: None,
+            current: 0,
+        })
+    }
 }
 
 impl std::clone::Clone for SqlStatement {

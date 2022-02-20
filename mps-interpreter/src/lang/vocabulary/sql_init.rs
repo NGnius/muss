@@ -10,12 +10,13 @@ use crate::lang::repeated_tokens;
 use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsIteratorItem, MpsOp};
-use crate::lang::{PseudoOp, RuntimeOp, SyntaxError};
+use crate::lang::{PseudoOp, RuntimeOp, SyntaxError, RuntimeError};
 
 #[derive(Debug)]
 pub struct SqlInitStatement {
     context: Option<MpsContext>,
     params: HashMap<String, String>,
+    has_tried: bool,
 }
 
 impl Display for SqlInitStatement {
@@ -33,6 +34,7 @@ impl std::clone::Clone for SqlInitStatement {
         Self {
             context: None,
             params: HashMap::new(),
+            has_tried: self.has_tried,
         }
     }
 }
@@ -41,6 +43,9 @@ impl Iterator for SqlInitStatement {
     type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.has_tried {
+            return None;
+        }
         // execute
         match self
             .context
@@ -66,6 +71,23 @@ impl MpsOp for SqlInitStatement {
 
     fn escape(&mut self) -> MpsContext {
         self.context.take().unwrap()
+    }
+
+    fn is_resetable(&self) -> bool {
+        true
+    }
+
+    fn reset(&mut self) -> Result<(), RuntimeError> {
+        self.has_tried = false;
+        Ok(())
+    }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        Box::new(Self {
+            context: None,
+            params: self.params.clone(),
+            has_tried: false,
+        })
     }
 }
 
@@ -110,6 +132,7 @@ impl MpsFunctionFactory<SqlInitStatement> for SqlInitFunctionFactory {
         Ok(SqlInitStatement {
             context: None,
             params: HashMap::from_iter(params),
+            has_tried: false,
         })
     }
 }

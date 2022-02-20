@@ -79,4 +79,12 @@ impl MpsOp for SingleItem {
         self.is_complete = false;
         Ok(())
     }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        Box::new(Self {
+            context: None,
+            item: self.item.clone(),
+            is_complete: false,
+        })
+    }
 }

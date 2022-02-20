@@ -1,4 +1,5 @@
 use core::ops::Deref;
+use std::sync::Arc;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
@@ -54,7 +55,7 @@ impl<X: MpsItemOpFactory<Y> + 'static, Y: Deref<Target = dyn MpsItemOp> + MpsIte
 
 #[derive(Debug)]
 pub struct MpsItemBlockStatement {
-    statements: Vec<Box<dyn MpsItemOp>>,
+    statements: Vec<Arc<Box<dyn MpsItemOp>>>,
     iterable: PseudoOp,
     // state
     last_item: Option<PseudoOp>,
@@ -103,6 +104,19 @@ impl MpsOp for MpsItemBlockStatement {
 
     fn reset(&mut self) -> Result<(), RuntimeError> {
         self.iterable.try_real()?.reset()
+    }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        /*let mut statements_clone = Vec::with_capacity(self.statements.len());
+        for stmt in &self.statements {
+            statements_clone.push(stmt.dup());
+        }*/
+        Box::new(Self {
+            statements: self.statements.clone(),
+            iterable: PseudoOp::from(self.iterable.try_real_ref().unwrap().dup()),
+            // state
+            last_item: None,
+        })
     }
 }
 
@@ -263,11 +277,11 @@ impl BoxedMpsOpFactory for MpsItemBlockFactory {
         while !tokens.is_empty() {
             if let Some(next_comma) = find_next_comma(tokens) {
                 let end_tokens = tokens.split_off(next_comma);
-                item_ops.push(self.try_build_item_statement(tokens, dict)?);
+                item_ops.push(Arc::new(self.try_build_item_statement(tokens, dict)?));
                 tokens.extend(end_tokens);
                 assert_token_raw(MpsToken::Comma, tokens)?;
             } else {
-                item_ops.push(self.try_build_item_statement(tokens, dict)?);
+                item_ops.push(Arc::new(self.try_build_item_statement(tokens, dict)?));
             }
         }
         Ok(Box::new(MpsItemBlockStatement {

@@ -133,6 +133,19 @@ impl MpsOp for UnionStatement {
         }
         Ok(())
     }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        let mut ops_clone = Vec::with_capacity(self.ops.len());
+        for op in self.ops.iter() {
+            ops_clone.push(PseudoOp::from(op.try_real_ref().unwrap().dup()))
+        }
+        Box::new(Self {
+            context: None,
+            ops: ops_clone,
+            strategy: self.strategy,
+            index: 0,
+        })
+    }
 }
 
 pub struct UnionFunctionFactory;

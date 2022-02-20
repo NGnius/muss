@@ -30,7 +30,7 @@ impl Display for IterItemOp {
 
 impl MpsItemOp for IterItemOp {
     fn execute(&self, _context: &mut MpsContext) -> Result<MpsType, RuntimeMsg> {
-        Ok(MpsType::Op(self.inner.duplicate().into()))
+        Ok(MpsType::Op(self.inner.dup().into()))
     }
 }
 

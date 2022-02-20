@@ -139,6 +139,20 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterReplaceStatement<P> {
             }),
         }
     }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        Box::new(Self {
+            predicate: self.predicate.clone(),
+            iterable: match &self.iterable {
+                VariableOrOp::Variable(s) => VariableOrOp::Variable(s.clone()),
+                VariableOrOp::Op(op) => VariableOrOp::Op(op.try_real_ref().unwrap().dup().into())
+            },
+            context: None,
+            op_if: PseudoOp::from(self.op_if.try_real_ref().unwrap().dup()),
+            op_else: self.op_else.as_ref().map(|x| PseudoOp::from(x.try_real_ref().unwrap().dup())),
+            item_cache: VecDeque::new(),
+        })
+    }
 }
 
 impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterReplaceStatement<P> {

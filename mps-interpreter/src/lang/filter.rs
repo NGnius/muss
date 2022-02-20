@@ -176,6 +176,18 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
             Ok(())
         }
     }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        Box::new(Self {
+            predicate: self.predicate.clone(),
+            iterable: match &self.iterable {
+                VariableOrOp::Variable(s) => VariableOrOp::Variable(s.clone()),
+                VariableOrOp::Op(op) => VariableOrOp::Op(op.try_real_ref().unwrap().dup().into())
+            },
+            context: None,
+            other_filters: self.other_filters.as_ref().map(|x| PseudoOp::from(x.try_real_ref().unwrap().dup())),
+        })
+    }
 }
 
 impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {

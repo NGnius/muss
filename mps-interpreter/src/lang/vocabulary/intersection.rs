@@ -123,6 +123,20 @@ impl MpsOp for IntersectionStatement {
         }
         Ok(())
     }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        let mut clone = Self {
+            context: None,
+            ops: Vec::with_capacity(self.ops.len()),
+            items: None,
+            original_order: None,
+            init_needed: true,
+        };
+        for op in self.ops.iter() {
+            clone.ops.push(PseudoOp::from(op.try_real_ref().unwrap().dup()));
+        }
+        Box::new(clone)
+    }
 }
 
 pub struct IntersectionFunctionFactory;

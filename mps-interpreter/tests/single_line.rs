@@ -709,13 +709,13 @@ fn execute_constructitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
     )
 }
 
-/*#[test]
+#[test]
 fn execute_iteritemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     item = iter empty()
 }",
-        false,
+        true,
         true,
     )
-}*/
+}

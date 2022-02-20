@@ -63,6 +63,10 @@ impl MpsOp for CommentStatement {
     fn escape(&mut self) -> MpsContext {
         self.context.take().unwrap()
     }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        Box::new(self.clone())
+    }
 }
 
 pub struct CommentStatementFactory;

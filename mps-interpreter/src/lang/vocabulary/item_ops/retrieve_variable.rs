@@ -48,7 +48,7 @@ impl MpsItemOp for VariableRetrieveItemOp {
             }
         } else {
             match var {
-                MpsType::Op(op) => Err(RuntimeMsg(format!("Cannot clone op-type `{}` variable `{}`", op, self.variable_name))),
+                MpsType::Op(op) => Ok(MpsType::Op(op.dup())),
                 MpsType::Primitive(x) => Ok(MpsType::Primitive(x.clone())),
                 MpsType::Item(item) => Ok(MpsType::Item(item.clone()))
             }

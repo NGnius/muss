@@ -203,6 +203,21 @@ impl MpsOp for RepeatStatement {
         }
         Ok(())
     }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        let clone = Self {
+            inner_statement: PseudoOp::from(self.inner_statement.try_real_ref().unwrap().dup()),
+            inner_done: self.original_repetitions == 0,
+            context: None,
+            cache: Vec::new(),
+            cache_position: 0,
+            repetitions: if self.original_repetitions != 0 {self.original_repetitions-1} else {0},
+            loop_forever: self.loop_forever,
+            original_repetitions: self.original_repetitions,
+        };
+        //clone.reset().unwrap();
+        Box::new(clone)
+    }
 }
 
 pub struct RepeatFunctionFactory;

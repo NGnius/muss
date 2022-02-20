@@ -78,6 +78,14 @@ impl<S: MpsSorter + 'static> MpsOp for MpsSortStatement<S> {
         self.orderer.reset();
         self.iterable.try_real()?.reset()
     }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        Box::new(Self {
+            orderer: self.orderer.clone(),
+            iterable: PseudoOp::from(self.iterable.try_real_ref().unwrap().dup()),
+            item_cache: VecDeque::new(),
+        })
+    }
 }
 
 impl<S: MpsSorter + 'static> Iterator for MpsSortStatement<S> {

@@ -120,6 +120,12 @@ impl MpsOp for FilesStatement {
         self.file_iter = None;
         Ok(())
     }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        let mut clone = self.clone();
+        clone.reset().unwrap();
+        Box::new(clone)
+    }
 }
 
 pub struct FilesFunctionFactory;

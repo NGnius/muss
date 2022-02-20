@@ -136,6 +136,17 @@ impl MpsOp for AssignStatement {
     fn escape(&mut self) -> MpsContext {
         self.context.take().unwrap()
     }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        Box::new(Self {
+            variable_name: self.variable_name.clone(),
+            inner_statement: self.inner_statement.as_ref().map(|x| PseudoOp::from(x.try_real_ref().unwrap().dup())),
+            assign_type: self.assign_type.clone(),
+            context: None,
+            is_declaration: self.is_declaration,
+            is_simple: self.is_simple,
+        })
+    }
 }
 
 pub struct AssignStatementFactory;

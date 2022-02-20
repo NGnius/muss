@@ -83,4 +83,7 @@ pub trait MpsOp: Iterator<Item = MpsIteratorItem> + Debug + Display {
             msg: "Op does not support reset()".to_string(),
         })
     }
+
+    // create an already-reset boxed clone of the op (without context)
+    fn dup(&self) -> Box<dyn MpsOp>;
 }

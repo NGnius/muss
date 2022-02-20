@@ -172,7 +172,7 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
                 .add(crate::lang::vocabulary::item_ops::VariableDeclareItemOpFactory)
                 .add(crate::lang::vocabulary::item_ops::InterpolateStringItemOpFactory)
                 .add(crate::lang::vocabulary::item_ops::BranchItemOpFactory)
-                //.add(crate::lang::vocabulary::item_ops::IterItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::IterItemOpFactory)
                 .add(crate::lang::vocabulary::item_ops::ConstructorItemOpFactory)
                 .add(crate::lang::vocabulary::item_ops::EmptyItemOpFactory)
                 .add(crate::lang::vocabulary::item_ops::RemoveItemOpFactory)

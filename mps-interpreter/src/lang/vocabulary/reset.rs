@@ -74,6 +74,14 @@ impl MpsOp for ResetStatement {
         self.has_tried = false;
         Ok(())
     }
+
+    fn dup(&self) -> Box<dyn MpsOp> {
+        Box::new(Self {
+            context: None,
+            inner: PseudoOp::from(self.inner.try_real_ref().unwrap().dup()),
+            has_tried: false,
+        })
+    }
 }
 
 pub struct ResetFunctionFactory;
