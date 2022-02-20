@@ -44,7 +44,11 @@ fn execute_single_line(
     should_be_emtpy: bool,
     should_complete: bool,
 ) -> Result<(), Box<dyn MpsLanguageError>> {
-    println!("--- Executing MPS code: '{}' ---", line);
+    if line.contains('\n') {
+        println!("--- Executing MPS code ---\n{}\n--- Executing MPS code ---", line);
+    } else {
+        println!("--- Executing MPS code: '{}' ---", line);
+    }
     let cursor = Cursor::new(line);
 
     let tokenizer = MpsTokenizer::new(cursor);
@@ -63,7 +67,7 @@ fn execute_single_line(
                 }
             } // no need to spam the rest of the songs
             println!(
-                "Got song `{}` (file: `{}`)",
+                "Got song `{}` (filename: `{}`)",
                 item.field("title")
                     .expect("Expected field `title` to exist")
                     .clone()
@@ -463,3 +467,255 @@ fn execute_intersectionfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
         true,
     )
 }
+
+#[test]
+fn execute_declareitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{let x = empty()}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_removeitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{remove item.title, remove item}",
+        true,
+        true,
+    )
+}
+
+#[test]
+fn execute_multiitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    let x = empty(),
+    remove item,
+    remove x
+}",
+        true,
+        true,
+    )
+}
+
+#[test]
+fn execute_fieldassignitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    item.potato = empty(),
+    .test = empty()
+}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_constitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    `str const`,
+    1234,
+    false,
+    item.test_field = 1234,
+    let foo = false
+}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_retrieveitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    item.path = item.filename,
+    item.not_a_field,
+    item.new_field = 42,
+    item.title = item.path,
+}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_additemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+            item.title = `TEST` + item.title,
+            item.test = 1234 + 94,
+}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_subtractitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    item.test = 1234 - 94,
+}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_negateitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    item.test = 1234,
+    item.test = -item.test,
+    item.test = -42,
+}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_notitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    item.test = false,
+    item.test = !item.test,
+    item.test = !true,
+}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_orlogicalitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    item.test = true || true,
+    item.test = !true || false,
+}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_andlogicalitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    item.test = true && true,
+    item.test = !true && false,
+}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_bracketsitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    item.test = true && true && (false || false),
+    item.test = (!true && false || (false || !false)),
+}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_stringifyitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    item.filepath = ~`test out: {test}` item,
+    item.test = true && true && (false || false),
+    item.test = item.test || ((!true && false) || (false || !false)),
+    item.title = ~`test out: {test}` item
+}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_branchitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    if false {
+        item.title = 42,
+        item.title = `THIS IS WRONG ` + item.title
+    } else {
+        item.title = `OK `+ item.title,
+        if true {item.filename = `RIGHT`},
+        if true {} else {item.filename = `WRONG`},
+    }
+}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_compareitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    if 42 != 42 {
+        item.title = `THIS IS WRONG ` + item.title
+    } else {
+        item.title = `OK `+ item.title
+    }
+}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_computeitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    let count = 1,
+    item.track = count,
+    item.title = ~`Song #{track}` item,
+    if count > 5 {
+        item.filename = `¯\\\\_(ツ)_/¯`
+    } else {
+        item.filename = `/shrug`,
+    },
+    count = count + 1,
+}",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_constructitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    let other_item = Item (),
+    let temp_item = Item (
+        filename= `???`,
+        title= `???`,
+    ),
+    other_item = temp_item,
+    temp_item = item,
+    item = other_item,
+}",
+        false,
+        true,
+    )
+}
+
+/*#[test]
+fn execute_iteritemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    item = iter empty()
+}",
+        false,
+        true,
+    )
+}*/

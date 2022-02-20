@@ -20,6 +20,8 @@ pub trait MpsMusicAnalyzer: Debug {
     fn prepare_item(&mut self, item: &MpsItem) -> Result<(), RuntimeMsg>;
 
     fn get_distance(&mut self, from: &MpsItem, to: &MpsItem) -> Result<f64, RuntimeMsg>;
+
+    fn clear_cache(&mut self) -> Result<(), RuntimeMsg>;
 }
 
 #[cfg(feature = "bliss-audio")]
@@ -108,6 +110,12 @@ impl MpsMusicAnalyzer for MpsDefaultAnalyzer {
         }
         Err(RuntimeMsg("Channel closed without response: internal error".to_owned()))
     }
+
+    fn clear_cache(&mut self) -> Result<(), RuntimeMsg> {
+        self.requests.send(
+            RequestType::Clear {}
+        ).map_err(|e| RuntimeMsg(format!("Channel send error: {}", e)))
+    }
 }
 
 #[cfg(not(feature = "bliss-audio"))]
@@ -140,6 +148,7 @@ enum RequestType {
         path: String,
         ack: bool,
     },
+    Clear {},
     //End {}
 }
 
@@ -383,6 +392,10 @@ impl CacheThread {
                         break 'outer;
                     }
                 },
+                RequestType::Clear{} => {
+                    self.distance_cache.clear();
+                    self.song_cache.clear();
+                }
             }
         }
     }

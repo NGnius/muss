@@ -23,4 +23,5 @@ pub use union::{union_function_factory, UnionStatementFactory};
 pub use variable_assign::{AssignStatement, AssignStatementFactory};
 
 pub mod filters;
+pub mod item_ops;
 pub mod sorters;

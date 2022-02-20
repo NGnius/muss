@@ -32,6 +32,14 @@ impl MpsItem {
     pub fn remove_field(&mut self, name: &str) -> Option<MpsTypePrimitive> {
         self.fields.remove(name)
     }
+
+    pub fn iter(&self) -> impl Iterator<Item=&String> {
+        self.fields.keys()
+    }
+
+    pub fn len(&self) -> usize {
+        self.fields.len()
+    }
 }
 
 impl Display for MpsItem {

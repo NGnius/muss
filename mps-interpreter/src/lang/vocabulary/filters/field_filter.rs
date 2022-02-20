@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use super::utility::assert_comparison_operator;
+use super::utility::{assert_comparison_operator, comparison_op};
 use crate::lang::utility::{assert_token, assert_type, check_is_type};
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::MpsTypePrimitive;
@@ -32,19 +32,6 @@ pub enum FieldFilterErrorHandling {
     Error,   // return error
     Ignore,  // return Ok(false) when error encountered
     Include, // return Ok(true) when error encountered
-}
-
-#[inline(always)]
-fn comparison_op(c: &[i8; 2]) -> &str {
-    match c {
-        [-1, -1] => "<",
-        [0, 0] => "==",
-        [1, 1] => ">",
-        [0, -1] => "<=",
-        [0, 1] => ">=",
-        [-1, 1] => "!=",
-        _ => "??",
-    }
 }
 
 impl Display for FieldFilter {

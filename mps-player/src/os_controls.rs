@@ -179,16 +179,17 @@ impl SystemControlWrapper {
 
     fn enqueued(item: MpsItem, dbus_ctrl: &Sender<DbusControl>) {
         //println!("Got enqueued item {}", &item.title);
+        let file_uri = item.field("filename").and_then(|x| x.to_owned().to_str()).map(|x| format!("file://{}", x));
         dbus_ctrl
             .send(DbusControl::SetMetadata(Metadata {
                 length: None,
-                art_url: None,
+                art_url: None, //file_uri.clone() TODO do this without having to rip the art image from the file like Elisa
                 album: item.field("album").and_then(|x| x.to_owned().to_str()),
                 album_artist: None, // TODO maybe?
                 artist: item
                     .field("artist")
                     .and_then(|x| x.to_owned().to_str())
-                    .map(|x| vec![x]),
+                    .map(|x| x.split(",").map(|s| s.trim().to_owned()).collect()),
                 composer: None,
                 disc_number: None,
                 genre: item
@@ -200,7 +201,7 @@ impl SystemControlWrapper {
                     .field("track")
                     .and_then(|x| x.to_owned().to_i64())
                     .map(|track| track as i32),
-                url: item.field("filename").and_then(|x| x.to_owned().to_str()),
+                url: file_uri,
             }))
             .unwrap_or(());
     }

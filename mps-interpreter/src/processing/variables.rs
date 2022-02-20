@@ -5,11 +5,13 @@ use std::collections::HashMap;
 use crate::lang::MpsOp;
 use crate::lang::MpsTypePrimitive;
 use crate::lang::RuntimeMsg;
+use crate::MpsItem;
 
 #[derive(Debug)]
 pub enum MpsType {
     Op(Box<dyn MpsOp>),
     Primitive(MpsTypePrimitive),
+    Item(MpsItem),
 }
 
 impl Display for MpsType {
@@ -17,7 +19,15 @@ impl Display for MpsType {
         match self {
             Self::Op(op) => write!(f, "Op({})", op),
             Self::Primitive(p) => write!(f, "{}", p),
+            Self::Item(item) => write!(f, "{}", item),
         }
+    }
+}
+
+impl MpsType {
+    #[inline(always)]
+    pub const fn empty() -> Self {
+        MpsType::Primitive(MpsTypePrimitive::Empty)
     }
 }
 

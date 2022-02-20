@@ -4,6 +4,7 @@ mod error;
 mod filter;
 mod filter_replace;
 mod function;
+mod iter_block;
 mod lookup;
 mod operation;
 mod pseudo_op;
@@ -21,6 +22,7 @@ pub use filter::{
 };
 pub use filter_replace::MpsFilterReplaceStatement;
 pub use function::{MpsFunctionFactory, MpsFunctionStatementFactory};
+pub use iter_block::{MpsItemBlockFactory, MpsItemOp, MpsItemOpFactory};
 pub use lookup::Lookup;
 pub use operation::{BoxedMpsOpFactory, MpsIteratorItem, MpsOp, MpsOpFactory, SimpleMpsOpFactory};
 pub use pseudo_op::PseudoOp;

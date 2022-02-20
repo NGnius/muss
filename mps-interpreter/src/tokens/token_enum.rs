@@ -21,6 +21,10 @@ pub enum MpsToken {
     Ampersand,
     Colon,
     Tilde,
+    OpenCurly,
+    CloseCurly,
+    Plus,
+    Minus,
 }
 
 impl MpsToken {
@@ -42,6 +46,10 @@ impl MpsToken {
             "&" => Ok(Self::Ampersand),
             ":" => Ok(Self::Colon),
             "~" => Ok(Self::Tilde),
+            "{" => Ok(Self::OpenCurly),
+            "}" => Ok(Self::CloseCurly),
+            "+" => Ok(Self::Plus),
+            "-" => Ok(Self::Minus),
             _ => {
                 // name validation
                 let mut ok = true;
@@ -194,6 +202,34 @@ impl MpsToken {
             _ => false,
         }
     }
+
+    pub fn is_open_curly(&self) -> bool {
+        match self {
+            Self::OpenCurly => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_close_curly(&self) -> bool {
+        match self {
+            Self::CloseCurly => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_plus(&self) -> bool {
+        match self {
+            Self::Plus => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_minus(&self) -> bool {
+        match self {
+            Self::Minus => true,
+            _ => false,
+        }
+    }
 }
 
 impl Display for MpsToken {
@@ -218,6 +254,10 @@ impl Display for MpsToken {
             Self::Ampersand => write!(f, "&"),
             Self::Colon => write!(f, ":"),
             Self::Tilde => write!(f, "~"),
+            Self::OpenCurly => write!(f, "{{"),
+            Self::CloseCurly => write!(f, "}}"),
+            Self::Plus => write!(f, "+"),
+            Self::Minus => write!(f, "-"),
         }
     }
 }

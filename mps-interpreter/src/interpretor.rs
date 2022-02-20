@@ -159,10 +159,33 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
         .add(crate::lang::vocabulary::filters::field_re_filter())
         // sorters
         .add(crate::lang::vocabulary::sorters::empty_sort())
-        .add(crate::lang::vocabulary::sorters::shuffle_sort()) // accepts valid field ~(shuffle)
-        .add(crate::lang::vocabulary::sorters::field_sort())
+        .add(crate::lang::vocabulary::sorters::shuffle_sort()) // accepts ~(shuffle)
+        .add(crate::lang::vocabulary::sorters::field_sort()) // accepts any ~(something)
         .add(crate::lang::vocabulary::sorters::bliss_sort())
         .add(crate::lang::vocabulary::sorters::bliss_next_sort())
+        // iter blocks
+        .add(
+            crate::lang::MpsItemBlockFactory::new()
+                .add(crate::lang::vocabulary::item_ops::ConstantItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::VariableAssignItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::FieldAssignItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::VariableDeclareItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::InterpolateStringItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::BranchItemOpFactory)
+                //.add(crate::lang::vocabulary::item_ops::IterItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::ConstructorItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::EmptyItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::RemoveItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::VariableRetrieveItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::NegateItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::NotItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::CompareItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::AddItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::SubtractItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::OrItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::AndItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::BracketsItemOpFactory)
+            )
         // functions and misc
         // functions don't enforce bracket coherence
         // -- function().() is valid despite the ).( in between brackets

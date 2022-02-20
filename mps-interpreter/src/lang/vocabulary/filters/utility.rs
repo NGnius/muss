@@ -55,3 +55,16 @@ pub fn assert_comparison_operator(tokens: &mut VecDeque<MpsToken>) -> Result<[i8
         }),
     }
 }
+
+#[inline(always)]
+pub fn comparison_op(c: &[i8; 2]) -> &str {
+    match c {
+        [-1, -1] => "<",
+        [0, 0] => "==",
+        [1, 1] => ">",
+        [0, -1] => "<=",
+        [0, 1] => ">=",
+        [-1, 1] => "!=",
+        _ => "??",
+    }
+}
