@@ -1,6 +1,6 @@
 [package]
 name = "mps"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2021"
 authors = ["NGnius (Graham) <ngniusness@gmail.com>"]
 description = "Music Playlist Script language (MPS)"
@@ -19,14 +19,14 @@ members = [
 
 [dependencies]
 # local
-mps-interpreter = { version = "0.5.0", path = "./mps-interpreter" }
+mps-interpreter = { version = "0.6.0", path = "./mps-interpreter" }
 # external
 clap = { version = "3.0", features = ["derive"] }
 # termios = { version = "^0.3"}
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
-mps-player = { version = "0.5.0", path = "./mps-player", default-features = false }
+mps-player = { version = "0.6.0", path = "./mps-player", default-features = false }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # TODO fix need to specify OS-specific dependency of mps-player
-mps-player = { version = "0.5.0", path = "./mps-player", features = ["mpris-player"] }
+mps-player = { version = "0.6.0", path = "./mps-player", features = ["mpris-player"] }
