@@ -1,9 +1,9 @@
 //! Basic types for MPS
 
-use std::cmp::{Ord, Ordering};
+use std::cmp::{Eq, Ord, Ordering, PartialEq};
 use std::fmt::{Debug, Display, Error, Formatter};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum MpsTypePrimitive {
     String(String),
     Int(i64),
@@ -172,6 +172,15 @@ impl Display for MpsTypePrimitive {
         }
     }
 }
+
+impl PartialEq for MpsTypePrimitive {
+    fn eq(&self, other: &Self) -> bool {
+        let cmp = self.partial_cmp(other);
+        cmp.is_some() && cmp.unwrap() == Ordering::Equal
+    }
+}
+
+impl Eq for MpsTypePrimitive {}
 
 impl PartialOrd for MpsTypePrimitive {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {

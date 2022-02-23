@@ -722,3 +722,31 @@ fn execute_iteritemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
         true,
     )
 }
+
+#[test]
+fn execute_uniquefieldfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), 3).(unique title?)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(unique album!)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(unique album)",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_uniquefilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(unique)",
+        false,
+        true,
+    )
+}

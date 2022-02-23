@@ -151,12 +151,14 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
     vocabulary
         // filters
         .add(crate::lang::vocabulary::filters::empty_filter())
-        .add(crate::lang::vocabulary::filters::field_filter())
+        .add(crate::lang::vocabulary::filters::unique_filter()) // accepts .(unique)
+        .add(crate::lang::vocabulary::filters::field_filter()) // accepts any .(something)
         .add(crate::lang::vocabulary::filters::field_filter_maybe())
         .add(crate::lang::vocabulary::filters::index_filter())
         .add(crate::lang::vocabulary::filters::range_filter())
         .add(crate::lang::vocabulary::filters::field_like_filter())
         .add(crate::lang::vocabulary::filters::field_re_filter())
+        .add(crate::lang::vocabulary::filters::unique_field_filter())
         // sorters
         .add(crate::lang::vocabulary::sorters::empty_sort())
         .add(crate::lang::vocabulary::sorters::shuffle_sort()) // accepts ~(shuffle)

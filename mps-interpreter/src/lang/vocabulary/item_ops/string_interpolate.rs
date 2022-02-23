@@ -60,8 +60,7 @@ impl MpsItemOp for InterpolateStringItemOp {
             MpsType::Op(op) => {
                 let result = self.format.replace("{}", &format!("{}", op));
                 Ok(MpsType::Primitive(MpsTypePrimitive::String(result)))
-            }
-            //val => Err(RuntimeMsg(format!("Cannot insert {} ({}) into format string", self.inner_op, val)))
+            } //val => Err(RuntimeMsg(format!("Cannot insert {} ({}) into format string", self.inner_op, val)))
         }
         //Ok(MpsType::empty())
     }

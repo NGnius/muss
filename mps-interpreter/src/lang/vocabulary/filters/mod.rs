@@ -5,6 +5,7 @@ mod field_like_filter;
 mod field_match_filter;
 mod index_filter;
 mod range_filter;
+mod unique;
 pub(crate) mod utility;
 
 pub use empty_filter::{
@@ -28,4 +29,8 @@ pub use index_filter::{
 };
 pub use range_filter::{
     range_filter, RangeFilter, RangeFilterFactory, RangeFilterStatementFactory,
+};
+pub use unique::{
+    unique_field_filter, unique_filter, UniqueFieldFilter, UniqueFieldFilterStatementFactory,
+    UniqueFilter, UniqueFilterFactory, UniqueFilterStatementFactory,
 };
