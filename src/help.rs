@@ -2,7 +2,7 @@
 pub const HELP_STRING: &str =
 "This language is all about iteration. Almost everything is an iterator or operates on iterators. By default, any operation which is not an assignment will cause the script runner to handle (play/save) the items which that statement contains.
 
-To view the currently-supported operations, try ?functions, ?filters, or ?sorters";
+To view the currently-supported operations, try ?functions, ?filters, ?procedures, or ?sorters";
 
 pub const FUNCTIONS: &str =
 "FUNCTIONS (?functions)
@@ -96,3 +96,50 @@ Operations to sort the items in an iterable: iterable~(sorter) OR iterable.sort(
 
  advanced bliss_next -- e.g. iterable~(advanced bliss_next)
     Sort by the distance (similarity) between the last played song in the iterator. Similar to bliss_first. Songs which are more similar (lower distance) to the first song in the iterator will be placed closer to the first song, while less similar songs will be sorted to the end. This uses the bliss music analyser, which is a very slow operation and can cause music playback interruptions for large iterators. Requires `advanced` mps-interpreter feature.";
+
+pub const PROCEDURES: &str =
+"PROCEDURES (?procedures)
+Operations to apply to each item in an iterable: iterable.{step1, step2, ...}
+Comma-separated procedure steps will be executed sequentially (like a for loop in regular programming languages). The variable item contains the current item of the iterable.
+
+ let variable = something -- e.g. let my_var = 42
+    Declare the variable and (optionally) set the initial value to something. The assignment will only be performed when the variable has not yet been declared. When the initial value (and equals sign) is omitted, the variable is initialized as empty().
+
+ variable = something -- e.g. my_var = 42
+    Assign something to the variable. The variable must have already been declared.
+
+ empty() -- e.g. empty()
+    The empty or null constant.
+
+ if condition { something } else { something_else } -- e.g.
+    if item.title == `Romantic Traffic` {
+
+    } else {
+        remove item
+    }
+    Branch based on a boolean condition. Multiple comma-separated procedure steps may be supplied in the if and else branches. This does not currently support if else chains, but they can be nested to accomplish similar behaviour.
+
+ something1 == something2
+ something1 != something2
+ something1 >= something2
+ something1 > something2
+ something1 <= something2
+ something1 < something2 -- e.g. item.filename != item.title
+    Compare something1 to something2. The result is a boolean which is useful for branch conditions.
+
+ op iterable_operation -- e.g. op files().(0..=42)~(shuffle)
+    An iterable operation inside of the procedure. When assigned to item, this can be used to replace item with multiple others. Note that iterable operations are never executed inside the procedure; when item is iterable, it will be executed immediately after the end of the procedure for the current item.
+
+ (something1)
+ -something1
+ something1 - something2
+ something1 + something2
+ something1 || something2
+ something1 && something2 -- e.g. 42 + (128 - 64)
+    Various algebraic operations: brackets (order of operations), negation, subtraction, addition, logical OR, logical AND; respectively.
+
+ Item(field1 = something1, field2 = something2, ...) - e.g. item = Item(title = item.title, filename = `/dev/null`)
+    Constructor for a new item. Each function parameter defines a new field and it's value.
+
+ ~`string_format` something -- e.g. ~`{filename}` item
+    Format a value into a string. This behaves differently depending on the value's type: When the value is an Item, the item's corresponding field will replace all `{field}` instances in the format string. When the value is a primitive type (String, Int, Bool, etc.), the value's text equivalent will replace all `{}` instances in the format string. When the value is an iterable operation (Op), the operation's script equivalent will replace all `{}` instances in the format string.";

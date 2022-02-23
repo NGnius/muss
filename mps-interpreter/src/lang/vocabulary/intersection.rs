@@ -133,7 +133,9 @@ impl MpsOp for IntersectionStatement {
             init_needed: true,
         };
         for op in self.ops.iter() {
-            clone.ops.push(PseudoOp::from(op.try_real_ref().unwrap().dup()));
+            clone
+                .ops
+                .push(PseudoOp::from(op.try_real_ref().unwrap().dup()));
         }
         Box::new(clone)
     }

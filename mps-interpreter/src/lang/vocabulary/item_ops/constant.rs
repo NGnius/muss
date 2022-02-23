@@ -2,10 +2,10 @@ use core::ops::Deref;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::utility::{check_is_type, assert_type};
+use crate::lang::utility::{assert_type, check_is_type};
 use crate::lang::MpsLanguageDictionary;
+use crate::lang::{MpsItemBlockFactory, MpsItemOp, MpsItemOpFactory, MpsTypePrimitive};
 use crate::lang::{RuntimeMsg, SyntaxError};
-use crate::lang::{MpsItemOp, MpsItemOpFactory, MpsItemBlockFactory, MpsTypePrimitive};
 use crate::processing::general::MpsType;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -38,8 +38,7 @@ pub struct ConstantItemOpFactory;
 
 impl MpsItemOpFactory<ConstantItemOp> for ConstantItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<MpsToken>) -> bool {
-        tokens.len() == 1
-        && check_is_type(&tokens[0])
+        tokens.len() == 1 && check_is_type(&tokens[0])
     }
 
     fn build_item_op(
@@ -49,8 +48,6 @@ impl MpsItemOpFactory<ConstantItemOp> for ConstantItemOpFactory {
         _dict: &MpsLanguageDictionary,
     ) -> Result<ConstantItemOp, SyntaxError> {
         let const_value = assert_type(tokens)?;
-        Ok(ConstantItemOp {
-            value: const_value,
-        })
+        Ok(ConstantItemOp { value: const_value })
     }
 }

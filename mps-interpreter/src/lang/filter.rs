@@ -182,10 +182,13 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
             predicate: self.predicate.clone(),
             iterable: match &self.iterable {
                 VariableOrOp::Variable(s) => VariableOrOp::Variable(s.clone()),
-                VariableOrOp::Op(op) => VariableOrOp::Op(op.try_real_ref().unwrap().dup().into())
+                VariableOrOp::Op(op) => VariableOrOp::Op(op.try_real_ref().unwrap().dup().into()),
             },
             context: None,
-            other_filters: self.other_filters.as_ref().map(|x| PseudoOp::from(x.try_real_ref().unwrap().dup())),
+            other_filters: self
+                .other_filters
+                .as_ref()
+                .map(|x| PseudoOp::from(x.try_real_ref().unwrap().dup())),
         })
     }
 }
@@ -350,15 +353,14 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                                 // handle other filters
                                 // make fake inner item
                                 let single_op = SingleItem::new_ok(item.clone());
-                                match ctx.variables.declare(
-                                    INNER_VARIABLE_NAME,
-                                    MpsType::Op(Box::new(single_op)),
-                                ) {
+                                match ctx
+                                    .variables
+                                    .declare(INNER_VARIABLE_NAME, MpsType::Op(Box::new(single_op)))
+                                {
                                     Ok(x) => x,
                                     Err(e) => {
                                         //self.context = Some(op.escape());
-                                        maybe_result =
-                                            Some(Err(e.with(RuntimeOp(fake.clone()))));
+                                        maybe_result = Some(Err(e.with(RuntimeOp(fake.clone()))));
                                         self.context = Some(ctx);
                                         break;
                                     }
@@ -381,9 +383,8 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                                             Ok(_) => {}
                                             Err(e) => match maybe_result {
                                                 Some(Ok(_)) => {
-                                                    maybe_result = Some(Err(
-                                                        e.with(RuntimeOp(fake.clone()))
-                                                    ))
+                                                    maybe_result =
+                                                        Some(Err(e.with(RuntimeOp(fake.clone()))))
                                                 }
                                                 Some(Err(e2)) => maybe_result = Some(Err(e2)), // already failing, do not replace error,
                                                 None => {} // impossible

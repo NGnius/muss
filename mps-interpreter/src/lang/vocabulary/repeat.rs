@@ -211,7 +211,11 @@ impl MpsOp for RepeatStatement {
             context: None,
             cache: Vec::new(),
             cache_position: 0,
-            repetitions: if self.original_repetitions != 0 {self.original_repetitions-1} else {0},
+            repetitions: if self.original_repetitions != 0 {
+                self.original_repetitions - 1
+            } else {
+                0
+            },
             loop_forever: self.loop_forever,
             original_repetitions: self.original_repetitions,
         };

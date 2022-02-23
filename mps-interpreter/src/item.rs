@@ -33,7 +33,7 @@ impl MpsItem {
         self.fields.remove(name)
     }
 
-    pub fn iter(&self) -> impl Iterator<Item=&String> {
+    pub fn iter(&self) -> impl Iterator<Item = &String> {
         self.fields.keys()
     }
 

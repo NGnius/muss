@@ -1,10 +1,10 @@
-use std::convert::AsRef;
 use std::collections::VecDeque;
+use std::convert::AsRef;
 
 use crate::lang::utility::{assert_token_raw, assert_token_raw_back};
 use crate::lang::MpsLanguageDictionary;
+use crate::lang::{MpsItemBlockFactory, MpsItemOp, MpsItemOpFactory};
 use crate::lang::{RuntimeMsg, SyntaxError};
-use crate::lang::{MpsItemOp, MpsItemOpFactory, MpsItemBlockFactory};
 use crate::processing::general::MpsType;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -13,7 +13,9 @@ pub struct BracketsItemOpFactory;
 
 impl MpsItemOpFactory<Box<dyn MpsItemOp>> for BracketsItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<MpsToken>) -> bool {
-        tokens.len() >= 2 && tokens[0].is_open_bracket() && tokens[tokens.len()-1].is_close_bracket()
+        tokens.len() >= 2
+            && tokens[0].is_open_bracket()
+            && tokens[tokens.len() - 1].is_close_bracket()
     }
 
     fn build_item_op(

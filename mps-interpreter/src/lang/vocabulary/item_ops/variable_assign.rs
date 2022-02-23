@@ -2,10 +2,10 @@ use core::ops::Deref;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::utility::{assert_token_raw, assert_token};
+use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::MpsLanguageDictionary;
+use crate::lang::{MpsItemBlockFactory, MpsItemOp, MpsItemOpFactory};
 use crate::lang::{RuntimeMsg, SyntaxError};
-use crate::lang::{MpsItemOp, MpsItemOpFactory, MpsItemBlockFactory};
 use crate::processing::general::MpsType;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -50,10 +50,14 @@ impl MpsItemOpFactory<VariableAssignItemOp> for VariableAssignItemOpFactory {
         factory: &MpsItemBlockFactory,
         dict: &MpsLanguageDictionary,
     ) -> Result<VariableAssignItemOp, SyntaxError> {
-        let var_name = assert_token(|t| match t {
-            MpsToken::Name(s) => Some(s),
-            _ => None,
-        }, MpsToken::Name("variable_name".into()), tokens)?;
+        let var_name = assert_token(
+            |t| match t {
+                MpsToken::Name(s) => Some(s),
+                _ => None,
+            },
+            MpsToken::Name("variable_name".into()),
+            tokens,
+        )?;
         assert_token_raw(MpsToken::Equals, tokens)?;
         let inner_op = factory.try_build_item_statement(tokens, dict)?;
         Ok(VariableAssignItemOp {

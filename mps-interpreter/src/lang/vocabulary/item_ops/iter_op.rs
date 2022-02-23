@@ -2,10 +2,10 @@ use core::ops::Deref;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::utility::{check_name, assert_name};
+use crate::lang::utility::{assert_name, check_name};
 use crate::lang::MpsLanguageDictionary;
+use crate::lang::{MpsItemBlockFactory, MpsItemOp, MpsItemOpFactory, MpsOp};
 use crate::lang::{RuntimeMsg, SyntaxError};
-use crate::lang::{MpsItemOp, MpsItemOpFactory, MpsItemBlockFactory, MpsOp};
 use crate::processing::general::MpsType;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -38,8 +38,7 @@ pub struct IterItemOpFactory;
 
 impl MpsItemOpFactory<IterItemOp> for IterItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<MpsToken>) -> bool {
-        !tokens.is_empty()
-        && check_name("iter", &tokens[0])
+        !tokens.is_empty() && check_name("iter", &tokens[0])
     }
 
     fn build_item_op(
@@ -50,8 +49,6 @@ impl MpsItemOpFactory<IterItemOp> for IterItemOpFactory {
     ) -> Result<IterItemOp, SyntaxError> {
         assert_name("iter", tokens)?;
         let inner_op = dict.try_build_statement(tokens)?;
-        Ok(IterItemOp {
-            inner: inner_op,
-        })
+        Ok(IterItemOp { inner: inner_op })
     }
 }

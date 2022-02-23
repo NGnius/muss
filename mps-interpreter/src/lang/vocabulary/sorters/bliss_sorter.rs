@@ -75,19 +75,20 @@ impl MpsSorter for BlissSorter {
                 let mut ctx = iterator.escape();
                 for i in 0..item_buf.len() {
                     if let Ok(item) = &item_buf[i] {
-                        if item == first {continue;}
+                        if item == first {
+                            continue;
+                        }
                         match ctx.analysis.prepare_distance(first, item) {
                             Err(e) => {
                                 iterator.enter(ctx);
                                 return Err(e);
-                            },
-                            Ok(_) => {},
+                            }
+                            Ok(_) => {}
                         }
                     }
                 }
                 iterator.enter(ctx);
             }
-
         } else if self.first_song.is_some() {
             // Sort songs on second call to this function
             let first = self.first_song.take().unwrap();
@@ -96,15 +97,17 @@ impl MpsSorter for BlissSorter {
             let mut ctx = iterator.escape();
             for i in 0..item_buf.len() {
                 if let Ok(item) = &item_buf[i] {
-                    if item == &first {continue;}
+                    if item == &first {
+                        continue;
+                    }
                     match ctx.analysis.get_distance(&first, item) {
                         Err(e) => {
                             iterator.enter(ctx);
                             return Err(e);
-                        },
+                        }
                         Ok(distance) => {
                             cache.insert(item.clone(), distance);
-                        },
+                        }
                     }
                 }
             }

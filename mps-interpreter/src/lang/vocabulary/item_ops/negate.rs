@@ -4,8 +4,8 @@ use std::fmt::{Debug, Display, Error, Formatter};
 
 use crate::lang::utility::assert_token_raw;
 use crate::lang::MpsLanguageDictionary;
+use crate::lang::{MpsItemBlockFactory, MpsItemOp, MpsItemOpFactory};
 use crate::lang::{RuntimeMsg, SyntaxError};
-use crate::lang::{MpsItemOp, MpsItemOpFactory, MpsItemBlockFactory};
 use crate::processing::general::MpsType;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -32,9 +32,14 @@ impl MpsItemOp for NegateItemOp {
     fn execute(&self, context: &mut MpsContext) -> Result<MpsType, RuntimeMsg> {
         let rhs = self.rhs.execute(context)?;
         if let MpsType::Primitive(rhs) = &rhs {
-            Ok(MpsType::Primitive(rhs.try_negate().map_err(|e| RuntimeMsg(e))?))
+            Ok(MpsType::Primitive(
+                rhs.try_negate().map_err(|e| RuntimeMsg(e))?,
+            ))
         } else {
-            Err(RuntimeMsg(format!("Cannot negate `{}` ({}): not primitive type", self.rhs, rhs)))
+            Err(RuntimeMsg(format!(
+                "Cannot negate `{}` ({}): not primitive type",
+                self.rhs, rhs
+            )))
         }
     }
 }
@@ -54,8 +59,6 @@ impl MpsItemOpFactory<NegateItemOp> for NegateItemOpFactory {
     ) -> Result<NegateItemOp, SyntaxError> {
         assert_token_raw(MpsToken::Minus, tokens)?;
         let rhs_op = factory.try_build_item_statement(tokens, dict)?;
-        Ok(NegateItemOp {
-            rhs: rhs_op,
-        })
+        Ok(NegateItemOp { rhs: rhs_op })
     }
 }

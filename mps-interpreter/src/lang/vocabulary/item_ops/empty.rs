@@ -2,10 +2,10 @@ use core::ops::Deref;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::utility::{assert_token_raw, check_name, assert_name};
+use crate::lang::utility::{assert_name, assert_token_raw, check_name};
 use crate::lang::MpsLanguageDictionary;
+use crate::lang::{MpsItemBlockFactory, MpsItemOp, MpsItemOpFactory};
 use crate::lang::{RuntimeMsg, SyntaxError};
-use crate::lang::{MpsItemOp, MpsItemOpFactory, MpsItemBlockFactory};
 use crate::processing::general::MpsType;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -37,9 +37,9 @@ pub struct EmptyItemOpFactory;
 impl MpsItemOpFactory<EmptyItemOp> for EmptyItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<MpsToken>) -> bool {
         tokens.len() == 3
-        && check_name("empty", &tokens[0])
-        && tokens[1].is_open_bracket()
-        && tokens[2].is_close_bracket()
+            && check_name("empty", &tokens[0])
+            && tokens[1].is_open_bracket()
+            && tokens[2].is_close_bracket()
     }
 
     fn build_item_op(

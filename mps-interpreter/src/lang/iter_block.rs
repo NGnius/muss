@@ -1,9 +1,9 @@
 use core::ops::Deref;
-use std::sync::Arc;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 use crate::lang::utility::{assert_token_raw, assert_token_raw_back};
 use crate::lang::MpsLanguageDictionary;
@@ -31,13 +31,16 @@ pub trait MpsItemOpFactory<T: Deref<Target = dyn MpsItemOp> + 'static> {
     ) -> Result<T, SyntaxError>;
 }
 
-pub struct MpsItemOpBoxer<X: MpsItemOpFactory<Y> + 'static, Y: Deref<Target = dyn MpsItemOp> + MpsItemOp + 'static> {
+pub struct MpsItemOpBoxer<
+    X: MpsItemOpFactory<Y> + 'static,
+    Y: Deref<Target = dyn MpsItemOp> + MpsItemOp + 'static,
+> {
     idc: PhantomData<Y>,
     factory: X,
 }
 
-impl<X: MpsItemOpFactory<Y> + 'static, Y: Deref<Target = dyn MpsItemOp> + MpsItemOp + 'static> MpsItemOpFactory<Box<dyn MpsItemOp>>
-    for MpsItemOpBoxer<X, Y>
+impl<X: MpsItemOpFactory<Y> + 'static, Y: Deref<Target = dyn MpsItemOp> + MpsItemOp + 'static>
+    MpsItemOpFactory<Box<dyn MpsItemOp>> for MpsItemOpBoxer<X, Y>
 {
     fn is_item_op(&self, tokens: &VecDeque<MpsToken>) -> bool {
         self.factory.is_item_op(tokens)
@@ -83,7 +86,6 @@ impl std::clone::Clone for MpsItemBlockStatement {
         }
     }
 }
-
 
 impl MpsOp for MpsItemBlockStatement {
     fn enter(&mut self, ctx: MpsContext) {
@@ -151,10 +153,12 @@ impl Iterator for MpsItemBlockStatement {
             let old_var = replace_item_var(&mut ctx, MpsType::Item(item));
             for op in self.statements.iter_mut() {
                 match op.execute(&mut ctx) {
-                    Ok(_) => {},
+                    Ok(_) => {}
                     Err(e) => {
                         #[allow(unused_must_use)]
-                        {restore_item_var(&mut ctx, old_var);}
+                        {
+                            restore_item_var(&mut ctx, old_var);
+                        }
                         real_op.enter(ctx);
                         return Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self)))));
                     }
@@ -169,9 +173,7 @@ impl Iterator for MpsItemBlockStatement {
             };
             real_op.enter(ctx);
             match item {
-                Some(MpsType::Item(item)) => {
-                    return Some(Ok(item))
-                },
+                Some(MpsType::Item(item)) => return Some(Ok(item)),
                 Some(MpsType::Op(mut op)) => {
                     op.enter(real_op.escape());
                     if let Some(item) = op.next() {
@@ -181,12 +183,17 @@ impl Iterator for MpsItemBlockStatement {
                     } else {
                         real_op.enter(op.escape());
                     }
-                },
-                Some(x) => return Some(Err(RuntimeError {
-                    line: 0,
-                    op: PseudoOp::from_printable(self),
-                    msg: format!("Expected `item` like MpsType::Item(MpsItem[...]), got {}", x),
-                })),
+                }
+                Some(x) => {
+                    return Some(Err(RuntimeError {
+                        line: 0,
+                        op: PseudoOp::from_printable(self),
+                        msg: format!(
+                            "Expected `item` like MpsType::Item(MpsItem[...]), got {}",
+                            x
+                        ),
+                    }))
+                }
                 None => {}
             }
         }
@@ -206,9 +213,12 @@ pub struct MpsItemBlockFactory {
 }
 
 impl MpsItemBlockFactory {
-    pub fn add<T: MpsItemOpFactory<Y> + 'static, Y: Deref<Target=dyn MpsItemOp> + MpsItemOp + 'static>(
+    pub fn add<
+        T: MpsItemOpFactory<Y> + 'static,
+        Y: Deref<Target = dyn MpsItemOp> + MpsItemOp + 'static,
+    >(
         mut self,
-        factory: T
+        factory: T,
     ) -> Self {
         self.vocabulary.push(Box::new(MpsItemOpBoxer {
             factory: factory,
@@ -250,7 +260,7 @@ impl MpsItemBlockFactory {
 
 impl BoxedMpsOpFactory for MpsItemBlockFactory {
     fn is_op_boxed(&self, tokens: &VecDeque<MpsToken>) -> bool {
-        tokens[tokens.len()-1].is_close_curly()
+        tokens[tokens.len() - 1].is_close_curly()
     }
 
     fn build_op_boxed(
@@ -303,7 +313,10 @@ fn replace_item_var(ctx: &mut MpsContext, item: MpsType) -> Option<MpsType> {
     old_var
 }
 
-fn restore_item_var(ctx: &mut MpsContext, old_var: Option<MpsType>) -> Result<Option<MpsType>, RuntimeMsg> {
+fn restore_item_var(
+    ctx: &mut MpsContext,
+    old_var: Option<MpsType>,
+) -> Result<Option<MpsType>, RuntimeMsg> {
     let new_var;
     if ctx.variables.exists(ITEM_VARIABLE_NAME) {
         new_var = Some(ctx.variables.remove(ITEM_VARIABLE_NAME)?);
@@ -326,16 +339,16 @@ fn find_last_open_curly(tokens: &VecDeque<MpsToken>) -> Option<usize> {
                 if bracket_depth != 0 {
                     bracket_depth -= 1;
                 }
-            },
+            }
             MpsToken::CloseCurly => {
                 bracket_depth += 1;
-            },
+            }
             MpsToken::Dot => {
                 if bracket_depth == 0 && curly_found {
-                    return Some(i+1);
+                    return Some(i + 1);
                 }
             }
-            _ => {},
+            _ => {}
         }
         if token.is_open_curly() {
             curly_found = true;

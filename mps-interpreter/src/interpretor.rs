@@ -184,8 +184,8 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
                 .add(crate::lang::vocabulary::item_ops::SubtractItemOpFactory)
                 .add(crate::lang::vocabulary::item_ops::OrItemOpFactory)
                 .add(crate::lang::vocabulary::item_ops::AndItemOpFactory)
-                .add(crate::lang::vocabulary::item_ops::BracketsItemOpFactory)
-            )
+                .add(crate::lang::vocabulary::item_ops::BracketsItemOpFactory),
+        )
         // functions and misc
         // functions don't enforce bracket coherence
         // -- function().() is valid despite the ).( in between brackets

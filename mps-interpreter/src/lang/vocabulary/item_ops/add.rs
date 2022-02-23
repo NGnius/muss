@@ -4,8 +4,8 @@ use std::fmt::{Debug, Display, Error, Formatter};
 
 use crate::lang::utility::assert_token_raw;
 use crate::lang::MpsLanguageDictionary;
+use crate::lang::{MpsItemBlockFactory, MpsItemOp, MpsItemOpFactory};
 use crate::lang::{RuntimeMsg, SyntaxError};
-use crate::lang::{MpsItemOp, MpsItemOpFactory, MpsItemBlockFactory};
 use crate::processing::general::MpsType;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -35,12 +35,20 @@ impl MpsItemOp for AddItemOp {
         if let MpsType::Primitive(lhs) = &lhs {
             let rhs = self.rhs.execute(context)?;
             if let MpsType::Primitive(rhs) = &rhs {
-                Ok(MpsType::Primitive(lhs.try_add(rhs).map_err(|e| RuntimeMsg(e))?))
+                Ok(MpsType::Primitive(
+                    lhs.try_add(rhs).map_err(|e| RuntimeMsg(e))?,
+                ))
             } else {
-                Err(RuntimeMsg(format!("Cannot add right-hand side `{}` ({}): not primitive type", self.rhs, rhs)))
+                Err(RuntimeMsg(format!(
+                    "Cannot add right-hand side `{}` ({}): not primitive type",
+                    self.rhs, rhs
+                )))
             }
         } else {
-            Err(RuntimeMsg(format!("Cannot add left-hand side `{}` ({}): not primitive type", self.lhs, lhs)))
+            Err(RuntimeMsg(format!(
+                "Cannot add left-hand side `{}` ({}): not primitive type",
+                self.lhs, lhs
+            )))
         }
     }
 }

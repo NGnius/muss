@@ -2,10 +2,10 @@ use core::ops::Deref;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::utility::{assert_token_raw, assert_token};
+use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::MpsLanguageDictionary;
+use crate::lang::{MpsItemBlockFactory, MpsItemOp, MpsItemOpFactory};
 use crate::lang::{RuntimeMsg, SyntaxError};
-use crate::lang::{MpsItemOp, MpsItemOpFactory, MpsItemBlockFactory};
 use crate::processing::general::MpsType;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -30,7 +30,6 @@ impl Display for VariableRetrieveItemOp {
         } else {
             write!(f, "{}", &self.variable_name)
         }
-
     }
 }
 
@@ -44,13 +43,16 @@ impl MpsItemOp for VariableRetrieveItemOp {
                     None => MpsType::empty(),
                 })
             } else {
-                Err(RuntimeMsg(format!("Cannot access field `{}` on variable `{}` ({} is not Item)", field_name, self.variable_name, var)))
+                Err(RuntimeMsg(format!(
+                    "Cannot access field `{}` on variable `{}` ({} is not Item)",
+                    field_name, self.variable_name, var
+                )))
             }
         } else {
             match var {
                 MpsType::Op(op) => Ok(MpsType::Op(op.dup())),
                 MpsType::Primitive(x) => Ok(MpsType::Primitive(x.clone())),
-                MpsType::Item(item) => Ok(MpsType::Item(item.clone()))
+                MpsType::Item(item) => Ok(MpsType::Item(item.clone())),
             }
         }
     }
@@ -61,8 +63,10 @@ pub struct VariableRetrieveItemOpFactory;
 impl MpsItemOpFactory<VariableRetrieveItemOp> for VariableRetrieveItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<MpsToken>) -> bool {
         (tokens.len() == 1 && tokens[0].is_name())
-        ||
-        (tokens.len() == 3 && tokens[0].is_name() && tokens[1].is_dot() && tokens[2].is_name())
+            || (tokens.len() == 3
+                && tokens[0].is_name()
+                && tokens[1].is_dot()
+                && tokens[2].is_name())
     }
 
     fn build_item_op(
@@ -71,19 +75,27 @@ impl MpsItemOpFactory<VariableRetrieveItemOp> for VariableRetrieveItemOpFactory 
         _factory: &MpsItemBlockFactory,
         _dict: &MpsLanguageDictionary,
     ) -> Result<VariableRetrieveItemOp, SyntaxError> {
-        let var_name = assert_token(|t| match t {
-            MpsToken::Name(s) => Some(s),
-            _ => None,
-        }, MpsToken::Name("variable_name".into()), tokens)?;
+        let var_name = assert_token(
+            |t| match t {
+                MpsToken::Name(s) => Some(s),
+                _ => None,
+            },
+            MpsToken::Name("variable_name".into()),
+            tokens,
+        )?;
         let field_opt;
         if tokens.is_empty() {
             field_opt = None;
         } else {
             assert_token_raw(MpsToken::Dot, tokens)?;
-            field_opt = Some(assert_token(|t| match t {
-                MpsToken::Name(s) => Some(s),
-                _ => None,
-            }, MpsToken::Name("field_name".into()), tokens)?);
+            field_opt = Some(assert_token(
+                |t| match t {
+                    MpsToken::Name(s) => Some(s),
+                    _ => None,
+                },
+                MpsToken::Name("field_name".into()),
+                tokens,
+            )?);
         }
         Ok(VariableRetrieveItemOp {
             variable_name: var_name,

@@ -85,28 +85,46 @@ impl MpsTypePrimitive {
         match self {
             Self::String(s) => match other {
                 Self::String(other_s) => Ok(Self::String(s.to_owned() + other_s)),
-                other => Err(format!("Cannot add {} and {}: incompatible types", self, other)),
+                other => Err(format!(
+                    "Cannot add {} and {}: incompatible types",
+                    self, other
+                )),
             },
             Self::Int(i) => match other {
                 Self::Int(other_i) => Ok(Self::Int(i + other_i)),
                 Self::UInt(u) => Ok(Self::Int(i + *u as i64)),
                 Self::Float(f) => Ok(Self::Float(*i as f64 + f)),
-                other => Err(format!("Cannot add {} and {}: incompatible types", self, other)),
+                other => Err(format!(
+                    "Cannot add {} and {}: incompatible types",
+                    self, other
+                )),
             },
             Self::UInt(u) => match other {
                 Self::UInt(other_u) => Ok(Self::UInt(u + other_u)),
                 Self::Int(i) => Ok(Self::UInt(u + *i as u64)),
                 Self::Float(f) => Ok(Self::Float(*u as f64 + f)),
-                other => Err(format!("Cannot add {} and {}: incompatible types", self, other)),
+                other => Err(format!(
+                    "Cannot add {} and {}: incompatible types",
+                    self, other
+                )),
             },
             Self::Float(f) => match other {
                 Self::Float(other_f) => Ok(Self::Float(f + other_f)),
                 Self::Int(i) => Ok(Self::Float(f + *i as f64)),
                 Self::UInt(u) => Ok(Self::Float(f + *u as f64)),
-                other => Err(format!("Cannot add {} and {}: incompatible types", self, other)),
+                other => Err(format!(
+                    "Cannot add {} and {}: incompatible types",
+                    self, other
+                )),
             },
-            Self::Bool(_) => Err(format!("Cannot add {} and {}: incompatible types", self, other)),
-            Self::Empty => Err(format!("Cannot add {} and {}: incompatible types", self, other)),
+            Self::Bool(_) => Err(format!(
+                "Cannot add {} and {}: incompatible types",
+                self, other
+            )),
+            Self::Empty => Err(format!(
+                "Cannot add {} and {}: incompatible types",
+                self, other
+            )),
         }
     }
 
@@ -134,7 +152,10 @@ impl MpsTypePrimitive {
     pub fn try_not(&self) -> Result<Self, String> {
         match self {
             Self::Bool(b) => Ok(Self::Bool(!*b)),
-            _ => Err(format!("Cannot apply logical NOT to {}: incompatible type", self)),
+            _ => Err(format!(
+                "Cannot apply logical NOT to {}: incompatible type",
+                self
+            )),
         }
     }
 }
@@ -206,7 +227,7 @@ impl PartialOrd for MpsTypePrimitive {
             Self::Empty => match other {
                 Self::Empty => Some(std::cmp::Ordering::Equal),
                 _ => None,
-            }
+            },
         }
     }
 }
@@ -222,7 +243,7 @@ impl std::hash::Hash for MpsTypePrimitive {
             Self::UInt(u) => u.hash(state),
             Self::Float(f_) => (*f_ as u64).hash(state),
             Self::Bool(b) => b.hash(state),
-            Self::Empty => {},
+            Self::Empty => {}
         }
     }
 }

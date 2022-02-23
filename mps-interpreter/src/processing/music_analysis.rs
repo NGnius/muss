@@ -2,12 +2,12 @@ use core::fmt::Debug;
 #[cfg(feature = "bliss-audio")]
 use std::collections::{HashMap, HashSet};
 #[cfg(feature = "bliss-audio")]
-use std::sync::mpsc::{channel, Sender, Receiver};
+use std::sync::mpsc::{channel, Receiver, Sender};
 
 #[cfg(feature = "bliss-audio")]
-use bliss_audio::{Song, BlissError};
-#[cfg(feature = "bliss-audio")]
 use crate::lang::MpsTypePrimitive;
+#[cfg(feature = "bliss-audio")]
+use bliss_audio::{BlissError, Song};
 
 use crate::lang::RuntimeMsg;
 use crate::MpsItem;
@@ -49,16 +49,21 @@ impl std::default::Default for MpsDefaultAnalyzer {
 
 #[cfg(feature = "bliss-audio")]
 impl MpsDefaultAnalyzer {
-    fn request_distance(&mut self, from: &MpsItem, to: &MpsItem, ack: bool) -> Result<(), RuntimeMsg> {
+    fn request_distance(
+        &mut self,
+        from: &MpsItem,
+        to: &MpsItem,
+        ack: bool,
+    ) -> Result<(), RuntimeMsg> {
         let path_from = Self::get_path(from)?;
         let path_to = Self::get_path(to)?;
-        self.requests.send(
-            RequestType::Distance {
+        self.requests
+            .send(RequestType::Distance {
                 path1: path_from.to_owned(),
                 path2: path_to.to_owned(),
                 ack: ack,
-            }
-        ).map_err(|e| RuntimeMsg(format!("Channel send err {}", e)))
+            })
+            .map_err(|e| RuntimeMsg(format!("Channel send err {}", e)))
     }
 
     fn get_path(item: &MpsItem) -> Result<&str, RuntimeMsg> {
@@ -66,7 +71,10 @@ impl MpsDefaultAnalyzer {
             if let MpsTypePrimitive::String(path) = path {
                 Ok(path)
             } else {
-                Err(RuntimeMsg(format!("Field {} on item is not String, it's {}", PATH_FIELD, path)))
+                Err(RuntimeMsg(format!(
+                    "Field {} on item is not String, it's {}",
+                    PATH_FIELD, path
+                )))
             }
         } else {
             Err(RuntimeMsg(format!("Missing field {} on item", PATH_FIELD)))
@@ -75,12 +83,12 @@ impl MpsDefaultAnalyzer {
 
     fn request_song(&mut self, item: &MpsItem, ack: bool) -> Result<(), RuntimeMsg> {
         let path = Self::get_path(item)?;
-        self.requests.send(
-            RequestType::Song {
+        self.requests
+            .send(RequestType::Song {
                 path: path.to_owned(),
                 ack: ack,
-            }
-        ).map_err(|e| RuntimeMsg(format!("Channel send error: {}", e)))
+            })
+            .map_err(|e| RuntimeMsg(format!("Channel send error: {}", e)))
     }
 }
 
@@ -99,22 +107,29 @@ impl MpsMusicAnalyzer for MpsDefaultAnalyzer {
         let path_from = Self::get_path(from)?;
         let path_to = Self::get_path(to)?;
         for response in self.responses.iter() {
-            if let ResponseType::Distance{path1, path2, distance} = response {
+            if let ResponseType::Distance {
+                path1,
+                path2,
+                distance,
+            } = response
+            {
                 if path1 == path_from && path2 == path_to {
                     return match distance {
                         Ok(d) => Ok(d as f64),
-                        Err(e) => Err(RuntimeMsg(format!("Bliss error: {}", e)))
+                        Err(e) => Err(RuntimeMsg(format!("Bliss error: {}", e))),
                     };
                 }
             }
         }
-        Err(RuntimeMsg("Channel closed without response: internal error".to_owned()))
+        Err(RuntimeMsg(
+            "Channel closed without response: internal error".to_owned(),
+        ))
     }
 
     fn clear_cache(&mut self) -> Result<(), RuntimeMsg> {
-        self.requests.send(
-            RequestType::Clear {}
-        ).map_err(|e| RuntimeMsg(format!("Channel send error: {}", e)))
+        self.requests
+            .send(RequestType::Clear {})
+            .map_err(|e| RuntimeMsg(format!("Channel send error: {}", e)))
     }
 }
 
@@ -191,10 +206,14 @@ impl CacheThread {
     fn non_blocking_read_some(&mut self, results: &Receiver<ResponseType>) {
         for result in results.try_iter() {
             match result {
-                ResponseType::Distance {path1, path2, distance} => {
+                ResponseType::Distance {
+                    path1,
+                    path2,
+                    distance,
+                } => {
                     self.insert_distance(path1, path2, distance);
-                },
-                ResponseType::Song {path, song} => {
+                }
+                ResponseType::Song { path, song } => {
                     self.insert_song(path, song);
                 }
             }
@@ -206,21 +225,35 @@ impl CacheThread {
         self.song_cache.insert(path, song_result);
     }
 
-    fn insert_distance(&mut self, path1: String, path2: String, distance_result: Result<f32, BlissError>) {
+    fn insert_distance(
+        &mut self,
+        path1: String,
+        path2: String,
+        distance_result: Result<f32, BlissError>,
+    ) {
         let key = (path1, path2);
         self.distance_in_progress.remove(&key);
         self.distance_cache.insert(key, distance_result);
     }
 
-    fn get_song_option(&mut self, path: &str, auto_add: bool, results: &Receiver<ResponseType>) -> Option<Song> {
+    fn get_song_option(
+        &mut self,
+        path: &str,
+        auto_add: bool,
+        results: &Receiver<ResponseType>,
+    ) -> Option<Song> {
         // wait for song if already in progress
         if self.song_in_progress.contains(path) {
             for result in results.iter() {
                 match result {
-                    ResponseType::Distance {path1, path2, distance} => {
+                    ResponseType::Distance {
+                        path1,
+                        path2,
+                        distance,
+                    } => {
                         self.insert_distance(path1, path2, distance);
-                    },
-                    ResponseType::Song {path: path2, song} => {
+                    }
+                    ResponseType::Song { path: path2, song } => {
                         if path2 == path {
                             self.insert_song(path2, song.clone());
                             let result = song.ok();
@@ -235,7 +268,10 @@ impl CacheThread {
                 }
             }
         } else if self.song_cache.contains_key(path) {
-            let result = self.song_cache.get(path).and_then(|r| r.clone().ok().to_owned());
+            let result = self
+                .song_cache
+                .get(path)
+                .and_then(|r| r.clone().ok().to_owned());
             if result.is_none() && auto_add {
                 self.song_in_progress.insert(path.to_owned());
             }
@@ -247,7 +283,8 @@ impl CacheThread {
         return None;
     }
 
-    fn handle_distance_req(&mut self,
+    fn handle_distance_req(
+        &mut self,
         path1: String,
         path2: String,
         ack: bool,
@@ -258,13 +295,13 @@ impl CacheThread {
         if let Some(result) = self.distance_cache.get(&key) {
             if ack {
                 let result = result.to_owned();
-                if let Err(_) = self.responses.send(
-                    ResponseType::Distance {
-                        path1: path1,
-                        path2: path2,
-                        distance: result,
-                    }
-                ) { return true; }
+                if let Err(_) = self.responses.send(ResponseType::Distance {
+                    path1: path1,
+                    path2: path2,
+                    distance: result,
+                }) {
+                    return true;
+                }
             }
         } else {
             if path1 == path2 {
@@ -277,43 +314,51 @@ impl CacheThread {
                         path1: path1,
                         path2: path2,
                         distance: Ok(0.0),
-                    }) { return true; }
+                    }) {
+                        return true;
+                    }
                 }
             } else if !self.distance_in_progress.contains(&key) {
                 let results = worker_tx.clone();
                 let song1_clone = self.get_song_option(&path1, true, worker_results);
                 let song2_clone = self.get_song_option(&path2, true, worker_results);
                 std::thread::spawn(move || {
-                    let distance_result = worker_distance(
-                        &results,
-                        (&path1, song1_clone),
-                        (&path2, song2_clone),
-                    );
-                    results.send(
-                        ResponseType::Distance {
+                    let distance_result =
+                        worker_distance(&results, (&path1, song1_clone), (&path2, song2_clone));
+                    results
+                        .send(ResponseType::Distance {
                             path1: path1,
                             path2: path2,
                             distance: distance_result,
-                        }
-                    ).unwrap_or(());
+                        })
+                        .unwrap_or(());
                 });
             }
             if ack {
                 'inner1: for result in worker_results.iter() {
                     match result {
-                        ResponseType::Distance {path1: path1_2, path2: path2_2, distance} => {
-                            self.insert_distance(path1_2.clone(), path2_2.clone(), distance.clone());
+                        ResponseType::Distance {
+                            path1: path1_2,
+                            path2: path2_2,
+                            distance,
+                        } => {
+                            self.insert_distance(
+                                path1_2.clone(),
+                                path2_2.clone(),
+                                distance.clone(),
+                            );
                             if path1_2 == key.0 && path2_2 == key.1 {
                                 if let Err(_) = self.responses.send(ResponseType::Distance {
                                     path1: path1_2,
                                     path2: path2_2,
                                     distance: distance,
-                                }) { return true; }
+                                }) {
+                                    return true;
+                                }
                                 break 'inner1;
                             }
-
-                        },
-                        ResponseType::Song {path, song} => {
+                        }
+                        ResponseType::Song { path, song } => {
                             self.insert_song(path, song);
                         }
                     }
@@ -323,7 +368,8 @@ impl CacheThread {
         false
     }
 
-    fn handle_song_req(&mut self,
+    fn handle_song_req(
+        &mut self,
         path: String,
         ack: bool,
         worker_tx: &Sender<ResponseType>,
@@ -332,12 +378,12 @@ impl CacheThread {
         if let Some(song) = self.song_cache.get(&path) {
             if ack {
                 let song = song.to_owned();
-                if let Err(_) = self.responses.send(
-                    ResponseType::Song {
-                        path: path,
-                        song: song,
-                    }
-                ) { return true; }
+                if let Err(_) = self.responses.send(ResponseType::Song {
+                    path: path,
+                    song: song,
+                }) {
+                    return true;
+                }
             }
         } else {
             if !self.song_in_progress.contains(&path) {
@@ -345,27 +391,33 @@ impl CacheThread {
                 let results = worker_tx.clone();
                 std::thread::spawn(move || {
                     let song_result = Song::new(&path_clone);
-                    results.send(
-                        ResponseType::Song {
+                    results
+                        .send(ResponseType::Song {
                             path: path_clone,
                             song: song_result,
-                        }
-                    ).unwrap_or(());
+                        })
+                        .unwrap_or(());
                 });
             }
             if ack {
                 'inner2: for result in worker_results.iter() {
                     match result {
-                        ResponseType::Distance {path1, path2, distance} => {
+                        ResponseType::Distance {
+                            path1,
+                            path2,
+                            distance,
+                        } => {
                             self.insert_distance(path1, path2, distance);
-                        },
-                        ResponseType::Song {path: path2, song} => {
+                        }
+                        ResponseType::Song { path: path2, song } => {
                             self.insert_song(path2.clone(), song.clone());
                             if path2 == path {
                                 if let Err(_) = self.responses.send(ResponseType::Song {
                                     path: path,
                                     song: song,
-                                }) { return false; }
+                                }) {
+                                    return false;
+                                }
                                 break 'inner2;
                             }
                         }
@@ -376,23 +428,23 @@ impl CacheThread {
         false
     }
 
-    fn run_loop(&mut self, requests: Receiver<RequestType>,) {
+    fn run_loop(&mut self, requests: Receiver<RequestType>) {
         let (worker_tx, worker_results): (Sender<ResponseType>, Receiver<ResponseType>) = channel();
         'outer: for request in requests.iter() {
             self.non_blocking_read_some(&worker_results);
             match request {
                 //RequestType::End{} => break,
-                RequestType::Distance{path1, path2, ack} => {
+                RequestType::Distance { path1, path2, ack } => {
                     if self.handle_distance_req(path1, path2, ack, &worker_tx, &worker_results) {
                         break 'outer;
                     }
-                },
-                RequestType::Song{path, ack} => {
+                }
+                RequestType::Song { path, ack } => {
                     if self.handle_song_req(path, ack, &worker_tx, &worker_results) {
                         break 'outer;
                     }
-                },
-                RequestType::Clear{} => {
+                }
+                RequestType::Clear {} => {
                     self.distance_cache.clear();
                     self.song_cache.clear();
                 }
@@ -402,16 +454,22 @@ impl CacheThread {
 }
 
 #[cfg(feature = "bliss-audio")]
-fn worker_distance(results: &Sender<ResponseType>, song1: (&str, Option<Song>), song2: (&str, Option<Song>)) -> Result<f32, BlissError> {
+fn worker_distance(
+    results: &Sender<ResponseType>,
+    song1: (&str, Option<Song>),
+    song2: (&str, Option<Song>),
+) -> Result<f32, BlissError> {
     let path1 = song1.0;
     let song1 = if let Some(song) = song1.1 {
         song
     } else {
         let new_song1 = Song::new(path1);
-        results.send(ResponseType::Song {
-            path: path1.to_string(),
-            song: new_song1.clone(),
-        }).unwrap_or(());
+        results
+            .send(ResponseType::Song {
+                path: path1.to_string(),
+                song: new_song1.clone(),
+            })
+            .unwrap_or(());
         new_song1?
     };
     let path2 = song2.0;
@@ -419,10 +477,12 @@ fn worker_distance(results: &Sender<ResponseType>, song1: (&str, Option<Song>), 
         song
     } else {
         let new_song2 = Song::new(path2);
-        results.send(ResponseType::Song {
-            path: path2.to_string(),
-            song: new_song2.clone(),
-        }).unwrap_or(());
+        results
+            .send(ResponseType::Song {
+                path: path2.to_string(),
+                song: new_song2.clone(),
+            })
+            .unwrap_or(());
         new_song2?
     };
     Ok(song1.distance(&song2))

@@ -2,10 +2,12 @@ use core::ops::Deref;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::utility::{assert_token_raw, assert_token_raw_back, check_name, assert_name, assert_token};
+use crate::lang::utility::{
+    assert_name, assert_token, assert_token_raw, assert_token_raw_back, check_name,
+};
 use crate::lang::MpsLanguageDictionary;
+use crate::lang::{MpsItemBlockFactory, MpsItemOp, MpsItemOpFactory};
 use crate::lang::{RuntimeMsg, SyntaxError};
-use crate::lang::{MpsItemOp, MpsItemOpFactory, MpsItemBlockFactory};
 use crate::processing::general::MpsType;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -34,11 +36,11 @@ impl Display for ConstructorItemOp {
         write!(f, "Item(")?;
         if self.fields.len() > 1 {
             write!(f, "\n")?;
-            for i in 0..self.fields.len()-1 {
+            for i in 0..self.fields.len() - 1 {
                 let field = &self.fields[i];
                 write!(f, "{}: {}, ", field.name, field.value)?;
             }
-            let field = &self.fields[self.fields.len()-1];
+            let field = &self.fields[self.fields.len() - 1];
             write!(f, "{}: {}", field.name, field.value)?;
         } else if !self.fields.is_empty() {
             let field = &self.fields[0];
@@ -56,7 +58,10 @@ impl MpsItemOp for ConstructorItemOp {
             if let MpsType::Primitive(value) = value {
                 result.set_field(&field.name, value);
             } else {
-                return Err(RuntimeMsg(format!("Cannot assign non-primitive {} to Item field `{}`", value, &field.name)));
+                return Err(RuntimeMsg(format!(
+                    "Cannot assign non-primitive {} to Item field `{}`",
+                    value, &field.name
+                )));
             }
         }
         Ok(MpsType::Item(result))
@@ -67,9 +72,7 @@ pub struct ConstructorItemOpFactory;
 
 impl MpsItemOpFactory<ConstructorItemOp> for ConstructorItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<MpsToken>) -> bool {
-        tokens.len() > 2
-        && check_name("Item", &tokens[0])
-        && tokens[1].is_open_bracket()
+        tokens.len() > 2 && check_name("Item", &tokens[0]) && tokens[1].is_open_bracket()
     }
 
     fn build_item_op(
@@ -83,10 +86,14 @@ impl MpsItemOpFactory<ConstructorItemOp> for ConstructorItemOpFactory {
         assert_token_raw_back(MpsToken::CloseBracket, tokens)?;
         let mut field_descriptors = Vec::new();
         while !tokens.is_empty() {
-            let field_name = assert_token(|t| match t {
-                MpsToken::Name(n) => Some(n),
-                _ => None,
-            }, MpsToken::Name("field_name".into()), tokens)?;
+            let field_name = assert_token(
+                |t| match t {
+                    MpsToken::Name(n) => Some(n),
+                    _ => None,
+                },
+                MpsToken::Name("field_name".into()),
+                tokens,
+            )?;
             assert_token_raw(MpsToken::Equals, tokens)?;
             let field_val;
             if let Some(comma_pos) = find_next_comma(tokens) {
@@ -97,12 +104,10 @@ impl MpsItemOpFactory<ConstructorItemOp> for ConstructorItemOpFactory {
             } else {
                 field_val = factory.try_build_item_statement(tokens, dict)?;
             }
-            field_descriptors.push(
-                FieldAssignment {
-                    name: field_name,
-                    value: field_val,
-                }
-            );
+            field_descriptors.push(FieldAssignment {
+                name: field_name,
+                value: field_val,
+            });
         }
         Ok(ConstructorItemOp {
             fields: field_descriptors,

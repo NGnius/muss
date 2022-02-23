@@ -1,10 +1,8 @@
+#[cfg(feature = "advanced")]
+use super::processing::advanced::{MpsDefaultAnalyzer, MpsMusicAnalyzer};
 use super::processing::database::{MpsDatabaseQuerier, MpsSQLiteExecutor};
 use super::processing::general::{
     MpsFilesystemExecutor, MpsFilesystemQuerier, MpsOpStorage, MpsVariableStorer,
-};
-#[cfg(feature = "advanced")]
-use super::processing::advanced::{
-    MpsMusicAnalyzer, MpsDefaultAnalyzer
 };
 use std::fmt::{Debug, Display, Error, Formatter};
 

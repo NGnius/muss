@@ -2,7 +2,6 @@ use std::collections::VecDeque;
 #[cfg(feature = "bliss-audio")]
 use std::fmt::{Debug, Display, Error, Formatter};
 
-
 use crate::lang::utility::{assert_name, check_name};
 use crate::lang::SyntaxError;
 #[cfg(feature = "bliss-audio")]
@@ -40,7 +39,7 @@ impl Default for BlissNextSorter {
             up_to: usize::MAX,
             algorithm_done: false,
             init_done: false,
-            item_buf: VecDeque::new()
+            item_buf: VecDeque::new(),
         }
     }
 }
@@ -73,8 +72,8 @@ impl MpsSorter for BlissNextSorter {
                         Err(e) => {
                             iterator.enter(ctx);
                             return Err(e);
-                        },
-                        Ok(_) => {},
+                        }
+                        Ok(_) => {}
                     }
                 }
                 iterator.enter(ctx);
@@ -92,13 +91,13 @@ impl MpsSorter for BlissNextSorter {
                         Err(e) => {
                             iterator.enter(ctx);
                             return Err(e);
-                        },
+                        }
                         Ok(distance) => {
                             if distance < best_distance {
                                 best_index = i;
                                 best_distance = distance;
                             }
-                        },
+                        }
                     }
                 }
                 if best_index != 0 {
@@ -112,8 +111,8 @@ impl MpsSorter for BlissNextSorter {
                         Err(e) => {
                             iterator.enter(ctx);
                             return Err(e);
-                        },
-                        Ok(_) => {},
+                        }
+                        Ok(_) => {}
                     }
                 }
                 iterator.enter(ctx);

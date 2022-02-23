@@ -4,8 +4,8 @@ use std::fmt::{Debug, Display, Error, Formatter};
 
 use crate::lang::utility::assert_token_raw;
 use crate::lang::MpsLanguageDictionary;
+use crate::lang::{MpsItemBlockFactory, MpsItemOp, MpsItemOpFactory, MpsTypePrimitive};
 use crate::lang::{RuntimeMsg, SyntaxError};
-use crate::lang::{MpsItemOp, MpsItemOpFactory, MpsItemBlockFactory, MpsTypePrimitive};
 use crate::processing::general::MpsType;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -41,10 +41,16 @@ impl MpsItemOp for AndItemOp {
             if let MpsType::Primitive(MpsTypePrimitive::Bool(rhs)) = rhs {
                 Ok(MpsType::Primitive(MpsTypePrimitive::Bool(rhs)))
             } else {
-                Err(RuntimeMsg(format!("Cannot apply logical AND to right-hand side of `{}` ({}): not Bool type", self.rhs, rhs)))
+                Err(RuntimeMsg(format!(
+                    "Cannot apply logical AND to right-hand side of `{}` ({}): not Bool type",
+                    self.rhs, rhs
+                )))
             }
         } else {
-            Err(RuntimeMsg(format!("Cannot apply logical AND to left-hand side of `{}` ({}): not Bool type", self.lhs, lhs)))
+            Err(RuntimeMsg(format!(
+                "Cannot apply logical AND to left-hand side of `{}` ({}): not Bool type",
+                self.lhs, lhs
+            )))
         }
     }
 }
@@ -81,9 +87,9 @@ impl MpsItemOpFactory<AndItemOp> for AndItemOpFactory {
 
 fn first_and(tokens: &VecDeque<MpsToken>) -> Option<usize> {
     let mut bracket_depth = 0;
-    for i in 0..tokens.len()-1 {
+    for i in 0..tokens.len() - 1 {
         let token = &tokens[i];
-        if token.is_ampersand() && bracket_depth == 0 && tokens[i+1].is_ampersand() {
+        if token.is_ampersand() && bracket_depth == 0 && tokens[i + 1].is_ampersand() {
             return Some(i);
         } else if token.is_open_bracket() {
             bracket_depth += 1;

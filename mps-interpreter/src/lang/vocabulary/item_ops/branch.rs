@@ -2,10 +2,10 @@ use core::ops::Deref;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::utility::{assert_token_raw, check_name, assert_name};
+use crate::lang::utility::{assert_name, assert_token_raw, check_name};
 use crate::lang::MpsLanguageDictionary;
+use crate::lang::{MpsItemBlockFactory, MpsItemOp, MpsItemOpFactory, MpsTypePrimitive};
 use crate::lang::{RuntimeMsg, SyntaxError};
-use crate::lang::{MpsItemOp, MpsItemOpFactory, MpsItemBlockFactory, MpsTypePrimitive};
 use crate::processing::general::MpsType;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -76,7 +76,10 @@ impl MpsItemOp for BranchItemOp {
                 Ok(MpsType::empty())
             }
         } else {
-            Err(RuntimeMsg(format!("Cannot use {} ({}) as if branch condition (should be Bool)", self.condition, condition_val)))
+            Err(RuntimeMsg(format!(
+                "Cannot use {} ({}) as if branch condition (should be Bool)",
+                self.condition, condition_val
+            )))
         }
     }
 }
@@ -183,13 +186,17 @@ fn next_curly_open_bracket(tokens: &VecDeque<MpsToken>) -> Option<usize> {
     for i in 0..tokens.len() {
         match &tokens[i] {
             MpsToken::OpenBracket => bracket_depth += 1,
-            MpsToken::CloseBracket => if bracket_depth != 0 {
-                bracket_depth -= 1;
-            },
-            MpsToken::OpenCurly => if bracket_depth == 0 {
-                return Some(i);
-            },
-            _ => {},
+            MpsToken::CloseBracket => {
+                if bracket_depth != 0 {
+                    bracket_depth -= 1;
+                }
+            }
+            MpsToken::OpenCurly => {
+                if bracket_depth == 0 {
+                    return Some(i);
+                }
+            }
+            _ => {}
         }
     }
     None
@@ -201,16 +208,20 @@ fn next_curly_close_bracket(tokens: &VecDeque<MpsToken>) -> Option<usize> {
     for i in 0..tokens.len() {
         match &tokens[i] {
             MpsToken::OpenBracket => bracket_depth += 1,
-            MpsToken::CloseBracket => if bracket_depth != 0 {
-                bracket_depth -= 1;
-            },
+            MpsToken::CloseBracket => {
+                if bracket_depth != 0 {
+                    bracket_depth -= 1;
+                }
+            }
             MpsToken::OpenCurly => curly_depth += 1,
-            MpsToken::CloseCurly => if bracket_depth == 0 && curly_depth == 0 {
-                return Some(i);
-            } else if curly_depth != 0 {
-                curly_depth -= 1;
-            },
-            _ => {},
+            MpsToken::CloseCurly => {
+                if bracket_depth == 0 && curly_depth == 0 {
+                    return Some(i);
+                } else if curly_depth != 0 {
+                    curly_depth -= 1;
+                }
+            }
+            _ => {}
         }
     }
     None

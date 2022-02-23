@@ -17,5 +17,5 @@ pub mod general {
 
 #[cfg(feature = "advanced")]
 pub mod advanced {
-    pub use super::music_analysis::{MpsMusicAnalyzer, MpsDefaultAnalyzer};
+    pub use super::music_analysis::{MpsDefaultAnalyzer, MpsMusicAnalyzer};
 }

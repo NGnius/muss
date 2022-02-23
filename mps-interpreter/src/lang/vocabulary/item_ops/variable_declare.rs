@@ -2,10 +2,10 @@ use core::ops::Deref;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::utility::{assert_token_raw, assert_token};
+use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::MpsLanguageDictionary;
+use crate::lang::{MpsItemBlockFactory, MpsItemOp, MpsItemOpFactory};
 use crate::lang::{RuntimeMsg, SyntaxError};
-use crate::lang::{MpsItemOp, MpsItemOpFactory, MpsItemBlockFactory};
 use crate::processing::general::MpsType;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
@@ -42,7 +42,9 @@ impl MpsItemOp for VariableDeclareItemOp {
             }
         } else {
             if !context.variables.exists(&self.variable_name) {
-                context.variables.declare(&self.variable_name, MpsType::empty())?;
+                context
+                    .variables
+                    .declare(&self.variable_name, MpsType::empty())?;
             }
         }
         Ok(MpsType::empty())
@@ -64,10 +66,14 @@ impl MpsItemOpFactory<VariableDeclareItemOp> for VariableDeclareItemOpFactory {
     ) -> Result<VariableDeclareItemOp, SyntaxError> {
         assert_token_raw(MpsToken::Let, tokens)?;
         //assert_name("let", tokens)?;
-        let var_name = assert_token(|t| match t {
-            MpsToken::Name(s) => Some(s),
-            _ => None,
-        }, MpsToken::Name("variable_name".into()), tokens)?;
+        let var_name = assert_token(
+            |t| match t {
+                MpsToken::Name(s) => Some(s),
+                _ => None,
+            },
+            MpsToken::Name("variable_name".into()),
+            tokens,
+        )?;
         let inner_op: Option<Box<dyn MpsItemOp>>;
         if !tokens.is_empty() {
             assert_token_raw(MpsToken::Equals, tokens)?;

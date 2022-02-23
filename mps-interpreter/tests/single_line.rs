@@ -45,7 +45,10 @@ fn execute_single_line(
     should_complete: bool,
 ) -> Result<(), Box<dyn MpsLanguageError>> {
     if line.contains('\n') {
-        println!("--- Executing MPS code ---\n{}\n--- Executing MPS code ---", line);
+        println!(
+            "--- Executing MPS code ---\n{}\n--- Executing MPS code ---",
+            line
+        );
     } else {
         println!("--- Executing MPS code: '{}' ---", line);
     }
