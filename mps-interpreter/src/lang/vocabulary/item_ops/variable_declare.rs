@@ -55,7 +55,7 @@ pub struct VariableDeclareItemOpFactory;
 
 impl MpsItemOpFactory<VariableDeclareItemOp> for VariableDeclareItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<MpsToken>) -> bool {
-        tokens.len() > 2 && tokens[0].is_let() && tokens[1].is_name()
+        tokens.len() >= 2 && tokens[0].is_let() && tokens[1].is_name()
     }
 
     fn build_item_op(
