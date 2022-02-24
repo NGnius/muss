@@ -30,3 +30,21 @@ mps-player = { version = "0.6.0", path = "./mps-player", default-features = fals
 [target.'cfg(target_os = "linux")'.dependencies]
 # TODO fix need to specify OS-specific dependency of mps-player
 mps-player = { version = "0.6.0", path = "./mps-player", features = ["mpris-player"] }
+
+[profile.release]
+debug = true
+strip = true
+lto = true
+codegen-units = 4
+
+[profile.dev.package.bliss-audio]
+debug-assertions = false
+overflow-checks = false
+debug = true
+opt-level = 3
+
+[profile.dev.package."*"]
+debug-assertions = false
+overflow-checks = false
+debug = true
+opt-level = 3
