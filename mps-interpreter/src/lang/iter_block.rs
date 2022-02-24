@@ -274,7 +274,7 @@ impl BoxedMpsOpFactory for MpsItemBlockFactory {
             Err(SyntaxError {
                 line: 0,
                 token: MpsToken::OpenCurly,
-                got: None,
+                got: tokens.pop_front(),
             })
         }?;
         let block_tokens = tokens.split_off(open_curly_pos - 1); // . always before {

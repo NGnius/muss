@@ -15,6 +15,7 @@ struct ReplState {
     writer: ChannelWriter,
     in_literal: Option<char>,
     bracket_depth: usize,
+    curly_depth: usize,
 }
 
 impl ReplState {
@@ -26,6 +27,7 @@ impl ReplState {
             writer: chan_writer,
             in_literal: None,
             bracket_depth: 0,
+            curly_depth: 0,
         }
     }
 }
@@ -119,7 +121,9 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                 }
             }
             '(' => state.bracket_depth += 1,
-            ')' => state.bracket_depth -= 1,
+            ')' => if state.bracket_depth != 0 { state.bracket_depth -= 1 },
+            '{' => state.curly_depth += 1,
+            '}' => if state.curly_depth != 0 { state.curly_depth -= 1 },
             ';' => {
                 if state.in_literal.is_none() {
                     state
@@ -136,7 +140,7 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                     //println!("Got {}", statement_result.unwrap());
                     repl_commands(statement_result.unwrap().trim());
                     state.statement_buf.clear();
-                } else if state.bracket_depth == 0 && state.in_literal.is_none() {
+                } else if state.bracket_depth == 0 && state.in_literal.is_none() && state.curly_depth == 0 {
                     state.statement_buf.push(b';');
                     state
                         .writer
