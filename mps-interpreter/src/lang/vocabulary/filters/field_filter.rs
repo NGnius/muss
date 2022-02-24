@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
 use super::utility::{assert_comparison_operator, comparison_op};
-use crate::lang::utility::{assert_token, assert_type, check_is_type};
+use crate::lang::utility::{assert_token, assert_type, check_is_type, assert_empty};
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::MpsTypePrimitive;
 use crate::lang::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatementFactory};
@@ -104,11 +104,12 @@ pub struct FieldFilterFactory;
 impl MpsFilterFactory<FieldFilter> for FieldFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
         let tokens_len = tokens.len();
-        (tokens_len == 3 // field > variable OR field < variable
+        (tokens_len >= 3
+            // field > variable OR field < variable
             && tokens[0].is_name()
             && (tokens[1].is_open_angle_bracket() || tokens[1].is_close_angle_bracket())
             && (tokens[2].is_name() || check_is_type(tokens[2])))
-            || (tokens_len == 4 // field >= variable OR field <= variable OR field != variable
+            || (tokens_len >= 4 // field >= variable OR field <= variable OR field != variable
             && tokens[0].is_name()
             && (tokens[1].is_open_angle_bracket() || tokens[1].is_close_angle_bracket() || tokens[1].is_equals() || tokens[1].is_exclamation())
             && tokens[2].is_equals()
@@ -131,6 +132,7 @@ impl MpsFilterFactory<FieldFilter> for FieldFilterFactory {
         let compare_operator = assert_comparison_operator(tokens)?;
         if check_is_type(&tokens[0]) {
             let value = VariableOrValue::Value(assert_type(tokens)?);
+            assert_empty(tokens)?;
             Ok(FieldFilter {
                 field_name: field,
                 field_errors: FieldFilterErrorHandling::Error,
@@ -147,6 +149,7 @@ impl MpsFilterFactory<FieldFilter> for FieldFilterFactory {
                 MpsToken::Name("variable_name".into()),
                 tokens,
             )?);
+            assert_empty(tokens)?;
             Ok(FieldFilter {
                 field_name: field,
                 field_errors: FieldFilterErrorHandling::Error,

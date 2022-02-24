@@ -169,7 +169,6 @@ pub fn assert_type(tokens: &mut VecDeque<MpsToken>) -> Result<MpsTypePrimitive, 
     }
 }
 
-#[cfg(debug_assertions)]
 pub fn assert_empty(tokens: &mut VecDeque<MpsToken>) -> Result<(), SyntaxError> {
     match tokens.pop_front() {
         None => Ok(()),

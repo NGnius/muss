@@ -4,7 +4,7 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use regex::Regex;
 
 use super::field_filter::{FieldFilterErrorHandling, VariableOrValue};
-use crate::lang::utility::{assert_name, assert_token, assert_token_raw, check_name};
+use crate::lang::utility::{assert_name, assert_token, assert_token_raw, check_name, assert_empty};
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::MpsTypePrimitive;
 use crate::lang::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatementFactory};
@@ -83,11 +83,11 @@ pub struct FieldRegexFilterFactory;
 impl MpsFilterFactory<FieldRegexFilter> for FieldRegexFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
         let tokens_len = tokens.len();
-        (tokens_len == 3 // field like variable
+        (tokens_len >= 3 // field like variable
             && tokens[0].is_name()
             && check_name("matches", tokens[1])
             && (tokens[2].is_name() || tokens[2].is_literal()))
-            || (tokens_len == 4 // field? like variable OR field! like variable
+            || (tokens_len >= 4 // field? like variable OR field! like variable
             && tokens[0].is_name()
             && (tokens[1].is_interrogation() || tokens[1].is_exclamation())
             && check_name("matches", tokens[2])
@@ -133,6 +133,7 @@ impl MpsFilterFactory<FieldRegexFilter> for FieldRegexFilterFactory {
             })?;
             let compiled_cache = (literal.clone(), regex_c);
             let value = VariableOrValue::Value(MpsTypePrimitive::String(literal));
+            assert_empty(tokens)?;
             Ok(FieldRegexFilter {
                 field_name: field,
                 field_errors: error_handling,
@@ -148,6 +149,7 @@ impl MpsFilterFactory<FieldRegexFilter> for FieldRegexFilterFactory {
                 MpsToken::Name("variable_name".into()),
                 tokens,
             )?);
+            assert_empty(tokens)?;
             Ok(FieldRegexFilter {
                 field_name: field,
                 field_errors: FieldFilterErrorHandling::Error,
