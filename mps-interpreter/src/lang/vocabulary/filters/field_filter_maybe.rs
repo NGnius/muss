@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use super::utility::assert_comparison_operator;
 use super::{field_filter::VariableOrValue, FieldFilter, FieldFilterErrorHandling};
-use crate::lang::utility::{assert_token, assert_token_raw, assert_type, check_is_type, assert_empty};
+use crate::lang::utility::{assert_token, assert_token_raw, assert_type, check_is_type};
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::SyntaxError;
 use crate::lang::{MpsFilterFactory, MpsFilterStatementFactory};
@@ -13,17 +13,15 @@ pub struct FieldFilterMaybeFactory;
 impl MpsFilterFactory<FieldFilter> for FieldFilterMaybeFactory {
     fn is_filter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
         let tokens_len = tokens.len();
-        (tokens_len >= 4 // field > variable OR field < variable
+        (tokens_len >= 3 // field > variable OR field < variable
             && tokens[0].is_name()
             && (tokens[1].is_interrogation() || tokens[1].is_exclamation())
-            && (tokens[2].is_open_angle_bracket() || tokens[2].is_close_angle_bracket())
-            && (tokens[3].is_name() || check_is_type(tokens[3])))
-            || (tokens_len >= 5 // field >= variable OR field <= variable OR field != variable
+            && (tokens[2].is_open_angle_bracket() || tokens[2].is_close_angle_bracket()))
+            || (tokens_len >= 4 // field >= variable OR field <= variable OR field != variable
             && tokens[0].is_name()
             && (tokens[1].is_interrogation() || tokens[1].is_exclamation())
             && (tokens[2].is_open_angle_bracket() || tokens[2].is_close_angle_bracket() || tokens[2].is_equals() || tokens[2].is_exclamation())
-            && tokens[3].is_equals()
-            && (tokens[4].is_name() || check_is_type(tokens[4])))
+            && tokens[3].is_equals())
     }
 
     fn build_filter(
@@ -53,7 +51,7 @@ impl MpsFilterFactory<FieldFilter> for FieldFilterMaybeFactory {
         let compare_operator = assert_comparison_operator(tokens)?;
         if check_is_type(&tokens[0]) {
             let value = VariableOrValue::Value(assert_type(tokens)?);
-            assert_empty(tokens)?;
+            //assert_empty(tokens)?;
             Ok(FieldFilter {
                 field_name: field,
                 field_errors: error_f,
@@ -70,7 +68,7 @@ impl MpsFilterFactory<FieldFilter> for FieldFilterMaybeFactory {
                 MpsToken::Name("variable_name".into()),
                 tokens,
             )?);
-            assert_empty(tokens)?;
+            //assert_empty(tokens)?;
             Ok(FieldFilter {
                 field_name: field,
                 field_errors: error_f,

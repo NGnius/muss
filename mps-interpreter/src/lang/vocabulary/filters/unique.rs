@@ -90,9 +90,7 @@ pub struct UniqueFilterFactory;
 
 impl MpsFilterFactory<UniqueFieldFilter> for UniqueFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
-        (tokens.len() == 2 || tokens.len() == 3)
-            && check_name("unique", &tokens[0])
-            && tokens[1].is_name()
+        tokens.len() >= 2 && check_name("unique", &tokens[0])
     }
 
     fn build_filter(

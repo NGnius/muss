@@ -162,9 +162,9 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
         // sorters
         .add(crate::lang::vocabulary::sorters::empty_sort())
         .add(crate::lang::vocabulary::sorters::shuffle_sort()) // accepts ~(shuffle)
-        .add(crate::lang::vocabulary::sorters::field_sort()) // accepts any ~(something)
         .add(crate::lang::vocabulary::sorters::bliss_sort())
         .add(crate::lang::vocabulary::sorters::bliss_next_sort())
+        .add(crate::lang::vocabulary::sorters::field_sort()) // accepts any ~(something)
         // iter blocks
         .add(
             crate::lang::MpsItemBlockFactory::new()

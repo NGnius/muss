@@ -60,7 +60,7 @@ pub struct FieldSorterFactory;
 
 impl MpsSorterFactory<FieldSorter> for FieldSorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
-        tokens.len() == 1 && tokens[0].is_name()
+        !tokens.is_empty() && tokens[0].is_name()
     }
 
     fn build_sorter(

@@ -71,8 +71,8 @@ pub struct ShuffleSorterFactory;
 
 impl MpsSorterFactory<ShuffleSorter> for ShuffleSorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&MpsToken>) -> bool {
-        (tokens.len() == 1 && check_name("shuffle", &tokens[0]))
-            || (tokens.len() == 2
+        (!tokens.is_empty() && check_name("shuffle", &tokens[0]))
+            || (tokens.len() > 1
                 && check_name("random", &tokens[0])
                 && check_name("shuffle", &tokens[1]))
     }
