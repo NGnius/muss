@@ -5,8 +5,6 @@ use std::iter::Iterator;
 use crate::tokens::MpsToken;
 use crate::MpsContext;
 
-#[cfg(debug_assertions)]
-use crate::lang::utility::assert_empty;
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::{MpsFunctionFactory, MpsFunctionStatementFactory, MpsIteratorItem, MpsOp};
 use crate::lang::{RuntimeError, SyntaxError};
@@ -72,12 +70,10 @@ impl MpsFunctionFactory<EmptyStatement> for EmptyFunctionFactory {
     fn build_function_params(
         &self,
         _name: String,
-        #[allow(unused_variables)] tokens: &mut VecDeque<MpsToken>,
+        _tokens: &mut VecDeque<MpsToken>,
         _dict: &MpsLanguageDictionary,
     ) -> Result<EmptyStatement, SyntaxError> {
         // empty()
-        #[cfg(debug_assertions)]
-        assert_empty(tokens)?;
         Ok(EmptyStatement { context: None })
     }
 }
