@@ -78,7 +78,11 @@ Operations to reduce the items in an iterable: iterable.(filter)
     Matches all items
 
  if filter: operation1 else operation2 -- e.g. iterable.(if title == `Romantic Traffic`: repeat(item, 2) else item.())
-    Replace items matching the filter with operation1 and replace items not matching the filter with operation2. The `else operation2` part may be omitted to preserve items not matching the filter. To perform operations with the current item, use the special variable `item`. The replacement filter may not contain || -- instead, use multiple filters chained together.";
+    Replace items matching the filter with operation1 and replace items not matching the filter with operation2. The `else operation2` part may be omitted to preserve items not matching the filter. To perform operations with the current item, use the special variable `item`. The replacement filter may not contain || -- instead, use multiple filters chained together.
+
+ unique
+ unique field -- e.g. iterable.(unique title)
+    Keep only items which are do not duplicate another item, or keep only items whoes specified field does not duplicate another item's same field. The first non-duplicated instance of an item is always the one that is kept.";
 
 pub const SORTERS: &str =
 "SORTERS (?sorters)
