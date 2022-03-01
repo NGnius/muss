@@ -38,10 +38,13 @@ impl MpsItemOp for VariableRetrieveItemOp {
         let var = context.variables.get(&self.variable_name)?;
         if let Some(field_name) = &self.field_name {
             if let MpsType::Item(item) = var {
-                Ok(match item.field(field_name) {
-                    Some(val) => MpsType::Primitive(val.clone()),
-                    None => MpsType::empty(),
-                })
+                match item.field(field_name) {
+                    Some(val) => Ok(MpsType::Primitive(val.clone())),
+                    None => Err(RuntimeMsg(format!(
+                        "Cannot access field `{}` on variable `{}` (field does not exist)",
+                        field_name, self.variable_name
+                    ))),
+                }
             } else {
                 Err(RuntimeMsg(format!(
                     "Cannot access field `{}` on variable `{}` ({} is not Item)",

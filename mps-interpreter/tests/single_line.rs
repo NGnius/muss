@@ -534,7 +534,6 @@ fn execute_retrieveitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     item.path = item.filename,
-    item.not_a_field,
     item.new_field = 42,
     item.title = item.path,
 }",
@@ -746,6 +745,17 @@ fn execute_uniquefieldfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 fn execute_uniquefilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(unique)",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_fileitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    item = file(item.filename),
+}",
         false,
         true,
     )

@@ -146,4 +146,7 @@ Comma-separated procedure steps will be executed sequentially (like a for loop i
     Constructor for a new item. Each function parameter defines a new field and it's value.
 
  ~`string_format` something -- e.g. ~`{filename}` item
-    Format a value into a string. This behaves differently depending on the value's type: When the value is an Item, the item's corresponding field will replace all `{field}` instances in the format string. When the value is a primitive type (String, Int, Bool, etc.), the value's text equivalent will replace all `{}` instances in the format string. When the value is an iterable operation (Op), the operation's script equivalent will replace all `{}` instances in the format string.";
+    Format a value into a string. This behaves differently depending on the value's type: When the value is an Item, the item's corresponding field will replace all `{field}` instances in the format string. When the value is a primitive type (String, Int, Bool, etc.), the value's text equivalent will replace all `{}` instances in the format string. When the value is an iterable operation (Op), the operation's script equivalent will replace all `{}` instances in the format string.
+
+ file(filepath) -- e.g. file(`~/Music/Romantic Traffic.flac`)
+    Load a item from file, populating the item with the song's tags.";

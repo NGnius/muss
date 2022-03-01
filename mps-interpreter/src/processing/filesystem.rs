@@ -81,7 +81,7 @@ impl FileIter {
         root: Option<P>,
         pattern: Option<&str>,
         recurse: bool,
-    ) -> Result<Self, RuntimeMsg> {
+    ) -> Result<Self, String> {
         let root_path = match root {
             None => crate::lang::utility::music_folder(),
             Some(p) => p.as_ref().to_path_buf(),
@@ -91,7 +91,7 @@ impl FileIter {
             vec.push(
                 root_path
                     .read_dir()
-                    .map_err(|e| RuntimeMsg(format!("Directory read error: {}", e)))?
+                    .map_err(|e| format!("Directory read error: {}", e))?
                     .into(),
             );
             vec
@@ -99,15 +99,12 @@ impl FileIter {
             Vec::with_capacity(DEFAULT_VEC_CACHE_SIZE)
         };
         let pattern_re = if let Some(pattern) = pattern {
-            Some(
-                Regex::new(pattern)
-                    .map_err(|e| RuntimeMsg(format!("Regex compile error: {}", e)))?,
-            )
+            Some(Regex::new(pattern).map_err(|e| format!("Regex compile error: {}", e))?)
         } else {
             None
         };
-        let tags_re = Regex::new(DEFAULT_REGEX)
-            .map_err(|e| RuntimeMsg(format!("Regex compile error: {}", e)))?;
+        let tags_re =
+            Regex::new(DEFAULT_REGEX).map_err(|e| format!("Regex compile error: {}", e))?;
         Ok(Self {
             root: root_path,
             pattern: pattern_re,
@@ -235,6 +232,24 @@ impl FileIter {
         item.set_field("filename", path_str.to_string().into());
     }
 
+    fn only_once(&mut self) -> Result<MpsItem, String> {
+        if self.root.is_file() {
+            self.is_complete = true;
+            match self.build_item(&self.root) {
+                Some(item) => Ok(item),
+                None => Err(format!(
+                    "Failed to populate item from file `{}`",
+                    self.root.display()
+                )),
+            }
+        } else {
+            Err(format!(
+                "Cannot populate item from non-file `{}`",
+                self.root.display()
+            ))
+        }
+    }
+
     /*fn default_title(path: &Path) -> String {
         let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
         path.file_name()
@@ -312,6 +327,8 @@ pub trait MpsFilesystemQuerier: Debug {
         recursive: bool,
     ) -> Result<FileIter, RuntimeMsg>;
 
+    fn single(&mut self, path: &str, pattern: Option<&str>) -> Result<MpsItem, RuntimeMsg>;
+
     fn expand(&self, folder: Option<&str>) -> Result<Option<String>, RuntimeMsg> {
         #[cfg(feature = "shellexpand")]
         match folder {
@@ -338,6 +355,12 @@ impl MpsFilesystemQuerier for MpsFilesystemExecutor {
         recursive: bool,
     ) -> Result<FileIter, RuntimeMsg> {
         let folder = self.expand(folder)?;
-        FileIter::new(folder, pattern, recursive)
+        FileIter::new(folder, pattern, recursive).map_err(RuntimeMsg)
+    }
+
+    fn single(&mut self, path: &str, pattern: Option<&str>) -> Result<MpsItem, RuntimeMsg> {
+        let path = self.expand(Some(path))?;
+        let mut file_iter = FileIter::new(path, pattern, false).map_err(RuntimeMsg)?;
+        file_iter.only_once().map_err(RuntimeMsg)
     }
 }

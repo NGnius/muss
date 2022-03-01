@@ -171,6 +171,7 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
                 .add(crate::lang::vocabulary::item_ops::ConstantItemOpFactory)
                 .add(crate::lang::vocabulary::item_ops::VariableAssignItemOpFactory)
                 .add(crate::lang::vocabulary::item_ops::FieldAssignItemOpFactory)
+                .add(crate::lang::vocabulary::item_ops::FileItemOpFactory)
                 .add(crate::lang::vocabulary::item_ops::VariableDeclareItemOpFactory)
                 .add(crate::lang::vocabulary::item_ops::InterpolateStringItemOpFactory)
                 .add(crate::lang::vocabulary::item_ops::BranchItemOpFactory)

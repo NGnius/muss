@@ -66,7 +66,7 @@ impl<Op: MpsOp + 'static, F: MpsFunctionFactory<Op> + 'static> BoxedMpsOpFactory
             tokens,
         )?;
         assert_token_raw(MpsToken::OpenBracket, tokens)?;
-        let end_tokens = tokens.split_off(tokens.len()-1);
+        let end_tokens = tokens.split_off(tokens.len() - 1);
         let func = self.op_factory.build_function_params(name, tokens, dict)?;
         tokens.extend(end_tokens);
         assert_token_raw(MpsToken::CloseBracket, tokens)?;
