@@ -46,7 +46,10 @@ These always return an iterable which can be manipulated.
     Combine multiple iterables such that only items that exist in iterable1 and iterable2 and ... are returned. The order of items from iterable1 is maintained. There is no limit on the amount of iterables which can be provided as parameters.
 
  empty()
-    Empty iterator. Useful for deleting items using replacement filters.";
+    Empty iterator. Useful for deleting items using replacement filters.
+
+ empties(count);
+    Iterate over count empty items. The items in this iterator have no fields (i.e. are empty).";
 
 pub const FILTERS: &str =
 "FILTERS (?filters)

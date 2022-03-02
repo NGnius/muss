@@ -18,6 +18,7 @@ impl Lookup {
     pub fn check_is(token: &MpsToken) -> bool {
         token.is_name() || check_is_type(token)
     }
+
     pub fn parse(tokens: &mut VecDeque<MpsToken>) -> Result<Self, SyntaxError> {
         if tokens.is_empty() {
             Err(SyntaxError {

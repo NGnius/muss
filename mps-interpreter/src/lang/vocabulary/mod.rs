@@ -1,4 +1,5 @@
 mod comment;
+mod empties;
 mod empty;
 mod files;
 mod intersection;
@@ -11,6 +12,7 @@ mod union;
 mod variable_assign;
 
 pub use comment::{CommentStatement, CommentStatementFactory};
+pub use empties::{empties_function_factory, EmptiesStatementFactory};
 pub use empty::{empty_function_factory, EmptyStatementFactory};
 pub use files::{files_function_factory, FilesStatementFactory};
 pub use intersection::{intersection_function_factory, IntersectionStatementFactory};

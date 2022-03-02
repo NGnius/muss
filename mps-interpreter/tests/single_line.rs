@@ -754,9 +754,25 @@ fn execute_uniquefilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 fn execute_fileitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    item.title = `something else`,
     item = file(item.filename),
 }",
         false,
         true,
     )
+}
+
+#[test]
+fn execute_emptiesop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "empties(1).{let count = 0, item.title = ~`title #{}` count+1, item.filename = ~`filename_{}` count, count = count + 1}",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "empties(42).{let count = 0, item.title = ~`title #{}` count+1, item.filename = ~`filename_{}` count, count = count + 1}",
+        false,
+        true,
+    )?;
+    execute_single_line("empties(0)", true, true)
 }
