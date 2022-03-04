@@ -1,9 +1,9 @@
 use std::io::Read;
 use std::iter::Iterator;
 
-use super::lang::{MpsLanguageDictionary, MpsLanguageError};
+use super::lang::MpsLanguageDictionary;
 use super::tokens::{MpsTokenReader, MpsTokenizer};
-use super::{MpsContext, MpsInterpretor, MpsItem};
+use super::{MpsContext, MpsInterpretor, MpsItem, MpsError};
 
 pub struct MpsRunnerSettings<T: MpsTokenReader> {
     pub vocabulary: MpsLanguageDictionary,
@@ -57,7 +57,7 @@ impl<R: Read> MpsRunner<MpsTokenizer<R>> {
 }
 
 impl<T: MpsTokenReader> Iterator for MpsRunner<T> {
-    type Item = Result<MpsItem, Box<dyn MpsLanguageError>>;
+    type Item = Result<MpsItem, MpsError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut item = self.interpretor.next();

@@ -7,6 +7,7 @@ use super::lang::{MpsLanguageDictionary, MpsLanguageError, MpsOp};
 use super::tokens::MpsToken;
 use super::MpsContext;
 use super::MpsItem;
+use super::MpsError;
 
 /// The script interpreter.
 /// Use MpsRunner for a better interface.
@@ -81,7 +82,7 @@ impl<T> Iterator for MpsInterpretor<T>
 where
     T: crate::tokens::MpsTokenReader,
 {
-    type Item = Result<MpsItem, Box<dyn MpsLanguageError>>;
+    type Item = Result<MpsItem, MpsError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut is_stmt_done = false;
@@ -91,7 +92,7 @@ where
                 is_stmt_done = true;
             }
             next_item
-                .map(|item| item.map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line())))
+                .map(|item| item.map_err(|e| error_with_ctx(e.into(), self.tokenizer.current_line())))
         } else {
             /*if self.tokenizer.end_of_file() {
                 return None;
@@ -101,7 +102,7 @@ where
             let token_result = self
                 .tokenizer
                 .next_statement(&mut self.buffer)
-                .map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line()));
+                .map_err(|e| error_with_ctx(e.into(), self.tokenizer.current_line()));
             match token_result {
                 Ok(_) => {}
                 Err(x) => return Some(Err(x)),
@@ -123,11 +124,11 @@ where
                         is_stmt_done = true;
                     }
                     next_item.map(|item| {
-                        item.map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line()))
+                        item.map_err(|e| error_with_ctx(e.into(), self.tokenizer.current_line()))
                     })
                 }
                 Err(e) => {
-                    Some(Err(e).map_err(|e| box_error_with_ctx(e, self.tokenizer.current_line())))
+                    Some(Err(e).map_err(|e| error_with_ctx(e.into(), self.tokenizer.current_line())))
                 }
             }
         };
@@ -138,12 +139,9 @@ where
     }
 }
 
-fn box_error_with_ctx<E: MpsLanguageError + 'static>(
-    mut error: E,
-    line: usize,
-) -> Box<dyn MpsLanguageError> {
+fn error_with_ctx(mut error: MpsError, line: usize) -> MpsError {
     error.set_line(line);
-    Box::new(error) as Box<dyn MpsLanguageError>
+    error
 }
 
 /// Builder function to add the standard statements of MPS.

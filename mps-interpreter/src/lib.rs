@@ -21,7 +21,7 @@
 //! // warning: my library has ~3800 songs, so this outputs too much information to be useful.
 //! for result in interpreter {
 //!     match result {
-//!         Ok(item) => println!("Got song `{}` (file: `{}`)", item.title, item.filename),
+//!         Ok(item) => println!("Got song `{}` (file: `{}`)", item.field("title").unwrap(), item.field("filename").unwrap()),
 //!         Err(e) => panic!("Got error while executing: {}", e),
 //!     }
 //! }
@@ -240,6 +240,7 @@
 //!
 
 mod context;
+mod errors;
 mod interpretor;
 mod item;
 pub mod lang;
@@ -251,6 +252,7 @@ mod runner;
 pub mod tokens;
 
 pub use context::MpsContext;
+pub use errors::MpsError;
 pub use interpretor::{interpretor, MpsInterpretor};
 pub use item::MpsItem;
 //pub(crate) use item::MpsItemRuntimeUtil;

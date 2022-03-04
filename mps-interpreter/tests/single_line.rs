@@ -1,4 +1,4 @@
-use mps_interpreter::lang::MpsLanguageError;
+use mps_interpreter::MpsError;
 use mps_interpreter::tokens::{MpsToken, MpsTokenizer, ParseError};
 use mps_interpreter::*;
 use std::collections::VecDeque;
@@ -43,7 +43,7 @@ fn execute_single_line(
     line: &str,
     should_be_emtpy: bool,
     should_complete: bool,
-) -> Result<(), Box<dyn MpsLanguageError>> {
+) -> Result<(), MpsError> {
     if line.contains('\n') {
         println!(
             "--- Executing MPS code ---\n{}\n--- Executing MPS code ---",
@@ -108,23 +108,23 @@ fn execute_single_line(
 }
 
 #[test]
-fn execute_sql_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_sql_line() -> Result<(), MpsError> {
     execute_single_line("sql(`SELECT * FROM songs ORDER BY artist;`)", false, true)
 }
 
 #[test]
-fn execute_simple_sql_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_simple_sql_line() -> Result<(), MpsError> {
     execute_single_line("song(`lov`)", false, true)
 }
 
 #[test]
-fn execute_comment_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_comment_line() -> Result<(), MpsError> {
     execute_single_line("// this is a comment", true, true)?;
     execute_single_line("# this is a special comment", true, true)
 }
 
 #[test]
-fn execute_repeat_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_repeat_line() -> Result<(), MpsError> {
     execute_single_line(
         "repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))",
         false,
@@ -143,7 +143,7 @@ fn execute_repeat_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_sql_init_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_sql_init_line() -> Result<(), MpsError> {
     execute_single_line(
         "sql_init(generate = false, folder = `/home/ngnius/Music`)",
         true,
@@ -152,7 +152,7 @@ fn execute_sql_init_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_assign_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_assign_line() -> Result<(), MpsError> {
     execute_single_line(
         "let some_var = repeat(song(`Christmas in L.A.`))",
         true,
@@ -162,7 +162,7 @@ fn execute_assign_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_emptyfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_emptyfilter_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).().().()",
         false,
@@ -171,7 +171,7 @@ fn execute_emptyfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_fieldfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_fieldfilter_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year >= 2000)",
         false,
@@ -195,7 +195,7 @@ fn execute_fieldfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_fieldfiltermaybe_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_fieldfiltermaybe_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year? >= 2000)",
         false,
@@ -219,7 +219,7 @@ fn execute_fieldfiltermaybe_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_files_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_files_line() -> Result<(), MpsError> {
     execute_single_line(
         r"files(folder=`~/Music/MusicFlac/Bruno Mars/24K Magic/`, re=``, recursive=false)",
         false,
@@ -234,7 +234,7 @@ fn execute_files_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_indexfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_indexfilter_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(2)",
         false,
@@ -258,7 +258,7 @@ fn execute_indexfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_rangefilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_rangefilter_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(..)",
         false,
@@ -282,7 +282,7 @@ fn execute_rangefilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_orfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_orfilter_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(4 || 5)",
         false,
@@ -301,7 +301,7 @@ fn execute_orfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_replacefilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_replacefilter_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(if 4: files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(5))",
         false,
@@ -320,7 +320,7 @@ fn execute_replacefilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_emptysort_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_emptysort_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).sort()",
         false,
@@ -334,7 +334,7 @@ fn execute_emptysort_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_likefilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_likefilter_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(not_a_field? like `24K Magic`)",
         true,
@@ -353,7 +353,7 @@ fn execute_likefilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_fieldsort_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_fieldsort_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(title)",
         false,
@@ -367,7 +367,7 @@ fn execute_fieldsort_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_blissfirstsort_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_blissfirstsort_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(advanced bliss_first)",
         false,
@@ -376,7 +376,7 @@ fn execute_blissfirstsort_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_blissnextsort_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_blissnextsort_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(advanced bliss_next)",
         false,
@@ -385,17 +385,17 @@ fn execute_blissnextsort_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_emptyfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_emptyfn_line() -> Result<(), MpsError> {
     execute_single_line("empty()", true, true)
 }
 
 #[test]
-fn execute_resetfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_resetfn_line() -> Result<(), MpsError> {
     execute_single_line("reset(empty())", true, true)
 }
 
 #[test]
-fn execute_shufflesort_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_shufflesort_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(random shuffle)",
         false,
@@ -410,7 +410,7 @@ fn execute_shufflesort_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_unionfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_unionfn_line() -> Result<(), MpsError> {
     execute_single_line(
         "union(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))",
         false,
@@ -434,7 +434,7 @@ fn execute_unionfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_regexfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_regexfilter_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(title matches `24K\\\\s+Magic`)", // note: quad-escape not required in scripts
         false,
@@ -448,7 +448,7 @@ fn execute_regexfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_intersectionfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_intersectionfn_line() -> Result<(), MpsError> {
     execute_single_line(
         "intersection(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`))",
         false,
@@ -472,7 +472,7 @@ fn execute_intersectionfn_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_declareitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_declareitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{let x = empty()}",
         false,
@@ -481,7 +481,7 @@ fn execute_declareitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_removeitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_removeitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{remove item.title, remove item}",
         true,
@@ -490,7 +490,7 @@ fn execute_removeitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_multiitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_multiitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     let x = empty(),
@@ -503,7 +503,7 @@ fn execute_multiitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_fieldassignitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_fieldassignitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     item.potato = empty(),
@@ -515,7 +515,7 @@ fn execute_fieldassignitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_constitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_constitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     `str const`,
@@ -530,7 +530,7 @@ fn execute_constitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_retrieveitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_retrieveitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     item.path = item.filename,
@@ -543,7 +543,7 @@ fn execute_retrieveitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_additemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_additemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
             item.title = `TEST` + item.title,
@@ -555,7 +555,7 @@ fn execute_additemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_subtractitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_subtractitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     item.test = 1234 - 94,
@@ -566,7 +566,7 @@ fn execute_subtractitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_negateitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_negateitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     item.test = 1234,
@@ -579,7 +579,7 @@ fn execute_negateitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_notitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_notitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     item.test = false,
@@ -592,7 +592,7 @@ fn execute_notitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_orlogicalitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_orlogicalitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     item.test = true || true,
@@ -604,7 +604,7 @@ fn execute_orlogicalitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_andlogicalitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_andlogicalitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     item.test = true && true,
@@ -616,7 +616,7 @@ fn execute_andlogicalitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_bracketsitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_bracketsitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     item.test = true && true && (false || false),
@@ -628,7 +628,7 @@ fn execute_bracketsitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_stringifyitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_stringifyitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     item.filepath = ~`test out: {test}` item,
@@ -642,7 +642,7 @@ fn execute_stringifyitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_branchitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_branchitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     if false {
@@ -660,7 +660,7 @@ fn execute_branchitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_compareitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_compareitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     if 42 != 42 {
@@ -675,7 +675,7 @@ fn execute_compareitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_computeitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_computeitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     let count = 1,
@@ -694,7 +694,7 @@ fn execute_computeitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_complexitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_complexitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).().{
     let count = 1,
@@ -713,7 +713,7 @@ fn execute_complexitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_constructitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_constructitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     let other_item = Item (),
@@ -731,7 +731,7 @@ fn execute_constructitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_iteritemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_iteritemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     item = iter empty()
@@ -742,7 +742,7 @@ fn execute_iteritemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_uniquefieldfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_uniquefieldfilter_line() -> Result<(), MpsError> {
     execute_single_line(
         "repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), 3).(unique title?)",
         false,
@@ -761,7 +761,7 @@ fn execute_uniquefieldfilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_uniquefilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_uniquefilter_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(unique)",
         false,
@@ -770,7 +770,7 @@ fn execute_uniquefilter_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_fileitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_fileitemop_line() -> Result<(), MpsError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     item.title = `something else`,
@@ -782,7 +782,7 @@ fn execute_fileitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 }
 
 #[test]
-fn execute_emptiesop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+fn execute_emptiesop_line() -> Result<(), MpsError> {
     execute_single_line(
         "empties(1).{let count = 0, item.title = ~`title #{}` count+1, item.filename = ~`filename_{}` count, count = count + 1}",
         false,
