@@ -677,7 +677,7 @@ fn execute_compareitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 #[test]
 fn execute_computeitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(artist? like `Bruno`).{
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     let count = 1,
     item.track = count,
     item.title = ~`Song #{track}` item,
@@ -688,6 +688,25 @@ fn execute_computeitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
     },
     count = count + 1,
 }",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_complexitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).().{
+    let count = 1,
+    item.track = count,
+    item.title = ~`Song #{track}` item,
+    if count > 5 {
+        item.filename = `¯\\\\_(ツ)_/¯`
+    } else {
+        item.filename = `/shrug`,
+    },
+    count = count + 1,
+}.()",
         false,
         true,
     )

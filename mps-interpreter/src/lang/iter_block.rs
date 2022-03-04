@@ -260,7 +260,7 @@ impl MpsItemBlockFactory {
 
 impl BoxedMpsOpFactory for MpsItemBlockFactory {
     fn is_op_boxed(&self, tokens: &VecDeque<MpsToken>) -> bool {
-        tokens[tokens.len() - 1].is_close_curly()
+        find_last_open_curly(tokens).is_some()
     }
 
     fn build_op_boxed(
@@ -347,7 +347,12 @@ fn find_last_open_curly(tokens: &VecDeque<MpsToken>) -> Option<usize> {
                 if bracket_depth == 0 && curly_found {
                     return Some(i + 1);
                 }
-            }
+            },
+            MpsToken::OpenBracket | MpsToken::CloseBracket => {
+                if bracket_depth == 0 {
+                    return None;
+                }
+            },
             _ => {}
         }
         if token.is_open_curly() {
