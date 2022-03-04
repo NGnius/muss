@@ -677,7 +677,7 @@ fn execute_compareitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
 #[test]
 fn execute_computeitemop_line() -> Result<(), Box<dyn MpsLanguageError>> {
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(artist? like `Bruno`).{
     let count = 1,
     item.track = count,
     item.title = ~`Song #{track}` item,

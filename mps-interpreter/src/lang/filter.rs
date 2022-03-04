@@ -474,7 +474,7 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
 {
     fn is_op_boxed(&self, tokens: &VecDeque<MpsToken>) -> bool {
         let tokens_len = tokens.len();
-        if last_open_bracket_is_after_dot(tokens) {
+        if is_correct_format(tokens) {
             let start_of_predicate = last_dot_before_open_bracket(tokens) + 2; // .(predicate)
             if start_of_predicate > tokens_len - 1 {
                 false
@@ -615,11 +615,15 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
     }
 }
 
-fn last_open_bracket_is_after_dot(tokens: &VecDeque<MpsToken>) -> bool {
+fn is_correct_format(tokens: &VecDeque<MpsToken>) -> bool {
     let mut inside_brackets = 0;
     let mut open_bracket_found = false;
+    let mut close_bracket = 0;
     for i in (0..tokens.len()).rev() {
         if tokens[i].is_close_bracket() {
+            if inside_brackets == 0 {
+                close_bracket = i;
+            }
             inside_brackets += 1;
         } else if tokens[i].is_open_bracket() {
             if inside_brackets == 1 {
@@ -628,7 +632,7 @@ fn last_open_bracket_is_after_dot(tokens: &VecDeque<MpsToken>) -> bool {
                 inside_brackets -= 1;
             }
         } else if open_bracket_found {
-            return tokens[i].is_dot();
+            return tokens[i].is_dot() && (close_bracket == 0 || close_bracket == tokens.len() - 1);
         }
     }
     false
