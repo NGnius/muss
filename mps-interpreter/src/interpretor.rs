@@ -92,7 +92,7 @@ where
                 is_stmt_done = true;
             }
             next_item
-                .map(|item| item.map_err(|e| error_with_ctx(e.into(), self.tokenizer.current_line())))
+                .map(|item| item.map_err(|e| error_with_ctx(e, self.tokenizer.current_line())))
         } else {
             /*if self.tokenizer.end_of_file() {
                 return None;
@@ -102,7 +102,7 @@ where
             let token_result = self
                 .tokenizer
                 .next_statement(&mut self.buffer)
-                .map_err(|e| error_with_ctx(e.into(), self.tokenizer.current_line()));
+                .map_err(|e| error_with_ctx(e, self.tokenizer.current_line()));
             match token_result {
                 Ok(_) => {}
                 Err(x) => return Some(Err(x)),
@@ -124,11 +124,11 @@ where
                         is_stmt_done = true;
                     }
                     next_item.map(|item| {
-                        item.map_err(|e| error_with_ctx(e.into(), self.tokenizer.current_line()))
+                        item.map_err(|e| error_with_ctx(e, self.tokenizer.current_line()))
                     })
                 }
                 Err(e) => {
-                    Some(Err(e).map_err(|e| error_with_ctx(e.into(), self.tokenizer.current_line())))
+                    Some(Err(e).map_err(|e| error_with_ctx(e, self.tokenizer.current_line())))
                 }
             }
         };
@@ -139,9 +139,10 @@ where
     }
 }
 
-fn error_with_ctx(mut error: MpsError, line: usize) -> MpsError {
-    error.set_line(line);
-    error
+fn error_with_ctx<T: std::convert::Into<MpsError>>(error: T, line: usize) -> MpsError {
+    let mut err = error.into();
+    err.set_line(line);
+    err
 }
 
 /// Builder function to add the standard statements of MPS.

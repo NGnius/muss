@@ -1,6 +1,8 @@
 //! Read, Execute, Print Loop functionality
 
-use std::io::{self, Read, Stdin, Write};
+use std::io::{self, Write};
+
+use console::{Term, Key};
 
 use mps_interpreter::MpsRunner;
 use mps_player::{MpsController, MpsPlayer};
@@ -9,33 +11,40 @@ use super::channel_io::{channel_io, ChannelWriter};
 use super::cli::CliArgs;
 
 struct ReplState {
-    stdin: Stdin,
+    terminal: Term,
     line_number: usize,
-    statement_buf: Vec<u8>,
+    statement_buf: Vec<char>,
     writer: ChannelWriter,
     in_literal: Option<char>,
     bracket_depth: usize,
     curly_depth: usize,
+    history: Vec<String>,
+    selected_history: usize,
+    current_line: Vec<char>,
+    cursor_rightward_position: usize,
 }
 
 impl ReplState {
-    fn new(chan_writer: ChannelWriter) -> Self {
+    fn new(chan_writer: ChannelWriter, term: Term) -> Self {
         Self {
-            stdin: io::stdin(),
+            terminal: term,
             line_number: 0,
             statement_buf: Vec::new(),
             writer: chan_writer,
             in_literal: None,
             bracket_depth: 0,
             curly_depth: 0,
+            history: Vec::new(),
+            selected_history: 0,
+            current_line: Vec::new(),
+            cursor_rightward_position: 0,
         }
     }
 }
 
 pub fn repl(args: CliArgs) {
-    /*let mut terminal = termios::Termios::from_fd(0 /* stdin */).unwrap();
-    terminal.c_lflag &= !termios::ICANON; // no echo and canonical mode
-    termios::tcsetattr(0, termios::TCSANOW, &mut terminal).unwrap();*/
+    let term = Term::stdout();
+    term.set_title("mps");
     let (writer, reader) = channel_io();
     let volume = args.volume.clone();
     let player_builder = move || {
@@ -47,9 +56,9 @@ pub fn repl(args: CliArgs) {
         }
         player
     };
-    let mut state = ReplState::new(writer);
+    let mut state = ReplState::new(writer, term);
     if let Some(playlist_file) = &args.playlist {
-        println!("Playlist mode (output: `{}`)", playlist_file);
+        writeln!(state.terminal, "Playlist mode (output: `{}`)", playlist_file).expect("Failed to write to terminal output");
         let mut player = player_builder();
         let mut playlist_writer =
             io::BufWriter::new(std::fs::File::create(playlist_file).unwrap_or_else(|_| {
@@ -71,7 +80,7 @@ pub fn repl(args: CliArgs) {
                 .expect("Failed to flush playlist to file");
         });
     } else {
-        println!("Playback mode (output: audio device)");
+        writeln!(state.terminal, "Playback mode (output: audio device)").expect("Failed to write to terminal output");
         let ctrl = MpsController::create_repl(player_builder);
         read_loop(&args, &mut state, || {
             if args.wait {
@@ -96,71 +105,181 @@ pub fn repl(args: CliArgs) {
 }
 
 fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) -> ! {
-    let mut read_buf: [u8; 1] = [0];
-    prompt(&mut state.line_number, args);
+    prompt(state, args);
     loop {
-        let mut read_count = 0;
-        //read_buf[0] = 0;
-        while read_count == 0 {
-            // TODO: enable raw mode (char by char) reading of stdin
-            read_count = state
-                .stdin
-                .read(&mut read_buf)
-                .expect("Failed to read stdin");
-        }
-        //println!("Read {}", read_buf[0]);
-        state.statement_buf.push(read_buf[0]);
-        match read_buf[0] as char {
-            '"' | '`' => {
-                if let Some(c) = state.in_literal {
-                    if c == read_buf[0] as char {
-                        state.in_literal = None;
-                    }
+        match state.terminal.read_key().expect("Failed to read terminal input") {
+            Key::Char(read_c) => {
+                if state.cursor_rightward_position == 0 {
+                    write!(state.terminal, "{}", read_c).expect("Failed to write to terminal output");
+                    state.statement_buf.push(read_c);
+                    state.current_line.push(read_c);
                 } else {
-                    state.in_literal = Some(read_buf[0] as char);
+                    write!(state.terminal, "{}", read_c).expect("Failed to write to terminal output");
+                    for i in state.current_line.len() - state.cursor_rightward_position .. state.current_line.len() {
+                        write!(state.terminal, "{}", state.current_line[i]).expect("Failed to write to terminal output");
+                    }
+                    state.terminal.move_cursor_left(state.cursor_rightward_position).expect("Failed to write to terminal output");
+                    state.statement_buf.insert(state.statement_buf.len() - state.cursor_rightward_position, read_c);
+                    state.current_line.insert(state.current_line.len() - state.cursor_rightward_position, read_c);
                 }
-            }
-            '(' => state.bracket_depth += 1,
-            ')' => if state.bracket_depth != 0 { state.bracket_depth -= 1 },
-            '{' => state.curly_depth += 1,
-            '}' => if state.curly_depth != 0 { state.curly_depth -= 1 },
-            ';' => {
-                if state.in_literal.is_none() {
-                    state
-                        .writer
-                        .write(state.statement_buf.as_slice())
-                        .expect("Failed to write to MPS interpreter");
-                    execute();
-                    state.statement_buf.clear();
+                match read_c {
+                    '"' | '`' => {
+                        if let Some(c) = state.in_literal {
+                            if c == read_c {
+                                state.in_literal = None;
+                            }
+                        } else {
+                            state.in_literal = Some(read_c);
+                        }
+                    }
+                    '(' => state.bracket_depth += 1,
+                    ')' => if state.bracket_depth != 0 { state.bracket_depth -= 1 },
+                    '{' => state.curly_depth += 1,
+                    '}' => if state.curly_depth != 0 { state.curly_depth -= 1 },
+                    ';' => {
+                        if state.in_literal.is_none() {
+                            state
+                                .writer
+                                .write(state.statement_buf.iter().collect::<String>().as_bytes())
+                                .expect("Failed to write to MPS interpreter");
+                            execute();
+                            state.statement_buf.clear();
+                        }
+                    }
+                    '\n' => {
+                        let statement = state.statement_buf.iter().collect::<String>();
+                        let statement_result = statement.trim();
+                        if statement_result.starts_with('?') {
+                            //println!("Got {}", statement_result.unwrap());
+                            repl_commands(statement_result);
+                            state.statement_buf.clear();
+                        } else if state.bracket_depth == 0 && state.in_literal.is_none() && state.curly_depth == 0 {
+                            state.statement_buf.push(';');
+                            state
+                                .writer
+                                .write(state.statement_buf.iter().collect::<String>().as_bytes())
+                                .expect("Failed to write to MPS interpreter");
+                            execute();
+                            state.statement_buf.clear();
+                        }
+                        prompt(state, args);
+                    }
+                    _ => {}
                 }
-            }
-            '\n' => {
-                let statement_result = std::str::from_utf8(state.statement_buf.as_slice());
-                if statement_result.is_ok() && statement_result.unwrap().trim().starts_with('?') {
+            },
+            Key::Backspace => {
+                if let Some(c) = state.statement_buf.pop() {
+                    match c {
+                        '\n' | '\r' => {
+                            // another line, cannot backspace that far
+                            state.statement_buf.push(c);
+                        }
+                        _ => {
+                            state.current_line.pop();
+                            state.terminal.move_cursor_left(1).expect("Failed to write to terminal output");
+                            write!(state.terminal, " ").expect("Failed to write to terminal output");
+                            state.terminal.flush().expect("Failed to flush terminal output");
+                            state.terminal.move_cursor_left(1).expect("Failed to write to terminal output");
+                        }
+                    }
+                }
+            },
+            Key::Enter => {
+                state.terminal.write_line("").expect("Failed to write to terminal output");
+                let statement = state.statement_buf.iter().collect::<String>();
+                let statement_result = statement.trim();
+                if statement_result.starts_with('?') {
                     //println!("Got {}", statement_result.unwrap());
-                    repl_commands(statement_result.unwrap().trim());
+                    repl_commands(statement_result);
                     state.statement_buf.clear();
                 } else if state.bracket_depth == 0 && state.in_literal.is_none() && state.curly_depth == 0 {
-                    state.statement_buf.push(b';');
+                    state.statement_buf.push(';');
+                    let complete_statement = state.statement_buf.iter().collect::<String>();
                     state
                         .writer
-                        .write(state.statement_buf.as_slice())
+                        .write(complete_statement.as_bytes())
                         .expect("Failed to write to MPS interpreter");
                     execute();
                     state.statement_buf.clear();
                 }
-                prompt(&mut state.line_number, args);
-            }
-            _ => {}
+                state.statement_buf.push('\n');
+                state.cursor_rightward_position = 0;
+                // history
+                let last_line = state.current_line.iter().collect::<String>();
+                state.current_line.clear();
+                if !last_line.is_empty() && ((!state.history.is_empty() && state.history[state.history.len()-1] != last_line) || state.history.is_empty()) {
+                    state.history.push(last_line);
+                }
+                state.selected_history = 0;
+
+                prompt(state, args);
+            },
+            Key::ArrowUp => {
+                if state.selected_history != state.history.len() {
+                    state.selected_history += 1;
+                    display_history_line(state, args);
+                }
+            },
+            Key::ArrowDown => {
+                if state.selected_history > 1 {
+                    state.selected_history -= 1;
+                    display_history_line(state, args);
+                } else if state.selected_history == 1 {
+                    state.selected_history = 0;
+                    state.line_number -= 1;
+                    state.terminal.clear_line().expect("Failed to write to terminal output");
+                    prompt(state, args);
+                    // clear stale input buffer
+                    state.statement_buf.clear();
+                    state.current_line.clear();
+                    state.in_literal = None;
+                    state.bracket_depth = 0;
+                    state.curly_depth = 0;
+                }
+            },
+            Key::ArrowLeft => {
+                if state.current_line.len() > state.cursor_rightward_position {
+                    state.terminal.move_cursor_left(1).expect("Failed to write to terminal output");
+                    state.cursor_rightward_position += 1;
+                }
+            },
+            Key::ArrowRight => {
+                if state.cursor_rightward_position != 0 {
+                    state.terminal.move_cursor_right(1).expect("Failed to write to terminal output");
+                    state.cursor_rightward_position -= 1;
+                }
+            },
+            _ => continue
         }
+        
+        //println!("Read {}", read_buf[0]);
+        
     }
 }
 
 #[inline(always)]
-fn prompt(line: &mut usize, args: &CliArgs) {
-    print!("{}{}", line, args.prompt);
-    *line += 1;
-    std::io::stdout().flush().expect("Failed to flush stdout");
+fn prompt(state: &mut ReplState, args: &CliArgs) {
+    write!(state.terminal, "{}{}", state.line_number, args.prompt).expect("Failed to write to terminal output");
+    state.line_number += 1;
+    state.terminal.flush().expect("Failed to flush terminal output");
+}
+
+#[inline(always)]
+fn display_history_line(state: &mut ReplState, args: &CliArgs) {
+    // get historical line
+    state.line_number -= 1;
+    state.terminal.clear_line().expect("Failed to write to terminal output");
+    prompt(state, args);
+    let new_statement = state.history[state.history.len() - state.selected_history].trim();
+    state.terminal.write(new_statement.as_bytes()).expect("Failed to write to terminal output");
+    // clear stale input buffer
+    state.statement_buf.clear();
+    state.current_line.clear();
+    state.in_literal = None;
+    state.bracket_depth = 0;
+    state.curly_depth = 0;
+    state.statement_buf.extend(new_statement.chars());
+    state.current_line.extend(new_statement.chars());
 }
 
 #[inline(always)]
