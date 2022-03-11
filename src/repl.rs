@@ -168,21 +168,52 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                 }
             },
             Key::Backspace => {
-                if let Some(c) = state.statement_buf.pop() {
-                    match c {
-                        '\n' | '\r' => {
-                            // another line, cannot backspace that far
-                            state.statement_buf.push(c);
-                        }
-                        _ => {
-                            state.current_line.pop();
-                            state.terminal.move_cursor_left(1).expect("Failed to write to terminal output");
-                            write!(state.terminal, " ").expect("Failed to write to terminal output");
-                            state.terminal.flush().expect("Failed to flush terminal output");
-                            state.terminal.move_cursor_left(1).expect("Failed to write to terminal output");
+                if state.cursor_rightward_position == 0 {
+                    if let Some(c) = state.statement_buf.pop() {
+                        match c {
+                            '\n' | '\r' => {
+                                // another line, cannot backspace that far
+                                state.statement_buf.push(c);
+                            }
+                            _ => {
+                                state.current_line.pop();
+                                state.terminal.move_cursor_left(1).expect("Failed to write to terminal output");
+                                write!(state.terminal, " ").expect("Failed to write to terminal output");
+                                state.terminal.flush().expect("Failed to flush terminal output");
+                                state.terminal.move_cursor_left(1).expect("Failed to write to terminal output");
+                            }
                         }
                     }
+                } else {
+                    if state.current_line.len() != state.cursor_rightward_position {
+                        // if not at start of line
+                        let removed_char = state.current_line.remove(state.current_line.len()-state.cursor_rightward_position-1);
+                        state.statement_buf.remove(state.statement_buf.len()-state.cursor_rightward_position-1);
+                        // re-sync unclosed syntax tracking
+                        match removed_char {
+                            '"' | '`' => {
+                                if let Some(c) = state.in_literal {
+                                    if c == removed_char {
+                                        state.in_literal = None;
+                                    }
+                                }
+                            },
+                            '(' => if state.bracket_depth != 0 { state.bracket_depth -= 1 },
+                            ')' => state.bracket_depth += 1,
+                            '{' => if state.curly_depth != 0 { state.curly_depth -= 1 },
+                            '}' => state.curly_depth += 1,
+                            _ => {},
+                        }
+                        // re-print end of line to remove character in middle
+                        state.terminal.move_cursor_left(1).expect("Failed to write to terminal output");
+                        for i in state.current_line.len() - state.cursor_rightward_position .. state.current_line.len() {
+                            write!(state.terminal, "{}", state.current_line[i]).expect("Failed to write to terminal output");
+                        }
+                        write!(state.terminal, " ").expect("Failed to write to terminal output");
+                        state.terminal.move_cursor_left(state.cursor_rightward_position + 1).expect("Failed to write to terminal output");
+                    }
                 }
+
             },
             Key::Enter => {
                 state.terminal.write_line("").expect("Failed to write to terminal output");

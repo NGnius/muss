@@ -182,7 +182,6 @@ where
     }
 
     fn current_column(&self) -> usize {
-        println!("Current column: {}", self.column);
         self.column
     }
 
