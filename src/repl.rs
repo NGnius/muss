@@ -2,7 +2,7 @@
 
 use std::io::{self, Write};
 
-use console::{Term, Key};
+use console::{Key, Term};
 
 use mps_interpreter::MpsRunner;
 use mps_player::{MpsController, MpsPlayer};
@@ -58,7 +58,12 @@ pub fn repl(args: CliArgs) {
     };
     let mut state = ReplState::new(writer, term);
     if let Some(playlist_file) = &args.playlist {
-        writeln!(state.terminal, "Playlist mode (output: `{}`)", playlist_file).expect("Failed to write to terminal output");
+        writeln!(
+            state.terminal,
+            "Playlist mode (output: `{}`)",
+            playlist_file
+        )
+        .expect("Failed to write to terminal output");
         let mut player = player_builder();
         let mut playlist_writer =
             io::BufWriter::new(std::fs::File::create(playlist_file).unwrap_or_else(|_| {
@@ -80,7 +85,8 @@ pub fn repl(args: CliArgs) {
                 .expect("Failed to flush playlist to file");
         });
     } else {
-        writeln!(state.terminal, "Playback mode (output: audio device)").expect("Failed to write to terminal output");
+        writeln!(state.terminal, "Playback mode (output: audio device)")
+            .expect("Failed to write to terminal output");
         let ctrl = MpsController::create_repl(player_builder);
         read_loop(&args, &mut state, || {
             if args.wait {
@@ -107,20 +113,38 @@ pub fn repl(args: CliArgs) {
 fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) -> ! {
     prompt(state, args);
     loop {
-        match state.terminal.read_key().expect("Failed to read terminal input") {
+        match state
+            .terminal
+            .read_key()
+            .expect("Failed to read terminal input")
+        {
             Key::Char(read_c) => {
                 if state.cursor_rightward_position == 0 {
-                    write!(state.terminal, "{}", read_c).expect("Failed to write to terminal output");
+                    write!(state.terminal, "{}", read_c)
+                        .expect("Failed to write to terminal output");
                     state.statement_buf.push(read_c);
                     state.current_line.push(read_c);
                 } else {
-                    write!(state.terminal, "{}", read_c).expect("Failed to write to terminal output");
-                    for i in state.current_line.len() - state.cursor_rightward_position .. state.current_line.len() {
-                        write!(state.terminal, "{}", state.current_line[i]).expect("Failed to write to terminal output");
+                    write!(state.terminal, "{}", read_c)
+                        .expect("Failed to write to terminal output");
+                    for i in state.current_line.len() - state.cursor_rightward_position
+                        ..state.current_line.len()
+                    {
+                        write!(state.terminal, "{}", state.current_line[i])
+                            .expect("Failed to write to terminal output");
                     }
-                    state.terminal.move_cursor_left(state.cursor_rightward_position).expect("Failed to write to terminal output");
-                    state.statement_buf.insert(state.statement_buf.len() - state.cursor_rightward_position, read_c);
-                    state.current_line.insert(state.current_line.len() - state.cursor_rightward_position, read_c);
+                    state
+                        .terminal
+                        .move_cursor_left(state.cursor_rightward_position)
+                        .expect("Failed to write to terminal output");
+                    state.statement_buf.insert(
+                        state.statement_buf.len() - state.cursor_rightward_position,
+                        read_c,
+                    );
+                    state.current_line.insert(
+                        state.current_line.len() - state.cursor_rightward_position,
+                        read_c,
+                    );
                 }
                 match read_c {
                     '"' | '`' => {
@@ -133,9 +157,17 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                         }
                     }
                     '(' => state.bracket_depth += 1,
-                    ')' => if state.bracket_depth != 0 { state.bracket_depth -= 1 },
+                    ')' => {
+                        if state.bracket_depth != 0 {
+                            state.bracket_depth -= 1
+                        }
+                    }
                     '{' => state.curly_depth += 1,
-                    '}' => if state.curly_depth != 0 { state.curly_depth -= 1 },
+                    '}' => {
+                        if state.curly_depth != 0 {
+                            state.curly_depth -= 1
+                        }
+                    }
                     ';' => {
                         if state.in_literal.is_none() {
                             state
@@ -153,7 +185,10 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                             //println!("Got {}", statement_result.unwrap());
                             repl_commands(statement_result);
                             state.statement_buf.clear();
-                        } else if state.bracket_depth == 0 && state.in_literal.is_none() && state.curly_depth == 0 {
+                        } else if state.bracket_depth == 0
+                            && state.in_literal.is_none()
+                            && state.curly_depth == 0
+                        {
                             state.statement_buf.push(';');
                             state
                                 .writer
@@ -166,7 +201,7 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                     }
                     _ => {}
                 }
-            },
+            }
             Key::Backspace => {
                 if state.cursor_rightward_position == 0 {
                     if let Some(c) = state.statement_buf.pop() {
@@ -180,32 +215,54 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                                 } else {
                                     state.in_literal = Some(c);
                                 }
-                            },
-                            '(' => if state.bracket_depth != 0 { state.bracket_depth -= 1 },
+                            }
+                            '(' => {
+                                if state.bracket_depth != 0 {
+                                    state.bracket_depth -= 1
+                                }
+                            }
                             ')' => state.bracket_depth += 1,
-                            '{' => if state.curly_depth != 0 { state.curly_depth -= 1 },
+                            '{' => {
+                                if state.curly_depth != 0 {
+                                    state.curly_depth -= 1
+                                }
+                            }
                             '}' => state.curly_depth += 1,
-                            _ => {},
+                            _ => {}
                         }
                         match c {
                             '\n' | '\r' => {
                                 // another line, cannot backspace that far
                                 state.statement_buf.push(c);
-                            },
+                            }
                             _ => {
                                 state.current_line.pop();
-                                state.terminal.move_cursor_left(1).expect("Failed to write to terminal output");
-                                write!(state.terminal, " ").expect("Failed to write to terminal output");
-                                state.terminal.flush().expect("Failed to flush terminal output");
-                                state.terminal.move_cursor_left(1).expect("Failed to write to terminal output");
+                                state
+                                    .terminal
+                                    .move_cursor_left(1)
+                                    .expect("Failed to write to terminal output");
+                                write!(state.terminal, " ")
+                                    .expect("Failed to write to terminal output");
+                                state
+                                    .terminal
+                                    .flush()
+                                    .expect("Failed to flush terminal output");
+                                state
+                                    .terminal
+                                    .move_cursor_left(1)
+                                    .expect("Failed to write to terminal output");
                             }
                         }
                     }
                 } else {
                     if state.current_line.len() != state.cursor_rightward_position {
                         // if not at start of line
-                        let removed_char = state.current_line.remove(state.current_line.len()-state.cursor_rightward_position-1);
-                        state.statement_buf.remove(state.statement_buf.len()-state.cursor_rightward_position-1);
+                        let removed_char = state
+                            .current_line
+                            .remove(state.current_line.len() - state.cursor_rightward_position - 1);
+                        state.statement_buf.remove(
+                            state.statement_buf.len() - state.cursor_rightward_position - 1,
+                        );
                         // re-sync unclosed syntax tracking
                         match removed_char {
                             '"' | '`' => {
@@ -216,33 +273,55 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                                 } else {
                                     state.in_literal = Some(removed_char);
                                 }
-                            },
-                            '(' => if state.bracket_depth != 0 { state.bracket_depth -= 1 },
+                            }
+                            '(' => {
+                                if state.bracket_depth != 0 {
+                                    state.bracket_depth -= 1
+                                }
+                            }
                             ')' => state.bracket_depth += 1,
-                            '{' => if state.curly_depth != 0 { state.curly_depth -= 1 },
+                            '{' => {
+                                if state.curly_depth != 0 {
+                                    state.curly_depth -= 1
+                                }
+                            }
                             '}' => state.curly_depth += 1,
-                            _ => {},
+                            _ => {}
                         }
                         // re-print end of line to remove character in middle
-                        state.terminal.move_cursor_left(1).expect("Failed to write to terminal output");
-                        for i in state.current_line.len() - state.cursor_rightward_position .. state.current_line.len() {
-                            write!(state.terminal, "{}", state.current_line[i]).expect("Failed to write to terminal output");
+                        state
+                            .terminal
+                            .move_cursor_left(1)
+                            .expect("Failed to write to terminal output");
+                        for i in state.current_line.len() - state.cursor_rightward_position
+                            ..state.current_line.len()
+                        {
+                            write!(state.terminal, "{}", state.current_line[i])
+                                .expect("Failed to write to terminal output");
                         }
                         write!(state.terminal, " ").expect("Failed to write to terminal output");
-                        state.terminal.move_cursor_left(state.cursor_rightward_position + 1).expect("Failed to write to terminal output");
+                        state
+                            .terminal
+                            .move_cursor_left(state.cursor_rightward_position + 1)
+                            .expect("Failed to write to terminal output");
                     }
                 }
-
-            },
+            }
             Key::Enter => {
-                state.terminal.write_line("").expect("Failed to write to terminal output");
+                state
+                    .terminal
+                    .write_line("")
+                    .expect("Failed to write to terminal output");
                 let statement = state.statement_buf.iter().collect::<String>();
                 let statement_result = statement.trim();
                 if statement_result.starts_with('?') {
                     //println!("Got {}", statement_result.unwrap());
                     repl_commands(statement_result);
                     state.statement_buf.clear();
-                } else if state.bracket_depth == 0 && state.in_literal.is_none() && state.curly_depth == 0 {
+                } else if state.bracket_depth == 0
+                    && state.in_literal.is_none()
+                    && state.curly_depth == 0
+                {
                     state.statement_buf.push(';');
                     let complete_statement = state.statement_buf.iter().collect::<String>();
                     state
@@ -257,19 +336,23 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                 // history
                 let last_line = state.current_line.iter().collect::<String>();
                 state.current_line.clear();
-                if !last_line.is_empty() && ((!state.history.is_empty() && state.history[state.history.len()-1] != last_line) || state.history.is_empty()) {
+                if !last_line.is_empty()
+                    && ((!state.history.is_empty()
+                        && state.history[state.history.len() - 1] != last_line)
+                        || state.history.is_empty())
+                {
                     state.history.push(last_line);
                 }
                 state.selected_history = 0;
 
                 prompt(state, args);
-            },
+            }
             Key::ArrowUp => {
                 if state.selected_history != state.history.len() {
                     state.selected_history += 1;
                     display_history_line(state, args);
                 }
-            },
+            }
             Key::ArrowDown => {
                 if state.selected_history > 1 {
                     state.selected_history -= 1;
@@ -277,7 +360,10 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                 } else if state.selected_history == 1 {
                     state.selected_history = 0;
                     state.line_number -= 1;
-                    state.terminal.clear_line().expect("Failed to write to terminal output");
+                    state
+                        .terminal
+                        .clear_line()
+                        .expect("Failed to write to terminal output");
                     prompt(state, args);
                     // clear stale input buffer
                     state.statement_buf.clear();
@@ -286,42 +372,57 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                     state.bracket_depth = 0;
                     state.curly_depth = 0;
                 }
-            },
+            }
             Key::ArrowLeft => {
                 if state.current_line.len() > state.cursor_rightward_position {
-                    state.terminal.move_cursor_left(1).expect("Failed to write to terminal output");
+                    state
+                        .terminal
+                        .move_cursor_left(1)
+                        .expect("Failed to write to terminal output");
                     state.cursor_rightward_position += 1;
                 }
-            },
+            }
             Key::ArrowRight => {
                 if state.cursor_rightward_position != 0 {
-                    state.terminal.move_cursor_right(1).expect("Failed to write to terminal output");
+                    state
+                        .terminal
+                        .move_cursor_right(1)
+                        .expect("Failed to write to terminal output");
                     state.cursor_rightward_position -= 1;
                 }
-            },
-            _ => continue
+            }
+            _ => continue,
         }
-        
+
         //println!("Read {}", read_buf[0]);
-        
     }
 }
 
 #[inline(always)]
 fn prompt(state: &mut ReplState, args: &CliArgs) {
-    write!(state.terminal, "{}{}", state.line_number, args.prompt).expect("Failed to write to terminal output");
+    write!(state.terminal, "{}{}", state.line_number, args.prompt)
+        .expect("Failed to write to terminal output");
     state.line_number += 1;
-    state.terminal.flush().expect("Failed to flush terminal output");
+    state
+        .terminal
+        .flush()
+        .expect("Failed to flush terminal output");
 }
 
 #[inline(always)]
 fn display_history_line(state: &mut ReplState, args: &CliArgs) {
     // get historical line
     state.line_number -= 1;
-    state.terminal.clear_line().expect("Failed to write to terminal output");
+    state
+        .terminal
+        .clear_line()
+        .expect("Failed to write to terminal output");
     prompt(state, args);
     let new_statement = state.history[state.history.len() - state.selected_history].trim();
-    state.terminal.write(new_statement.as_bytes()).expect("Failed to write to terminal output");
+    state
+        .terminal
+        .write(new_statement.as_bytes())
+        .expect("Failed to write to terminal output");
     // clear stale input buffer
     state.statement_buf.clear();
     state.current_line.clear();

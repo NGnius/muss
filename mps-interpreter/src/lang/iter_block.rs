@@ -347,12 +347,12 @@ fn find_last_open_curly(tokens: &VecDeque<MpsToken>) -> Option<usize> {
                 if bracket_depth == 0 && curly_found {
                     return Some(i + 1);
                 }
-            },
+            }
             MpsToken::OpenBracket | MpsToken::CloseBracket => {
                 if bracket_depth == 0 {
                     return None;
                 }
-            },
+            }
             _ => {}
         }
         if token.is_open_curly() {

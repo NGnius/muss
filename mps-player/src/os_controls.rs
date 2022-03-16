@@ -179,7 +179,10 @@ impl SystemControlWrapper {
 
     fn enqueued(item: MpsItem, dbus_ctrl: &Sender<DbusControl>) {
         //println!("Got enqueued item {}", &item.title);
-        let file_uri = item.field("filename").and_then(|x| x.to_owned().to_str()).map(|x| format!("file://{}", x));
+        let file_uri = item
+            .field("filename")
+            .and_then(|x| x.to_owned().to_str())
+            .map(|x| format!("file://{}", x));
         dbus_ctrl
             .send(DbusControl::SetMetadata(Metadata {
                 length: None,

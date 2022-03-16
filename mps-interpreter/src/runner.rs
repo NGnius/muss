@@ -3,7 +3,7 @@ use std::iter::Iterator;
 
 use super::lang::MpsLanguageDictionary;
 use super::tokens::{MpsTokenReader, MpsTokenizer};
-use super::{MpsContext, MpsInterpretor, MpsItem, MpsError};
+use super::{MpsContext, MpsError, MpsInterpretor, MpsItem};
 
 pub struct MpsRunnerSettings<T: MpsTokenReader> {
     pub vocabulary: MpsLanguageDictionary,

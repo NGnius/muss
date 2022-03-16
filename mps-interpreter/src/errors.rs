@@ -1,7 +1,7 @@
-use std::fmt::{Debug, Display, Error, Formatter};
 use std::convert::From;
+use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::{SyntaxError, RuntimeError, MpsLanguageError};
+use crate::lang::{MpsLanguageError, RuntimeError, SyntaxError};
 use crate::tokens::ParseError;
 
 #[derive(Debug)]

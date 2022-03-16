@@ -6,8 +6,8 @@ use std::path::Path;
 use super::lang::{MpsLanguageDictionary, MpsLanguageError, MpsOp};
 use super::tokens::MpsToken;
 use super::MpsContext;
-use super::MpsItem;
 use super::MpsError;
+use super::MpsItem;
 
 /// The script interpreter.
 /// Use MpsRunner for a better interface.
@@ -91,8 +91,7 @@ where
             if next_item.is_none() {
                 is_stmt_done = true;
             }
-            next_item
-                .map(|item| item.map_err(|e| error_with_ctx(e, self.tokenizer.current_line())))
+            next_item.map(|item| item.map_err(|e| error_with_ctx(e, self.tokenizer.current_line())))
         } else {
             /*if self.tokenizer.end_of_file() {
                 return None;

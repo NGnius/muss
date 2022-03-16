@@ -1,5 +1,5 @@
-use mps_interpreter::MpsError;
 use mps_interpreter::tokens::{MpsToken, MpsTokenizer, ParseError};
+use mps_interpreter::MpsError;
 use mps_interpreter::*;
 use std::collections::VecDeque;
 use std::io::Cursor;
