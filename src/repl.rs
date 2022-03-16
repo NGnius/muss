@@ -170,11 +170,28 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
             Key::Backspace => {
                 if state.cursor_rightward_position == 0 {
                     if let Some(c) = state.statement_buf.pop() {
+                        // re-sync syntax tracking
+                        match c {
+                            '"' | '`' => {
+                                if let Some(c2) = state.in_literal {
+                                    if c == c2 {
+                                        state.in_literal = None;
+                                    }
+                                } else {
+                                    state.in_literal = Some(c);
+                                }
+                            },
+                            '(' => if state.bracket_depth != 0 { state.bracket_depth -= 1 },
+                            ')' => state.bracket_depth += 1,
+                            '{' => if state.curly_depth != 0 { state.curly_depth -= 1 },
+                            '}' => state.curly_depth += 1,
+                            _ => {},
+                        }
                         match c {
                             '\n' | '\r' => {
                                 // another line, cannot backspace that far
                                 state.statement_buf.push(c);
-                            }
+                            },
                             _ => {
                                 state.current_line.pop();
                                 state.terminal.move_cursor_left(1).expect("Failed to write to terminal output");
@@ -192,10 +209,12 @@ fn read_loop<F: FnMut()>(args: &CliArgs, state: &mut ReplState, mut execute: F) 
                         // re-sync unclosed syntax tracking
                         match removed_char {
                             '"' | '`' => {
-                                if let Some(c) = state.in_literal {
-                                    if c == removed_char {
+                                if let Some(c2) = state.in_literal {
+                                    if removed_char == c2 {
                                         state.in_literal = None;
                                     }
+                                } else {
+                                    state.in_literal = Some(removed_char);
                                 }
                             },
                             '(' => if state.bracket_depth != 0 { state.bracket_depth -= 1 },
