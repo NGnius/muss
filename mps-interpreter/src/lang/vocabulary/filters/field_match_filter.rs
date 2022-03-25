@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use regex::Regex;
+use regex::{Regex, RegexBuilder};
 
 use super::field_filter::{FieldFilterErrorHandling, VariableOrValue};
 use crate::lang::utility::{assert_name, assert_token, assert_token_raw, check_name};
@@ -20,6 +20,7 @@ pub struct FieldRegexFilter {
     field_errors: FieldFilterErrorHandling,
     val: VariableOrValue,
     regex_cache: Option<(String, Regex)>,
+    regex_options: u8,
 }
 
 impl Display for FieldRegexFilter {
@@ -46,12 +47,21 @@ impl MpsFilterPredicate for FieldRegexFilter {
             // non-string values will be stopped at parse-time, so this should never occur
             _ => Err(RuntimeMsg("Value is not type String".to_string())),
         }?;
-        let pattern = if let Some((_, regex_c)) = &self.regex_cache {
-            regex_c
+        let pattern = if let Some((val, regex_c)) = &self.regex_cache {
+            if val == variable {
+                regex_c
+            } else {
+                // only rebuild regex when variable's value changes
+                let regex_c = build_regex(variable, self.regex_options)
+                    .map_err(|e| RuntimeMsg(format!("Regex compile error: {}", e)))?;
+                self.regex_cache = Some((variable.to_owned(), regex_c));
+                &self.regex_cache.as_ref().unwrap().1
+            }
         } else {
-            let regex_c = Regex::new(variable)
+            // build empty cache
+            let regex_c = build_regex(variable, self.regex_options)
                 .map_err(|e| RuntimeMsg(format!("Regex compile error: {}", e)))?;
-            self.regex_cache = Some((variable.clone(), regex_c));
+            self.regex_cache = Some((variable.to_owned(), regex_c));
             &self.regex_cache.as_ref().unwrap().1
         };
         if let Some(field) = music_item_lut.field(&self.field_name) {
@@ -74,6 +84,7 @@ impl MpsFilterPredicate for FieldRegexFilter {
     }
 
     fn reset(&mut self) -> Result<(), RuntimeMsg> {
+        //self.regex_cache = None;
         Ok(())
     }
 }
@@ -124,7 +135,8 @@ impl MpsFilterFactory<FieldRegexFilter> for FieldRegexFilterFactory {
                 MpsToken::Literal("regex_string".into()),
                 tokens,
             )?;
-            let regex_c = Regex::new(&literal).map_err(|_| SyntaxError {
+            let re_flags = regex_flags(tokens)?;
+            let regex_c = build_regex(&literal, re_flags).map_err(|_| SyntaxError {
                 line: 0,
                 token: MpsToken::Literal("[valid regex]".to_string()),
                 got: Some(MpsToken::Literal(literal.clone())),
@@ -137,6 +149,7 @@ impl MpsFilterFactory<FieldRegexFilter> for FieldRegexFilterFactory {
                 field_errors: error_handling,
                 val: value,
                 regex_cache: Some(compiled_cache),
+                regex_options: re_flags,
             })
         } else {
             let variable = VariableOrValue::Variable(assert_token(
@@ -153,9 +166,59 @@ impl MpsFilterFactory<FieldRegexFilter> for FieldRegexFilterFactory {
                 field_errors: FieldFilterErrorHandling::Error,
                 val: variable,
                 regex_cache: None,
+                regex_options: regex_flags(tokens)?,
             })
         }
     }
+}
+
+#[inline]
+fn regex_flags(tokens: &mut VecDeque<MpsToken>) ->  Result<u8, SyntaxError> {
+    // syntax: , "flags"
+    let mut result = 0_u8;
+    if tokens.is_empty() {
+        Ok(result)
+    } else {
+        assert_token_raw(MpsToken::Comma, tokens)?;
+        let flags = assert_token(
+            |t| match t {
+                MpsToken::Literal(s) => Some(s),
+                _ => None,
+            },
+            MpsToken::Literal("[one or more of imsUux]".into()),
+            tokens,
+        )?;
+        // build flag byte
+        for c in flags.chars() {
+            match c {
+                'i' => result |= 1 << 0,
+                'm' => result |= 1 << 1,
+                's' => result |= 1 << 2,
+                'U' => result |= 1 << 3,
+                'u' => result |= 1 << 4,
+                'x' => result |= 1 << 5,
+                c => return Err(SyntaxError{
+                    line: 0,
+                    token: MpsToken::Literal("[one or more of imsUux]".to_string()),
+                    got: Some(MpsToken::Literal(format!("{}", c))),
+                }),
+            }
+        }
+        Ok(result)
+    }
+}
+
+#[inline]
+fn build_regex(pattern: &str, flags: u8) -> Result<Regex, regex::Error> {
+    println!("Compiling");
+    RegexBuilder::new(pattern)
+        .case_insensitive((flags & (1 << 0)) != 0)
+        .multi_line((flags & (1 << 1)) != 0)
+        .dot_matches_new_line((flags & (1 << 2)) != 0)
+        .swap_greed((flags & (1 << 3)) != 0)
+        .unicode((flags & (1 << 4)) != 0)
+        .ignore_whitespace((flags & (1 << 5)) != 0)
+        .build()
 }
 
 pub type FieldRegexFilterStatementFactory =

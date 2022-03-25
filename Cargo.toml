@@ -33,7 +33,7 @@ mps-player = { version = "0.7.0", path = "./mps-player", default-features = fals
 mps-player = { version = "0.7.0", path = "./mps-player", features = ["mpris-player"] }
 
 [profile.release]
-debug = true
+debug = false
 strip = true
 lto = true
 codegen-units = 4

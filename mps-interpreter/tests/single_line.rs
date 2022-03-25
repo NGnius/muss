@@ -444,6 +444,12 @@ fn execute_regexfilter_line() -> Result<(), MpsError> {
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(artist? matches `Bruno Mars`)",
         false,
         true,
+    )?;
+    // regex options
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(artist? matches `bruno mars`, `i`)",
+        false,
+        true,
     )
 }
 
