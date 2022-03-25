@@ -44,8 +44,9 @@ impl MpsFilterPredicate for FieldLikeFilter {
             _ => Err(RuntimeMsg("Value is not type String".to_string())),
         }?;
         if let Some(field) = music_item_lut.field(&self.field_name) {
-            let field_str = field.as_str().to_lowercase();
-            Ok(field_str.contains(&variable.to_lowercase()))
+            let pattern = |c: char| c.is_whitespace() || c.is_control() || !c.is_alphanumeric();
+            let field_str = field.as_str().replace(pattern, "").to_lowercase();
+            Ok(field_str.contains(&variable.replace(pattern, "").to_lowercase()))
         } else {
             match self.field_errors {
                 FieldFilterErrorHandling::Error => Err(RuntimeMsg(format!(
