@@ -16,6 +16,13 @@ rand = { version = "0.8" }
 shellexpand = { version = "2.1", optional = true }
 bliss-audio = { version = "0.4", optional = true, path = "../bliss-rs" }
 
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "file_parse"
+harness = false
+
 [features]
 default = [ "music_library", "ergonomics", "advanced" ]
 music_library = [ "symphonia" ] # song metadata parsing and database auto-population

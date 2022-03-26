@@ -11,7 +11,7 @@ use crate::lang::{RuntimeError, SyntaxError};
 
 #[derive(Debug)]
 pub struct EmptyStatement {
-    context: Option<MpsContext>,
+    pub(crate) context: Option<MpsContext>,
 }
 
 impl Display for EmptyStatement {

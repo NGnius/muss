@@ -173,7 +173,7 @@ impl MpsFilterFactory<FieldRegexFilter> for FieldRegexFilterFactory {
 }
 
 #[inline]
-fn regex_flags(tokens: &mut VecDeque<MpsToken>) ->  Result<u8, SyntaxError> {
+fn regex_flags(tokens: &mut VecDeque<MpsToken>) -> Result<u8, SyntaxError> {
     // syntax: , "flags"
     let mut result = 0_u8;
     if tokens.is_empty() {
@@ -197,11 +197,13 @@ fn regex_flags(tokens: &mut VecDeque<MpsToken>) ->  Result<u8, SyntaxError> {
                 'U' => result |= 1 << 3,
                 'u' => result |= 1 << 4,
                 'x' => result |= 1 << 5,
-                c => return Err(SyntaxError{
-                    line: 0,
-                    token: MpsToken::Literal("[one or more of imsUux]".to_string()),
-                    got: Some(MpsToken::Literal(format!("{}", c))),
-                }),
+                c => {
+                    return Err(SyntaxError {
+                        line: 0,
+                        token: MpsToken::Literal("[one or more of imsUux]".to_string()),
+                        got: Some(MpsToken::Literal(format!("{}", c))),
+                    })
+                }
             }
         }
         Ok(result)

@@ -1,6 +1,6 @@
 mod comment;
 mod empties;
-mod empty;
+pub(crate) mod empty;
 mod files;
 mod intersection;
 mod repeat;

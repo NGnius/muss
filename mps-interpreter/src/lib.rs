@@ -241,6 +241,7 @@
 
 mod context;
 mod errors;
+mod faye;
 mod interpretor;
 mod item;
 pub mod lang;
@@ -253,6 +254,7 @@ pub mod tokens;
 
 pub use context::MpsContext;
 pub use errors::MpsError;
+pub use faye::MpsFaye;
 pub use interpretor::{interpretor, MpsInterpretor};
 pub use item::MpsItem;
 //pub(crate) use item::MpsItemRuntimeUtil;
