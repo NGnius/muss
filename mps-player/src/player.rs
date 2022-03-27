@@ -5,22 +5,22 @@ use rodio::{decoder::Decoder, OutputStream, OutputStreamHandle, Sink};
 
 use m3u8_rs::{MediaPlaylist, MediaSegment};
 
-use mps_interpreter::{tokens::MpsTokenReader, MpsItem, MpsRunner};
+use mps_interpreter::{tokens::MpsTokenReader, MpsFaye, MpsItem};
 
 use super::PlaybackError;
 
 /// Playback functionality for a script.
 /// This takes the output of the runner and plays or saves it.
-pub struct MpsPlayer<T: MpsTokenReader> {
-    runner: MpsRunner<T>,
+pub struct MpsPlayer<'a, T: MpsTokenReader + 'a> {
+    runner: MpsFaye<'a, T>,
     sink: Sink,
     #[allow(dead_code)]
     output_stream: OutputStream, // this is required for playback, so it must live as long as this struct instance
     output_handle: OutputStreamHandle,
 }
 
-impl<T: MpsTokenReader> MpsPlayer<T> {
-    pub fn new(runner: MpsRunner<T>) -> Result<Self, PlaybackError> {
+impl<'a, T: MpsTokenReader + 'a> MpsPlayer<'a, T> {
+    pub fn new(runner: MpsFaye<'a, T>) -> Result<Self, PlaybackError> {
         let (stream, output_handle) =
             OutputStream::try_default().map_err(PlaybackError::from_err)?;
         Ok(Self {
@@ -201,14 +201,14 @@ impl<T: MpsTokenReader> MpsPlayer<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mps_interpreter::MpsRunner;
+    use mps_interpreter::MpsFaye;
     use std::io;
 
     #[allow(dead_code)]
     //#[test]
     fn play_cursor() -> Result<(), PlaybackError> {
         let cursor = io::Cursor::new("sql(`SELECT * FROM songs JOIN artists ON songs.artist = artists.artist_id WHERE artists.name like 'thundercat'`);");
-        let runner = MpsRunner::with_stream(cursor);
+        let runner = MpsFaye::with_stream(cursor);
         let mut player = MpsPlayer::new(runner)?;
         player.play_all()
     }
@@ -216,7 +216,7 @@ mod tests {
     #[test]
     fn playlist() -> Result<(), PlaybackError> {
         let cursor = io::Cursor::new("sql(`SELECT * FROM songs JOIN artists ON songs.artist = artists.artist_id WHERE artists.name like 'thundercat'`);");
-        let runner = MpsRunner::with_stream(cursor);
+        let runner = MpsFaye::with_stream(cursor);
         let mut player = MpsPlayer::new(runner)?;
 
         let output_file = std::fs::File::create("playlist.m3u8").unwrap();

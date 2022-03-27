@@ -45,6 +45,12 @@ impl MpsLanguageDictionary {
             vocabulary: Vec::new(),
         }
     }
+
+    pub fn standard() -> Self {
+        let mut new = Self::new();
+        crate::interpretor::standard_vocab(&mut new);
+        new
+    }
 }
 
 impl Default for MpsLanguageDictionary {

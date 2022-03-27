@@ -2,7 +2,7 @@
 
 ![repl_demo](https://raw.githubusercontent.com/NGnius/mps/master/extras/demo.png)
 
-A language all about iteration to play your music files.
+Sort, filter and analyse your music to create great playlists.
 This project implements the interpreter (mps-interpreter), music player (mps-player), and CLI interface for MPS (root).
 The CLI interface includes a REPL for running scripts.
 The REPL interactive mode also provides more details about using MPS through the `?help` command.
@@ -47,7 +47,7 @@ One day I'll add pretty REPL example pictures and some script files...
 **Music Playlist Script (MPS) is technically a query language for music files.** It uses an (auto-generated) SQLite3 database for SQL queries and can also directly query the filesystem. Queries can be modified by using filters, functions, and sorters built-in to MPS (see mps-interpreter's README.md).
 
 ### Is MPS a scripting language?
-**Yes**. It evolved from a simple query language into something that can do arbitrary calculations. Whether it's Turing-complete is still unproved, but it's powerful enough to do what I want it to do.
+**Yes**. It evolved from a simple query language into something that can do arbitrary calculations. Whether it's Turing-complete is still unproven, but it's powerful enough for what I want it to do.
 
 
 ## License

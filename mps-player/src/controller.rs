@@ -18,7 +18,11 @@ pub struct MpsController {
 }
 
 impl MpsController {
-    pub fn create<F: FnOnce() -> MpsPlayer<T> + Send + 'static, T: MpsTokenReader>(
+    pub fn create<
+        'a,
+        F: FnOnce() -> MpsPlayer<'a, T> + Send + 'static,
+        T: MpsTokenReader + 'static,
+    >(
         player_gen: F,
     ) -> Self {
         let (control_tx, control_rx) = channel();
@@ -42,7 +46,11 @@ impl MpsController {
         }
     }
 
-    pub fn create_repl<F: FnOnce() -> MpsPlayer<T> + Send + 'static, T: MpsTokenReader>(
+    pub fn create_repl<
+        'a,
+        F: FnOnce() -> MpsPlayer<'a, T> + Send + 'static,
+        T: MpsTokenReader + 'static,
+    >(
         player_gen: F,
     ) -> Self {
         let (control_tx, control_rx) = channel();

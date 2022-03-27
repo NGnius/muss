@@ -2,13 +2,10 @@
 
 All necessary components to interpret and run a MPS script.
 
-MpsInterpretor uses a non-standard Iterator implementation,
-so it is recommended to use MpsRunner to execute a script.
+MpsFaye is the new interpreter, which replaces the old MpsInterpretor and MpsRunner types.
+MpsDebugger can be used to run scripts with a custom debug harness.
 Since MPS is centered around iterators, script execution is also done by iterating.
 
-MpsInterpretor is misspelt to emphasise that it behaves strangely:
-after every MPS statement, a None item is returned even when the script is not complete.
-MpsRunner wraps MpsInterpretor so that this behaviour is hidden when iterating.
 
 ```rust
 use std::io::Cursor;
@@ -18,7 +15,7 @@ let cursor = Cursor::new(
 "files(folder=`~/Music/`, recursive=true)" // retrieve all files from Music folder
 );
 
-let interpreter = MpsRunner::with_stream(cursor);
+let interpreter = MpsFaye::with_stream(cursor);
 
 // warning: my library has ~3800 songs, so this outputs too much information to be useful.
 for result in interpreter {
@@ -96,7 +93,7 @@ Keep only items which are do not duplicate another item, or keep only items whoe
 
 ### Functions
 Similar to most other languages: `function_name(param1, param2, etc.);`.
-These always return an iterable which can be manipulated.
+These always return an iterable which can be manipulated with other syntax (filters, sorters, etc.).
 Functions are statements of the format `function_name(params)`, where "function_name" is one of the function names (below) and params is a valid parameter input for the function.
 Each function is responsible for parsing it's own parameters when the statement is parsed, so this is very flexible.
 E.g. `files(folder="~/Music/", recursive=true);` is valid function syntax to execute the files function with parameters `folder="~/Music/", recursive=true`.
@@ -104,7 +101,7 @@ E.g. `files(folder="~/Music/", recursive=true);` is valid function syntax to exe
 
 #### sql_init(generate = true|false, folder = "path/to/music");
 
-Initialize the SQLite database connection using the provided parameters. This must be performed before any other database operation (otherwise the database will already be connected with default settings).
+Initialize the SQLite database connection using the provided parameters. This must be performed before any other database operation (otherwise the database will already be connected with default settings). This returns an empty iterable (contains zero items).
 
 #### sql("SQL query here");
 
@@ -140,19 +137,19 @@ Explicitly reset an iterable. This useful for reusing an iterable variable.
 
 #### interlace(iterable1, iterable2, ...);
 
-Combine multiple iterables in an interleaved pattern. This is a variant of union(...) where the first item in iterable1, then iterable2, ... is returned, then the second item, etc. until all iterables are depleted. There is no limit on the amount of iterables which can be provided as parameters.
+Combine multiple iterables in an interleaved pattern. This is a variant of union(...) where the first item in iterable1, then iterable2, ... is returned, then the second item, etc. until all iterables are depleted. There is no limit to the amount of iterables which can be provided as parameters.
 
 #### union(iterable1, iterable2, ...);
 
-Combine multiple iterables in a sequential pattern. All items in iterable1 are returned, then all items in iterable2, ... until all provided iterables are depleted. There is no limit on the amount of iterables which can be provided as parameters.
+Combine multiple iterables in a sequential pattern. All items in iterable1 are returned, then all items in iterable2, ... until all provided iterables are depleted. There is no limit to the amount of iterables which can be provided as parameters.
 
 #### intersection(iterable1, iterable2, ...);
 
-Combine multiple iterables such that only items that exist in iterable1 and iterable2 and ... are returned. The order of items from iterable1 is maintained. There is no limit on the amount of iterables which can be provided as parameters.
+Combine multiple iterables such that only items that exist in iterable1 and iterable2 and ... are returned. The order of items from iterable1 is maintained. There is no limit to the amount of iterables which can be provided as parameters.
 
 #### empty();
 
-Empty iterator. Useful for deleting items using replacement filters.
+Empty iterator containing zero items. Useful for deleting items using replacement filters.
 
 #### empties(count);
 

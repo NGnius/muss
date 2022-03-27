@@ -3,14 +3,14 @@ use std::io::Read;
 use std::iter::Iterator;
 
 use super::lang::{MpsLanguageDictionary, MpsLanguageError, MpsOp};
-use super::tokens::{MpsToken, MpsTokenizer};
+use super::tokens::{MpsToken, MpsTokenReader, MpsTokenizer};
 use super::MpsContext;
 use super::MpsError;
 use super::MpsItem;
 
 const DEFAULT_TOKEN_BUFFER_SIZE: usize = 16;
 
-pub enum MpsDebuggableEvent {
+pub enum MpsInterpreterEvent {
     FileEnd,
     StatementComplete,
     NewStatementReady,
@@ -19,26 +19,26 @@ pub enum MpsDebuggableEvent {
 /// The script interpreter.
 pub struct MpsFaye<'a, T>
 where
-    T: crate::tokens::MpsTokenReader,
+    T: MpsTokenReader,
 {
     tokenizer: T,
     buffer: VecDeque<MpsToken>,
     current_stmt: Box<dyn MpsOp>,
     vocabulary: MpsLanguageDictionary,
-    callback: &'a dyn Fn(&mut MpsFaye<'a, T>, MpsDebuggableEvent) -> Result<(), MpsError>,
+    callback: &'a dyn Fn(&mut MpsFaye<'a, T>, MpsInterpreterEvent) -> Result<(), MpsError>,
 }
 
 #[inline]
-fn empty_callback<'a, T: crate::tokens::MpsTokenReader>(
+fn empty_callback<'a, T: MpsTokenReader>(
     _s: &mut MpsFaye<'a, T>,
-    _d: MpsDebuggableEvent,
+    _d: MpsInterpreterEvent,
 ) -> Result<(), MpsError> {
     Ok(())
 }
 
 /*impl <T> MpsFaye<'static, T>
 where
-    T: crate::tokens::MpsTokenReader,
+    T: MpsTokenReader,
 {
     /// Create a new interpreter for the provided token reader, using the standard MPS language.
     #[inline]
@@ -64,12 +64,11 @@ impl<'a, R: Read> MpsFaye<'a, MpsTokenizer<R>> {
 
 impl<'a, T> MpsFaye<'a, T>
 where
-    T: crate::tokens::MpsTokenReader,
+    T: MpsTokenReader,
 {
     #[inline]
     pub fn with_standard_vocab(token_reader: T) -> Self {
-        let mut vocab = MpsLanguageDictionary::default();
-        super::interpretor::standard_vocab(&mut vocab);
+        let vocab = MpsLanguageDictionary::standard();
         Self::with_vocab(vocab, token_reader)
     }
 
@@ -84,7 +83,7 @@ where
     pub fn with(
         vocab: MpsLanguageDictionary,
         token_reader: T,
-        debugger: &'a dyn Fn(&mut MpsFaye<'a, T>, MpsDebuggableEvent) -> Result<(), MpsError>,
+        callback: &'a dyn Fn(&mut MpsFaye<'a, T>, MpsInterpreterEvent) -> Result<(), MpsError>,
     ) -> Self {
         Self {
             tokenizer: token_reader,
@@ -93,34 +92,36 @@ where
                 context: Some(MpsContext::default()),
             }),
             vocabulary: vocab,
-            callback: debugger,
+            callback: callback,
         }
     }
 
+    // build a new statement
     #[inline]
-    fn new_statement(
-        tokenizer: &mut T,
-        buffer: &mut VecDeque<MpsToken>,
-        vocab: &MpsLanguageDictionary,
-    ) -> Option<Result<Box<dyn MpsOp>, MpsError>> {
-        while !tokenizer.end_of_file() && buffer.is_empty() {
-            let result = tokenizer.next_statement(buffer);
+    fn new_statement(&mut self) -> Option<Result<Box<dyn MpsOp>, MpsError>> {
+        while !self.tokenizer.end_of_file() && self.buffer.is_empty() {
+            let result = self.tokenizer.next_statement(&mut self.buffer);
             match result {
                 Ok(_) => {}
-                Err(e) => return Some(Err(error_with_ctx(e, tokenizer.current_line()))),
+                Err(e) => return Some(Err(error_with_ctx(e, self.tokenizer.current_line()))),
             }
         }
-        if buffer.is_empty() {
+        if self.buffer.is_empty() {
+            let callback_result = (self.callback)(self, MpsInterpreterEvent::FileEnd);
+            match callback_result {
+                Ok(_) => {}
+                Err(e) => return Some(Err(e)),
+            }
             return None;
         }
-        let result = vocab.try_build_statement(buffer);
+        let result = self.vocabulary.try_build_statement(&mut self.buffer);
         let stmt = match result {
             Ok(stmt) => stmt,
-            Err(e) => return Some(Err(error_with_ctx(e, tokenizer.current_line()))),
+            Err(e) => return Some(Err(error_with_ctx(e, self.tokenizer.current_line()))),
         };
         #[cfg(debug_assertions)]
-        if !buffer.is_empty() {
-            panic!("Token buffer was not emptied! (rem: {:?})", buffer)
+        if !self.buffer.is_empty() {
+            panic!("Token buffer was not emptied! (rem: {:?})", self.buffer)
         }
         Some(Ok(stmt))
     }
@@ -128,7 +129,7 @@ where
 
 impl<'a, T> Iterator for MpsFaye<'a, T>
 where
-    T: crate::tokens::MpsTokenReader,
+    T: MpsTokenReader,
 {
     type Item = Result<MpsItem, MpsError>;
 
@@ -141,43 +142,39 @@ where
                 None => {
                     // current_stmt has terminated
                     if self.tokenizer.end_of_file() {
-                        // notify reached end of file
-                        let callback_result = (self.callback)(self, MpsDebuggableEvent::FileEnd);
-                        match callback_result {
+                        // always try to read at least once, in case stream gets new data (e.g. in a REPL)
+                        let result = self.tokenizer.next_statement(&mut self.buffer);
+                        match result {
                             Ok(_) => {}
-                            Err(e) => return Some(Err(e)),
+                            Err(e) => {
+                                return Some(Err(error_with_ctx(e, self.tokenizer.current_line())))
+                            }
                         }
-                        // nothing left to return
-                        return None;
                     } else {
                         // notify old statement is complete
                         let callback_result =
-                            (self.callback)(self, MpsDebuggableEvent::StatementComplete);
+                            (self.callback)(self, MpsInterpreterEvent::StatementComplete);
                         match callback_result {
                             Ok(_) => {}
                             Err(e) => return Some(Err(e)),
                         }
-                        // build next statement
-                        let result = Self::new_statement(
-                            &mut self.tokenizer,
-                            &mut self.buffer,
-                            &self.vocabulary,
-                        );
-                        let mut stmt = match result {
-                            Some(Ok(stmt)) => stmt,
-                            Some(Err(e)) => return Some(Err(e)),
-                            None => return None,
-                        };
-                        let ctx = self.current_stmt.escape();
-                        stmt.enter(ctx);
-                        self.current_stmt = stmt;
-                        // notify new statement is ready
-                        let callback_result =
-                            (self.callback)(self, MpsDebuggableEvent::NewStatementReady);
-                        match callback_result {
-                            Ok(_) => {}
-                            Err(e) => return Some(Err(e)),
-                        }
+                    }
+                    // build next statement
+                    let result = self.new_statement();
+                    let mut stmt = match result {
+                        Some(Ok(stmt)) => stmt,
+                        Some(Err(e)) => return Some(Err(e)),
+                        None => return None,
+                    };
+                    let ctx = self.current_stmt.escape();
+                    stmt.enter(ctx);
+                    self.current_stmt = stmt;
+                    // notify new statement is ready
+                    let callback_result =
+                        (self.callback)(self, MpsInterpreterEvent::NewStatementReady);
+                    match callback_result {
+                        Ok(_) => {}
+                        Err(e) => return Some(Err(e)),
                     }
                 }
             }

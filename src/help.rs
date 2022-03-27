@@ -10,7 +10,7 @@ Similar to most other languages: function_name(param1, param2, etc.)
 These always return an iterable which can be manipulated.
 
  sql_init(generate = true|false, folder = `path/to/music`)
-    Initialize the SQLite database connection using the provided parameters. This must be performed before any other database operation (otherwise the database will already be connected with default settings).
+    Initialize the SQLite database connection using the provided parameters. This must be performed before any other database operation (otherwise the database will already be connected with default settings). Returns an empty iterable.
 
  sql(`SQL query here`)
     Perform a raw SQLite query on the database which MPS auto-generates. An iterator of the results is returned.
@@ -37,13 +37,13 @@ These always return an iterable which can be manipulated.
     Explicitly reset an iterable. This useful for reusing an iterable variable.
 
  interlace(iterable1, iterable2, ...)
-    Combine multiple iterables in an interleaved pattern. This is a variant of union(...) where the first item in iterable1, then iterable2, ... is returned, then the second item, etc. until all iterables are depleted. There is no limit on the amount of iterables which can be provided as parameters.
+    Combine multiple iterables in an interleaved pattern. This is a variant of union(...) where the first item in iterable1, then iterable2, ... is returned, then the second item, etc. until all iterables are depleted. There is no limit to the amount of iterables which can be provided as parameters.
 
  union(iterable1, iterable2, ...)
-    Combine multiple iterables in a sequential pattern. All items in iterable1 are returned, then all items in iterable2, ... until all provided iterables are depleted. There is no limit on the amount of iterables which can be provided as parameters.
+    Combine multiple iterables in a sequential pattern. All items in iterable1 are returned, then all items in iterable2, ... until all provided iterables are depleted. There is no limit to the amount of iterables which can be provided as parameters.
 
  intersection(iterable1, iterable2, ...);
-    Combine multiple iterables such that only items that exist in iterable1 and iterable2 and ... are returned. The order of items from iterable1 is maintained. There is no limit on the amount of iterables which can be provided as parameters.
+    Combine multiple iterables such that only items that exist in iterable1 and iterable2 and ... are returned. The order of items from iterable1 is maintained. There is no limit to the amount of iterables which can be provided as parameters.
 
  empty()
     Empty iterator. Useful for deleting items using replacement filters.

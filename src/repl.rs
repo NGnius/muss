@@ -4,7 +4,7 @@ use std::io::{self, Write};
 
 use console::{Key, Term};
 
-use mps_interpreter::MpsRunner;
+use mps_interpreter::MpsFaye;
 use mps_player::{MpsController, MpsPlayer};
 
 use super::channel_io::{channel_io, ChannelWriter};
@@ -48,7 +48,7 @@ pub fn repl(args: CliArgs) {
     let (writer, reader) = channel_io();
     let volume = args.volume.clone();
     let player_builder = move || {
-        let runner = MpsRunner::with_stream(reader);
+        let runner = MpsFaye::with_stream(reader);
 
         let player = MpsPlayer::new(runner).unwrap();
         if let Some(vol) = volume {

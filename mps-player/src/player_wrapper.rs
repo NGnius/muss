@@ -11,17 +11,17 @@ use super::PlaybackError;
 /// This allows for message passing between the player and controller.
 ///
 /// You will probably never directly interact with this, instead using MpsController to communicate.
-pub struct MpsPlayerServer<T: MpsTokenReader> {
-    player: MpsPlayer<T>,
+pub struct MpsPlayerServer<'a, T: MpsTokenReader + 'a> {
+    player: MpsPlayer<'a, T>,
     control: Receiver<ControlAction>,
     event: Sender<PlayerAction>,
     playback: Sender<PlaybackAction>,
     keep_alive: bool,
 }
 
-impl<T: MpsTokenReader> MpsPlayerServer<T> {
+impl<'a, T: MpsTokenReader + 'a> MpsPlayerServer<'a, T> {
     pub fn new(
-        player: MpsPlayer<T>,
+        player: MpsPlayer<'a, T>,
         ctrl: Receiver<ControlAction>,
         event: Sender<PlayerAction>,
         playback: Sender<PlaybackAction>,
@@ -146,7 +146,7 @@ impl<T: MpsTokenReader> MpsPlayerServer<T> {
         self.on_end();
     }
 
-    pub fn spawn<F: FnOnce() -> MpsPlayer<T> + Send + 'static>(
+    pub fn spawn<F: FnOnce() -> MpsPlayer<'a, T> + Send + 'static>(
         factory: F,
         ctrl_tx: Sender<ControlAction>,
         ctrl_rx: Receiver<ControlAction>,

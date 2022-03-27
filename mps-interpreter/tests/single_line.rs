@@ -1,5 +1,4 @@
 use mps_interpreter::tokens::{MpsToken, MpsTokenizer, ParseError};
-use mps_interpreter::MpsError;
 use mps_interpreter::*;
 use std::collections::VecDeque;
 use std::io::Cursor;
@@ -55,7 +54,7 @@ fn execute_single_line(
     let cursor = Cursor::new(line);
 
     let tokenizer = MpsTokenizer::new(cursor);
-    let interpreter = MpsInterpretor::with_standard_vocab(tokenizer);
+    let interpreter = MpsFaye::with_standard_vocab(tokenizer);
 
     let mut count = 0;
     for result in interpreter {
