@@ -1,17 +1,17 @@
 use std::collections::VecDeque;
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 use std::fmt::{Debug, Display, Error, Formatter};
 
 use crate::lang::utility::{assert_name, check_name};
 use crate::lang::SyntaxError;
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 use crate::lang::{MpsIteratorItem, MpsOp, MpsSorter, RuntimeMsg};
 use crate::lang::{MpsLanguageDictionary, MpsSortStatementFactory, MpsSorterFactory};
 use crate::tokens::MpsToken;
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 use crate::MpsItem;
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 #[derive(Debug)]
 pub struct BlissNextSorter {
     up_to: usize,
@@ -20,7 +20,7 @@ pub struct BlissNextSorter {
     item_buf: VecDeque<MpsItem>,
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 impl std::clone::Clone for BlissNextSorter {
     fn clone(&self) -> Self {
         Self {
@@ -32,7 +32,7 @@ impl std::clone::Clone for BlissNextSorter {
     }
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 impl Default for BlissNextSorter {
     fn default() -> Self {
         Self {
@@ -44,7 +44,7 @@ impl Default for BlissNextSorter {
     }
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 impl MpsSorter for BlissNextSorter {
     fn sort(
         &mut self,
@@ -133,10 +133,10 @@ impl MpsSorter for BlissNextSorter {
     }
 }
 
-#[cfg(not(feature = "bliss-audio"))]
+#[cfg(not(feature = "advanced"))]
 pub type BlissNextSorter = crate::lang::vocabulary::sorters::EmptySorter;
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 impl Display for BlissNextSorter {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(f, "advanced bliss_next")

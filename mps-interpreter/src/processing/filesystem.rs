@@ -202,6 +202,7 @@ impl FileIter {
     #[cfg(not(feature = "music_library"))]
     fn populate_item_impl(
         &self,
+        _path: &Path,
         path_str: &str,
         captures: Option<regex::Captures>,
         capture_names: regex::CaptureNames,

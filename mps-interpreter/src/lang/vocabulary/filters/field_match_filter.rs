@@ -212,7 +212,6 @@ fn regex_flags(tokens: &mut VecDeque<MpsToken>) -> Result<u8, SyntaxError> {
 
 #[inline]
 fn build_regex(pattern: &str, flags: u8) -> Result<Regex, regex::Error> {
-    println!("Compiling");
     RegexBuilder::new(pattern)
         .case_insensitive((flags & (1 << 0)) != 0)
         .multi_line((flags & (1 << 1)) != 0)

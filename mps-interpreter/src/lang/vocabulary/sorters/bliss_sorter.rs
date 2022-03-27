@@ -1,30 +1,30 @@
 use std::collections::VecDeque;
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 use std::fmt::{Debug, Display, Error, Formatter};
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 use std::collections::HashMap;
 
 use crate::lang::utility::{assert_name, check_name};
 use crate::lang::SyntaxError;
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 use crate::lang::{MpsIteratorItem, MpsOp, MpsSorter, RuntimeMsg};
 use crate::lang::{MpsLanguageDictionary, MpsSortStatementFactory, MpsSorterFactory};
 use crate::tokens::MpsToken;
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 use crate::MpsItem;
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 const DEFAULT_ORDER: std::cmp::Ordering = std::cmp::Ordering::Greater;
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 #[derive(Debug)]
 pub struct BlissSorter {
     up_to: usize,
     first_song: Option<MpsItem>,
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 impl std::clone::Clone for BlissSorter {
     fn clone(&self) -> Self {
         Self {
@@ -34,7 +34,7 @@ impl std::clone::Clone for BlissSorter {
     }
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 impl Default for BlissSorter {
     fn default() -> Self {
         Self {
@@ -44,7 +44,7 @@ impl Default for BlissSorter {
     }
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 impl MpsSorter for BlissSorter {
     fn sort(
         &mut self,
@@ -127,10 +127,10 @@ impl MpsSorter for BlissSorter {
     }
 }
 
-#[cfg(not(feature = "bliss-audio"))]
+#[cfg(not(feature = "advanced"))]
 pub type BlissSorter = crate::lang::vocabulary::sorters::EmptySorter;
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "advanced")]
 impl Display for BlissSorter {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(f, "advanced bliss_first")

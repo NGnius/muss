@@ -1,13 +1,22 @@
 use core::fmt::Debug;
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "bliss-audio-symphonia")]
 use std::collections::{HashMap, HashSet};
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "bliss-audio-symphonia")]
 use std::sync::mpsc::{channel, Receiver, Sender};
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "bliss-audio-symphonia")]
 use crate::lang::MpsTypePrimitive;
-#[cfg(feature = "bliss-audio")]
-use bliss_audio::{BlissError, Song};
+#[cfg(feature = "bliss-audio-symphonia")]
+use bliss_audio_symphonia::{BlissError, Song};
+
+// assumed processor threads
+const DEFAULT_PARALLELISM: usize = 2;
+
+// maximum length of song cache (song objects take up a lot of memory)
+const MAX_SONG_CACHE_SIZE: usize = 1000;
+
+// maximum length of distance cache (takes up significantly less memory than songs)
+const MAX_DISTANCE_CACHE_SIZE: usize = MAX_SONG_CACHE_SIZE * 10;
 
 use crate::lang::RuntimeMsg;
 use crate::MpsItem;
@@ -24,14 +33,14 @@ pub trait MpsMusicAnalyzer: Debug {
     fn clear_cache(&mut self) -> Result<(), RuntimeMsg>;
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "bliss-audio-symphonia")]
 #[derive(Debug)]
 pub struct MpsDefaultAnalyzer {
     requests: Sender<RequestType>,
     responses: Receiver<ResponseType>,
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "bliss-audio-symphonia")]
 impl std::default::Default for MpsDefaultAnalyzer {
     fn default() -> Self {
         let (req_tx, req_rx) = channel();
@@ -47,7 +56,7 @@ impl std::default::Default for MpsDefaultAnalyzer {
     }
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "bliss-audio-symphonia")]
 impl MpsDefaultAnalyzer {
     fn request_distance(
         &mut self,
@@ -92,7 +101,7 @@ impl MpsDefaultAnalyzer {
     }
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "bliss-audio-symphonia")]
 impl MpsMusicAnalyzer for MpsDefaultAnalyzer {
     fn prepare_distance(&mut self, from: &MpsItem, to: &MpsItem) -> Result<(), RuntimeMsg> {
         self.request_distance(from, to, false)
@@ -133,11 +142,11 @@ impl MpsMusicAnalyzer for MpsDefaultAnalyzer {
     }
 }
 
-#[cfg(not(feature = "bliss-audio"))]
+#[cfg(not(feature = "bliss-audio-symphonia"))]
 #[derive(Default, Debug)]
 pub struct MpsDefaultAnalyzer {}
 
-#[cfg(not(feature = "bliss-audio"))]
+#[cfg(not(feature = "bliss-audio-symphonia"))]
 impl MpsMusicAnalyzer for MpsDefaultAnalyzer {
     fn prepare_distance(&mut self, from: &MpsItem, to: &MpsItem) -> Result<(), RuntimeMsg> {
         Ok(())
@@ -150,9 +159,13 @@ impl MpsMusicAnalyzer for MpsDefaultAnalyzer {
     fn get_distance(&mut self, item: &MpsItem) -> Result<f64, RuntimeMsg> {
         Ok(f64::MAX)
     }
+
+    fn clear_cache(&mut self) -> Result<(), RuntimeMsg> {
+        Ok(())
+    }
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "bliss-audio-symphonia")]
 enum RequestType {
     Distance {
         path1: String,
@@ -167,7 +180,7 @@ enum RequestType {
     //End {}
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "bliss-audio-symphonia")]
 enum ResponseType {
     Distance {
         path1: String,
@@ -180,7 +193,7 @@ enum ResponseType {
     },
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "bliss-audio-symphonia")]
 struct CacheThread {
     distance_cache: HashMap<(String, String), Result<f32, BlissError>>,
     distance_in_progress: HashSet<(String, String)>,
@@ -190,7 +203,7 @@ struct CacheThread {
     responses: Sender<ResponseType>,
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "bliss-audio-symphonia")]
 impl CacheThread {
     fn new(responses: Sender<ResponseType>) -> Self {
         Self {
@@ -222,6 +235,10 @@ impl CacheThread {
 
     fn insert_song(&mut self, path: String, song_result: Result<Song, BlissError>) {
         self.song_in_progress.remove(&path);
+        if self.song_cache.len() > MAX_SONG_CACHE_SIZE {
+            // avoid using too much memory -- songs are big memory objects
+            self.song_cache.clear();
+        }
         self.song_cache.insert(path, song_result);
     }
 
@@ -233,6 +250,10 @@ impl CacheThread {
     ) {
         let key = (path1, path2);
         self.distance_in_progress.remove(&key);
+        if self.distance_cache.len() > MAX_DISTANCE_CACHE_SIZE {
+            // avoid using too much memory
+            self.song_cache.clear();
+        }
         self.distance_cache.insert(key, distance_result);
     }
 
@@ -319,6 +340,34 @@ impl CacheThread {
                     }
                 }
             } else if !self.distance_in_progress.contains(&key) {
+                // distance worker uses 3 threads (it's own thread + 1 extra per song) for 2 songs
+                let available_parallelism =
+                    (std::thread::available_parallelism().ok().map(|x| x.get()).unwrap_or(DEFAULT_PARALLELISM) * 2) / 3;
+                let available_parallelism = if available_parallelism != 0 {
+                    available_parallelism - 1
+                } else {
+                    0
+                };
+                // wait for processing to complete if too many tasks already running
+                if self.song_in_progress.len() > available_parallelism {
+                    'inner4: for result in worker_results.iter() {
+                        match result {
+                            ResponseType::Distance {
+                                path1,
+                                path2,
+                                distance,
+                            } => {
+                                self.insert_distance(path1, path2, distance);
+                            }
+                            ResponseType::Song { path: path2, song } => {
+                                self.insert_song(path2.clone(), song.clone());
+                                if self.song_in_progress.len() <= available_parallelism {
+                                    break 'inner4;
+                                }
+                            }
+                        }
+                    }
+                }
                 let results = worker_tx.clone();
                 let song1_clone = self.get_song_option(&path1, true, worker_results);
                 let song2_clone = self.get_song_option(&path2, true, worker_results);
@@ -387,6 +436,34 @@ impl CacheThread {
             }
         } else {
             if !self.song_in_progress.contains(&path) {
+                // every song is roughly 2 threads -- Song::new(...) spawns a thread
+                let available_parallelism =
+                    std::thread::available_parallelism().ok().map(|x| x.get()).unwrap_or(DEFAULT_PARALLELISM) / 2;
+                let available_parallelism = if available_parallelism != 0 {
+                    available_parallelism - 1
+                } else {
+                    0
+                };
+                // wait for processing to complete if too many tasks already running
+                if self.song_in_progress.len() > available_parallelism {
+                    'inner2: for result in worker_results.iter() {
+                        match result {
+                            ResponseType::Distance {
+                                path1,
+                                path2,
+                                distance,
+                            } => {
+                                self.insert_distance(path1, path2, distance);
+                            }
+                            ResponseType::Song { path: path2, song } => {
+                                self.insert_song(path2.clone(), song.clone());
+                                if self.song_in_progress.len() <= available_parallelism {
+                                    break 'inner2;
+                                }
+                            }
+                        }
+                    }
+                }
                 let path_clone = path.clone();
                 let results = worker_tx.clone();
                 std::thread::spawn(move || {
@@ -400,7 +477,7 @@ impl CacheThread {
                 });
             }
             if ack {
-                'inner2: for result in worker_results.iter() {
+                'inner3: for result in worker_results.iter() {
                     match result {
                         ResponseType::Distance {
                             path1,
@@ -418,7 +495,7 @@ impl CacheThread {
                                 }) {
                                     return false;
                                 }
-                                break 'inner2;
+                                break 'inner3;
                             }
                         }
                     }
@@ -453,7 +530,7 @@ impl CacheThread {
     }
 }
 
-#[cfg(feature = "bliss-audio")]
+#[cfg(feature = "bliss-audio-symphonia")]
 fn worker_distance(
     results: &Sender<ResponseType>,
     song1: (&str, Option<Song>),

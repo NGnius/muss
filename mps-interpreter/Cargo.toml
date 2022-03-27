@@ -4,6 +4,7 @@ version = "0.7.0"
 edition = "2021"
 license = "LGPL-2.1-only OR GPL-3.0-only"
 readme = "README.md"
+rust-version = "1.59"
 
 [dependencies]
 rusqlite = { version = "0.26.3", features = ["bundled"] }
@@ -14,7 +15,7 @@ dirs = { version = "4.0.0" }
 regex = { version = "1" }
 rand = { version = "0.8" }
 shellexpand = { version = "2.1", optional = true }
-bliss-audio = { version = "0.4", optional = true, path = "../bliss-rs" }
+bliss-audio-symphonia = { version = "0.4", optional = true, path = "../bliss-rs" }
 
 [dev-dependencies]
 criterion = "0.3"
@@ -27,4 +28,4 @@ harness = false
 default = [ "music_library", "ergonomics", "advanced" ]
 music_library = [ "symphonia" ] # song metadata parsing and database auto-population
 ergonomics = ["shellexpand"] # niceties like ~ in pathes
-advanced = ["bliss-audio"] # advanced language features like bliss playlist generation
+advanced = ["bliss-audio-symphonia"] # advanced language features like bliss playlist generation

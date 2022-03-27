@@ -123,7 +123,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
-name = "bliss-audio"
+name = "bliss-audio-aubio-rs"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe01698d293ee91e334339d6436f17eac30d94bebaa668c5799c8206384dfeb1"
+dependencies = [
+ "bliss-audio-aubio-sys",
+]
+
+[[package]]
+name = "bliss-audio-aubio-sys"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ef9fab7b922bdd057bb06fa2a2fa79d2a93bec3dd576320511cb3dfe21e78a9"
+dependencies = [
+ "cc",
+ "fftw-sys",
+]
+
+[[package]]
+name = "bliss-audio-symphonia"
 version = "0.4.6"
 dependencies = [
  "anyhow",
@@ -149,25 +168,6 @@ dependencies = [
  "strum_macros",
  "symphonia 0.5.0",
  "thiserror",
-]
-
-[[package]]
-name = "bliss-audio-aubio-rs"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe01698d293ee91e334339d6436f17eac30d94bebaa668c5799c8206384dfeb1"
-dependencies = [
- "bliss-audio-aubio-sys",
-]
-
-[[package]]
-name = "bliss-audio-aubio-sys"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ef9fab7b922bdd057bb06fa2a2fa79d2a93bec3dd576320511cb3dfe21e78a9"
-dependencies = [
- "cc",
- "fftw-sys",
 ]
 
 [[package]]
@@ -1203,7 +1203,7 @@ dependencies = [
 name = "mps-interpreter"
 version = "0.7.0"
 dependencies = [
- "bliss-audio",
+ "bliss-audio-symphonia",
  "criterion",
  "dirs",
  "rand",

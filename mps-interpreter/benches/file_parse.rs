@@ -1,10 +1,11 @@
-use mps_interpreter::{MpsFaye, MpsRunner};
+use mps_interpreter::MpsFaye;
+//use mps_interpreter::MpsRunner;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek};
 
 use criterion::{criterion_group, criterion_main, Criterion};
 
-fn interpretor_benchmark(c: &mut Criterion) {
+/*fn interpretor_benchmark(c: &mut Criterion) {
     let f = File::open("benches/lots_of_empty.mps").unwrap();
     let mut reader = BufReader::with_capacity(1024 * 1024 /* 1 MiB */, f);
     // read everything into buffer before starting
@@ -25,7 +26,7 @@ fn interpretor_benchmark(c: &mut Criterion) {
             }
         })
     });
-}
+}*/
 
 fn faye_benchmark(c: &mut Criterion) {
     let f = File::open("benches/lots_of_empty.mps").unwrap();
@@ -50,5 +51,5 @@ fn faye_benchmark(c: &mut Criterion) {
     });
 }
 
-criterion_group!(parse_benches, interpretor_benchmark, faye_benchmark);
+criterion_group!(parse_benches, /*interpretor_benchmark,*/ faye_benchmark);
 criterion_main!(parse_benches);

@@ -41,7 +41,7 @@ codegen-units = 4
 [profile.bench]
 lto = false
 
-[profile.dev.package.bliss-audio]
+[profile.dev.package.bliss-audio-symphonia]
 debug-assertions = false
 overflow-checks = false
 debug = true
