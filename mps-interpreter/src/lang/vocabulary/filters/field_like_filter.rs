@@ -19,6 +19,14 @@ pub struct FieldLikeFilter {
     val: VariableOrValue,
 }
 
+impl FieldLikeFilter {
+    fn sanitise_string(s: &str) -> String {
+        s.replace(|c: char| c.is_whitespace() || c == '_' || c == '-', " ")
+            .replace(|c: char| !(c.is_whitespace() || c.is_alphanumeric()), "")
+            .to_lowercase()
+    }
+}
+
 impl Display for FieldLikeFilter {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match &self.val {
@@ -44,9 +52,9 @@ impl MpsFilterPredicate for FieldLikeFilter {
             _ => Err(RuntimeMsg("Value is not type String".to_string())),
         }?;
         if let Some(field) = music_item_lut.field(&self.field_name) {
-            let pattern = |c: char| c.is_whitespace() || c.is_control() || !c.is_alphanumeric();
-            let field_str = field.as_str().replace(pattern, "").to_lowercase();
-            Ok(field_str.contains(&variable.replace(pattern, "").to_lowercase()))
+            let field_str = Self::sanitise_string(&field.as_str());
+            let var_str = Self::sanitise_string(variable);
+            Ok(field_str.contains(&var_str))
         } else {
             match self.field_errors {
                 FieldFilterErrorHandling::Error => Err(RuntimeMsg(format!(
