@@ -41,7 +41,10 @@ impl Iterator for SortedReadDir {
                 }
             }
             self.dir_iter_complete = true;
-            self.cache.sort_by(|a, b| b.path().cmp(&a.path()));
+            self.cache.sort_by(
+                |a, b| b.path().to_string_lossy().to_lowercase().cmp(
+                    &a.path().to_string_lossy().to_lowercase())
+            );
         }
         if self.cache.is_empty() {
             None
