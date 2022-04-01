@@ -1,4 +1,3 @@
-mod comment;
 mod empties;
 pub(crate) mod empty;
 mod files;
@@ -11,7 +10,6 @@ mod sql_simple_query;
 mod union;
 mod variable_assign;
 
-pub use comment::{CommentStatement, CommentStatementFactory};
 pub use empties::{empties_function_factory, EmptiesStatementFactory};
 pub use empty::{empty_function_factory, EmptyStatementFactory};
 pub use files::{files_function_factory, FilesStatementFactory};

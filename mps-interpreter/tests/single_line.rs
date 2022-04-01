@@ -747,6 +747,19 @@ fn execute_iteritemop_line() -> Result<(), MpsError> {
 }
 
 #[test]
+fn execute_commentitemop_line() -> Result<(), MpsError> {
+    execute_single_line(
+        "empty().{
+    // this is a comment
+    // this is another comment
+    # this is also a comment
+}",
+        true,
+        true,
+    )
+}
+
+#[test]
 fn execute_uniquefieldfilter_line() -> Result<(), MpsError> {
     execute_single_line(
         "repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), 3).(unique title?)",

@@ -48,7 +48,6 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
         // -- function().() is valid despite the ).( in between brackets
         .add(crate::lang::vocabulary::sql_function_factory())
         .add(crate::lang::vocabulary::simple_sql_function_factory())
-        .add(crate::lang::vocabulary::CommentStatementFactory)
         .add(crate::lang::vocabulary::repeat_function_factory())
         .add(crate::lang::vocabulary::AssignStatementFactory)
         .add(crate::lang::vocabulary::sql_init_function_factory())

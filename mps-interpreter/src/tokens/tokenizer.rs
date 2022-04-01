@@ -67,9 +67,10 @@ where
                     bigger_buf.clear();
                 }
                 ReaderStateMachine::EndComment {} => {
-                    let comment = String::from_utf8(bigger_buf.clone())
-                        .map_err(|e| self.error(format!("UTF-8 encoding error: {}", e)))?;
-                    buf.push_back(MpsToken::Comment(comment));
+                    //let _comment = String::from_utf8(bigger_buf.clone())
+                    //    .map_err(|e| self.error(format!("UTF-8 encoding error: {}", e)))?;
+                    // ignore comments
+                    //buf.push_back(MpsToken::Comment(comment));
                     bigger_buf.clear();
                 }
                 ReaderStateMachine::EndToken {} => {
