@@ -11,7 +11,7 @@ use std::path::Path;
 
 use m3u8_rs::{MediaPlaylist, MediaSegment};
 
-use mps_interpreter::MpsRunner;
+use mps_interpreter::{MpsFaye, MpsItem};
 
 fn main() {
     let args = cli::parse();
@@ -29,16 +29,16 @@ fn main() {
         println!("Executing: {}", &args.input);
         let in_file = Cursor::new(&args.input);
 
-        let runner = MpsRunner::with_stream(in_file);
+        let runner = MpsFaye::with_stream(in_file);
         for item in runner {
             match item {
                 Ok(music) => {
                     if let Some(filename) =
-                        music.field("filename").and_then(|x| x.to_owned().to_str())
+                        music_filename(&music)
                     {
                         playlist.segments.push(MediaSegment {
                             uri: filename,
-                            title: music.field("title").and_then(|x| x.to_owned().to_str()),
+                            title: music_title(&music),
                             ..Default::default()
                         });
                     } else {
@@ -52,16 +52,16 @@ fn main() {
         let in_path = Path::new(&args.input);
         let in_file = BufReader::new(File::open(in_path).expect("Invalid/missing input file"));
 
-        let runner = MpsRunner::with_stream(in_file);
+        let runner = MpsFaye::with_stream(in_file);
         for item in runner {
             match item {
                 Ok(music) => {
                     if let Some(filename) =
-                        music.field("filename").and_then(|x| x.to_owned().to_str())
+                        music_filename(&music)
                     {
                         playlist.segments.push(MediaSegment {
                             uri: filename,
-                            title: music.field("title").and_then(|x| x.to_owned().to_str()),
+                            title: music_title(&music),
                             ..Default::default()
                         });
                     } else {
@@ -82,3 +82,22 @@ fn main() {
         eprintln!("Playlist save error: {}", e);
     }
 }
+
+fn music_title(item: &MpsItem) -> Option<String> {
+    item.field("title").and_then(|x| x.to_owned().to_str())
+}
+
+fn music_filename(item: &MpsItem) -> Option<String> {
+    if let Some(filename) = item.field("filename") {
+        if let Ok(cwd) = std::env::current_dir() {
+            let path: &Path = &cwd;
+            Some(filename.as_str().replace(path.to_str().unwrap_or(""), "./"))
+        } else {
+            Some(filename.to_string())
+        }
+    } else {
+        None
+    }
+}
+
+

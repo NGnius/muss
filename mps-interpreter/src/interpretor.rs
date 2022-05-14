@@ -13,6 +13,7 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
         .add(crate::lang::vocabulary::filters::field_like_filter())
         .add(crate::lang::vocabulary::filters::field_re_filter())
         .add(crate::lang::vocabulary::filters::unique_field_filter())
+        .add(crate::lang::vocabulary::filters::nonempty_filter())
         // sorters
         .add(crate::lang::vocabulary::sorters::empty_sort())
         .add(crate::lang::vocabulary::sorters::shuffle_sort()) // accepts ~(shuffle)

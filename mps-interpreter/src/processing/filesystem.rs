@@ -163,35 +163,34 @@ impl FileIter {
         match crate::music::MpsLibrary::read_media_tags(path) {
             Ok(tags) => {
                 let mut item = MpsItem::new();
+                item.set_field("title", tags.track_title().into());
+                if let Some(artist) = tags.artist_name() {
+                    item.set_field("artist", artist.into());
+                }
+                if let Some(albumartist) = tags.albumartist_name() {
+                    item.set_field("albumartist", albumartist.clone().into());
+                    if let Some(MpsTypePrimitive::String(artist)) = item.field("artist") {
+                        if albumartist.trim() != artist.trim() {
+                            let new_artist = format!("{},{}", artist, albumartist.as_str());
+                            item.set_field("artist", new_artist.into());
+                        }
+                    } else {
+                        item.set_field("artist", albumartist.into());
+                    }
+                }
+                if let Some(album) = tags.album_title() {
+                    item.set_field("album", album.into());
+                }
+                if let Some(genre) = tags.genre_title() {
+                    item.set_field("genre", genre.into());
+                }
+                if let Some(track) = tags.track_number() {
+                    item.set_field("track", track.into());
+                }
+                if let Some(year) = tags.track_date() {
+                    item.set_field("year", year.into());
+                }
                 self.populate_item_impl_simple(&mut item, path_str, captures, capture_names);
-                if item.field("title").is_none() {
-                    item.set_field("title", tags.track_title().into());
-                }
-                if item.field("artist").is_none() {
-                    if let Some(artist) = tags.artist_name() {
-                        item.set_field("artist", artist.into());
-                    }
-                }
-                if item.field("album").is_none() {
-                    if let Some(album) = tags.album_title() {
-                        item.set_field("album", album.into());
-                    }
-                }
-                if item.field("genre").is_none() {
-                    if let Some(genre) = tags.genre_title() {
-                        item.set_field("genre", genre.into());
-                    }
-                }
-                if item.field("track").is_none() {
-                    if let Some(track) = tags.track_number() {
-                        item.set_field("track", track.into());
-                    }
-                }
-                if item.field("year").is_none() {
-                    if let Some(year) = tags.track_date() {
-                        item.set_field("year", year.into());
-                    }
-                }
                 Some(item)
             }
             Err(_) => {
@@ -227,7 +226,9 @@ impl FileIter {
         if let Some(captures) = captures {
             for name_maybe in capture_names {
                 if let Some(name) = name_maybe {
-                    if let Some(value) = captures.name(name).map(|m| m.as_str().to_string()) {
+                    if item.field(name).is_some() {
+                        // do nothing
+                    } else if let Some(value) = captures.name(name).map(|m| m.as_str().to_string()) {
                         item.set_field(name, MpsTypePrimitive::parse(value));
                     }
                 }

@@ -13,10 +13,10 @@ use bliss_audio_symphonia::{BlissError, Song};
 const DEFAULT_PARALLELISM: usize = 2;
 
 // maximum length of song cache (song objects take up a lot of memory)
-const MAX_SONG_CACHE_SIZE: usize = 1000;
+const MAX_SONG_CACHE_SIZE: usize = 10000;
 
 // maximum length of distance cache (takes up significantly less memory than songs)
-const MAX_DISTANCE_CACHE_SIZE: usize = MAX_SONG_CACHE_SIZE * 10;
+const MAX_DISTANCE_CACHE_SIZE: usize = MAX_SONG_CACHE_SIZE * MAX_SONG_CACHE_SIZE;
 
 use crate::lang::RuntimeMsg;
 use crate::MpsItem;
@@ -252,7 +252,7 @@ impl CacheThread {
         self.distance_in_progress.remove(&key);
         if self.distance_cache.len() > MAX_DISTANCE_CACHE_SIZE {
             // avoid using too much memory
-            self.song_cache.clear();
+            self.distance_cache.clear();
         }
         self.distance_cache.insert(key, distance_result);
     }
@@ -560,6 +560,9 @@ fn worker_distance(
                 song: new_song2.clone(),
             })
             .unwrap_or(());
+        if new_song2.is_err() {
+            eprintln!("Song error on `{}`: {}", path2, new_song2.clone().err().unwrap());
+        }
         new_song2?
     };
     Ok(song1.distance(&song2))

@@ -155,11 +155,12 @@ impl<'a, T: MpsTokenReader + 'a> MpsPlayer<'a, T> {
             match item {
                 Ok(music) => {
                     if let Some(filename) =
-                        music.field("filename").and_then(|x| x.to_owned().to_str())
+                        music_filename(&music)
                     {
+                        println!("Adding file `{}` to playlist", filename);
                         playlist.segments.push(MediaSegment {
                             uri: filename,
-                            title: music.field("title").and_then(|x| x.to_owned().to_str()),
+                            title: music_title(&music),
                             ..Default::default()
                         });
                         Ok(())
@@ -195,6 +196,25 @@ impl<'a, T: MpsTokenReader + 'a> MpsPlayer<'a, T> {
         }
         self.sink.set_volume(volume);
         Ok(())
+    }
+}
+
+#[inline]
+fn music_title(item: &MpsItem) -> Option<String> {
+    item.field("title").and_then(|x| x.to_owned().to_str())
+}
+
+#[inline]
+fn music_filename(item: &MpsItem) -> Option<String> {
+    if let Some(filename) = item.field("filename") {
+        if let Ok(cwd) = std::env::current_dir() {
+            let path: &std::path::Path = &cwd;
+            Some(filename.as_str().replace(path.to_str().unwrap_or(""), "./"))
+        } else {
+            Some(filename.to_string())
+        }
+    } else {
+        None
     }
 }
 

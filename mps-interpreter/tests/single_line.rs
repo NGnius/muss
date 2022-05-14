@@ -1,3 +1,5 @@
+//! Integration tests for every syntax feature
+
 use mps_interpreter::tokens::{MpsToken, MpsTokenizer, ParseError};
 use mps_interpreter::*;
 use std::collections::VecDeque;
@@ -812,4 +814,18 @@ fn execute_emptiesop_line() -> Result<(), MpsError> {
         true,
     )?;
     execute_single_line("empties(0)", true, true)
+}
+
+#[test]
+fn execute_nonemptyfilter_line() -> Result<(), MpsError> {
+    execute_single_line(
+        "files().(??)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "empties(42).(??)",
+        true,
+        true,
+    )
 }

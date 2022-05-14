@@ -71,6 +71,15 @@ impl Tags {
     }
 
     #[inline]
+    pub fn albumartist_name(&self) -> Option<String> {
+        self.data
+            .get("ALBUMARTIST")
+            .unwrap_or(&TagType::Unknown)
+            .str()
+            .map(|s| s.to_string())
+    }
+
+    #[inline]
     pub fn genre_title(&self) -> Option<String> {
         self.data
             .get("GENRE")

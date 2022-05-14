@@ -89,6 +89,10 @@
 //!
 //! Keep only items which are do not duplicate another item, or keep only items whoes specified field does not duplicate another item's same field. The first non-duplicated instance of an item is always the one that is kept.
 //!
+//! ### ?? -- e.g. `iterable.(??);`
+//!
+//! Keep only the items that contain at least one field (not including the filename field).
+//!
 //! ## Functions
 //! Similar to most other languages: `function_name(param1, param2, etc.);`.
 //! These always return an iterable which can be manipulated with other syntax (filters, sorters, etc.).

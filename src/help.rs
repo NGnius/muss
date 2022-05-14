@@ -85,7 +85,10 @@ Operations to reduce the items in an iterable: iterable.(filter)
 
  unique
  unique field -- e.g. iterable.(unique title)
-    Keep only items which are do not duplicate another item, or keep only items whoes specified field does not duplicate another item's same field. The first non-duplicated instance of an item is always the one that is kept.";
+    Keep only items which are do not duplicate another item, or keep only items whoes specified field does not duplicate another item's same field. The first non-duplicated instance of an item is always the one that is kept.
+
+ ??
+    Keep only the items that contain at least one field (not including the filename field).";
 
 pub const SORTERS: &str =
 "SORTERS (?sorters)
