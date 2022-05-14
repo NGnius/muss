@@ -48,6 +48,7 @@ pub(crate) fn standard_vocab(vocabulary: &mut MpsLanguageDictionary) {
         // functions don't enforce bracket coherence
         // -- function().() is valid despite the ).( in between brackets
         .add(crate::lang::vocabulary::sql_function_factory())
+        .add(crate::lang::vocabulary::mpd_query_function_factory())
         .add(crate::lang::vocabulary::simple_sql_function_factory())
         .add(crate::lang::vocabulary::repeat_function_factory())
         .add(crate::lang::vocabulary::AssignStatementFactory)

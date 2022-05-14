@@ -1,6 +1,8 @@
 mod filesystem;
 #[cfg(feature = "advanced")]
 mod music_analysis;
+#[cfg(feature = "mpd")]
+mod mpd;
 mod sql;
 mod variables;
 
@@ -8,6 +10,8 @@ mod variables;
 
 pub mod database {
     pub use super::sql::{MpsDatabaseQuerier, MpsSQLiteExecutor, QueryResult};
+    #[cfg(feature = "mpd")]
+    pub use super::mpd::{MpsMpdQuerier, MpsMpdExecutor};
 }
 
 pub mod general {

@@ -91,6 +91,10 @@ Replace items matching the filter with operation1 and replace items not matching
 
 Keep only items which are do not duplicate another item, or keep only items whoes specified field does not duplicate another item's same field. The first non-duplicated instance of an item is always the one that is kept.
 
+#### ?? -- e.g. `iterable.(??);`
+
+Keep only the items that contain at least one field (not including the filename field).
+
 ### Functions
 Similar to most other languages: `function_name(param1, param2, etc.);`.
 These always return an iterable which can be manipulated with other syntax (filters, sorters, etc.).
@@ -130,6 +134,10 @@ Repeat the iterable count times, or infinite times if count is omitted.
 #### files(folder = "path/to/music", recursive = true|false, regex = "pattern");
 
 Retrieve all files from a folder, matching a regex pattern.
+
+#### mpd(address, term = value, term2 = value2, ...);
+
+Retrieve songs from a music player daemon at `address`. If compiled without the `music_library` feature, this is equivalent to `empty()`.
 
 #### reset(iterable);
 

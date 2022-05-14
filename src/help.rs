@@ -33,6 +33,10 @@ These always return an iterable which can be manipulated.
  files(folder = `path/to/music`, recursive = true|false, regex = `pattern`)
     Retrieve all files from a folder, matching a regex pattern.
 
+ mpd(address, term = value, term2 = value2, ...);
+
+    Retrieve songs from a music player daemon at address. If compiled without the music_library feature, this is equivalent to the empty() function.
+
  reset(iterable)
     Explicitly reset an iterable. This useful for reusing an iterable variable.
 

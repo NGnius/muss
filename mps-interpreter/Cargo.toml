@@ -16,6 +16,7 @@ regex = { version = "1" }
 rand = { version = "0.8" }
 shellexpand = { version = "2.1", optional = true }
 bliss-audio-symphonia = { version = "0.4", optional = true, path = "../bliss-rs" }
+mpd = { version = "0.0.12", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
@@ -26,6 +27,6 @@ harness = false
 
 [features]
 default = [ "music_library", "ergonomics", "advanced" ]
-music_library = [ "symphonia" ] # song metadata parsing and database auto-population
+music_library = [ "symphonia", "mpd" ] # song metadata parsing and database auto-population
 ergonomics = ["shellexpand"] # niceties like ~ in pathes
 advanced = ["bliss-audio-symphonia"] # advanced language features like bliss playlist generation

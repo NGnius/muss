@@ -829,3 +829,22 @@ fn execute_nonemptyfilter_line() -> Result<(), MpsError> {
         true,
     )
 }
+
+#[test]
+fn execute_mpdfunction_line() -> Result<(), MpsError> {
+    execute_single_line(
+        "mpd(`127.0.0.1:6600`, artist=`Bruno Mars`)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "mpd(`127.0.0.1:6600`, title=`something very long that should match absolutely nothing, probably, hopefully...`)",
+        true,
+        true,
+    )?;
+    execute_single_line(
+        "mpd(`127.0.0.1:6600`)",
+        false,
+        true,
+    )
+}

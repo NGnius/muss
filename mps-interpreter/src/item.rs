@@ -29,6 +29,11 @@ impl MpsItem {
         self
     }
 
+    pub fn set_field_chain2(mut self, name: &str, value: MpsTypePrimitive) -> Self {
+        self.set_field(name, value);
+        self
+    }
+
     pub fn remove_field(&mut self, name: &str) -> Option<MpsTypePrimitive> {
         self.fields.remove(name)
     }

@@ -1,6 +1,8 @@
 #[cfg(feature = "advanced")]
 use super::processing::advanced::{MpsDefaultAnalyzer, MpsMusicAnalyzer};
 use super::processing::database::{MpsDatabaseQuerier, MpsSQLiteExecutor};
+#[cfg(feature = "mpd")]
+use super::processing::database::{MpsMpdQuerier, MpsMpdExecutor};
 use super::processing::general::{
     MpsFilesystemExecutor, MpsFilesystemQuerier, MpsOpStorage, MpsVariableStorer,
 };
@@ -13,6 +15,8 @@ pub struct MpsContext {
     pub filesystem: Box<dyn MpsFilesystemQuerier>,
     #[cfg(feature = "advanced")]
     pub analysis: Box<dyn MpsMusicAnalyzer>,
+    #[cfg(feature = "mpd")]
+    pub mpd_database: Box<dyn MpsMpdQuerier>,
 }
 
 impl Default for MpsContext {
@@ -23,6 +27,8 @@ impl Default for MpsContext {
             filesystem: Box::new(MpsFilesystemExecutor::default()),
             #[cfg(feature = "advanced")]
             analysis: Box::new(MpsDefaultAnalyzer::default()),
+            #[cfg(feature = "mpd")]
+            mpd_database: Box::new(MpsMpdExecutor::default()),
         }
     }
 }
