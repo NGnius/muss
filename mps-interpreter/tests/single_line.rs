@@ -842,6 +842,18 @@ fn execute_mpdfunction_line() -> Result<(), MpsError> {
         true,
         true,
     )?;
+    #[cfg(feature = "ergonomics")]
+    execute_single_line(
+        "mpd(`localhost:6600`)",
+        false,
+        true,
+    )?;
+    #[cfg(feature = "ergonomics")]
+    execute_single_line(
+        "mpd(`default`)",
+        false,
+        true,
+    )?;
     execute_single_line(
         "mpd(`127.0.0.1:6600`)",
         false,

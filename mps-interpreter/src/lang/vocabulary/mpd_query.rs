@@ -62,6 +62,7 @@ impl Iterator for MpdQueryStatement {
                 )),
                 Err(e) => return Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self))))),
             };
+            #[cfg(not(feature = "ergonomics"))]
             let addr: SocketAddr = match addr_str.parse() {
                 Ok(a) => a,
                 Err(e) => return Some(Err(RuntimeError {
@@ -69,6 +70,30 @@ impl Iterator for MpdQueryStatement {
                     op: PseudoOp::from_printable(self),
                     msg: format!("Cannot convert `{}` to IP Address: {}", addr_str, e),
                 }))
+            };
+            #[cfg(feature = "ergonomics")]
+            let addr: SocketAddr = if addr_str.starts_with("localhost:") {
+                let port_str = addr_str.replace("localhost:", "");
+                let port = match port_str.parse::<u16>() {
+                    Ok(p) => p,
+                    Err(e) => return Some(Err(RuntimeError {
+                        line: 0,
+                        op: PseudoOp::from_printable(self),
+                        msg: format!("Cannot convert `{}` to IP port: {}", port_str, e),
+                    }))
+                };
+                SocketAddr::V4(std::net::SocketAddrV4::new(std::net::Ipv4Addr::LOCALHOST, port))
+            } else if addr_str == "default" {
+                SocketAddr::V4(std::net::SocketAddrV4::new(std::net::Ipv4Addr::LOCALHOST, 6600))
+            } else {
+                match addr_str.parse() {
+                    Ok(a) => a,
+                    Err(e) => return Some(Err(RuntimeError {
+                        line: 0,
+                        op: PseudoOp::from_printable(self),
+                        msg: format!("Cannot convert `{}` to IP Address: {}", addr_str, e),
+                    }))
+                }
             };
             // build params
             let mut new_params = Vec::<(&str, String)>::with_capacity(self.params.len());
