@@ -7,7 +7,7 @@ readme = "README.md"
 
 [dependencies]
 rodio = { version = "^0.15", features = ["symphonia-all"]}
-m3u8-rs = { version = "^3.0.0" }
+m3u8-rs = { version = "^3.0" }
 fluent-uri = { version = "^0.1" }
 
 # local
@@ -15,7 +15,7 @@ mps-interpreter = { path = "../mps-interpreter", version = "0.8.0" }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 #dbus = { version = "^0.9" }
-mpris-player = { version = "^0.6.1", path = "../mpris-player", optional = true }
+mpris-player = { version = "^0.6", path = "../mpris-player", optional = true }
 
 [features]
 default = ["os-controls"]
