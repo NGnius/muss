@@ -181,8 +181,7 @@ impl SystemControlWrapper {
         //println!("Got enqueued item {}", &item.title);
         let file_uri = item
             .field("filename")
-            .and_then(|x| x.to_owned().to_str())
-            .map(|x| format!("file://{}", x));
+            .and_then(|x| x.to_owned().to_str());
         dbus_ctrl
             .send(DbusControl::SetMetadata(Metadata {
                 length: None,

@@ -234,7 +234,7 @@ impl FileIter {
                 }
             }
         }
-        item.set_field("filename", path_str.to_string().into());
+        item.set_field("filename", format!("file://{}", path_str).into());
     }
 
     fn only_once(&mut self) -> Result<MpsItem, String> {

@@ -114,7 +114,7 @@ impl Tags {
             title: self.track_title(),
             artist: artist_id,
             album: album_id,
-            filename: self.filename.to_str().unwrap_or("").into(),
+            filename: format!("file://{}", self.filename.to_str().unwrap_or("")),
             metadata: meta_id,
             genre: genre_id,
         }

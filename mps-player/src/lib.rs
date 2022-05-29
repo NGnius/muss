@@ -8,10 +8,11 @@ mod errors;
 pub(crate) mod os_controls;
 mod player;
 pub(crate) mod player_wrapper;
+pub(crate) mod uri;
 //mod utility;
 
 pub use controller::MpsController;
-pub use errors::PlaybackError;
+pub use errors::{PlaybackError, UriError, PlayerError};
 pub use player::MpsPlayer;
 //pub use utility::{play_script};
 

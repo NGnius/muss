@@ -5,9 +5,13 @@ use rodio::{decoder::Decoder, OutputStream, OutputStreamHandle, Sink};
 
 use m3u8_rs::{MediaPlaylist, MediaSegment};
 
+use super::uri::Uri;
+
 use mps_interpreter::{tokens::MpsTokenReader, MpsFaye, MpsItem};
 
-use super::PlaybackError;
+//use super::PlaybackError;
+use super::PlayerError;
+use super::UriError;
 
 /// Playback functionality for a script.
 /// This takes the output of the runner and plays or saves it.
@@ -20,98 +24,86 @@ pub struct MpsPlayer<'a, T: MpsTokenReader + 'a> {
 }
 
 impl<'a, T: MpsTokenReader + 'a> MpsPlayer<'a, T> {
-    pub fn new(runner: MpsFaye<'a, T>) -> Result<Self, PlaybackError> {
+    pub fn new(runner: MpsFaye<'a, T>) -> Result<Self, PlayerError> {
         let (stream, output_handle) =
-            OutputStream::try_default().map_err(PlaybackError::from_err)?;
+            OutputStream::try_default().map_err(PlayerError::from_err_playback)?;
         Ok(Self {
             runner: runner,
-            sink: Sink::try_new(&output_handle).map_err(PlaybackError::from_err)?,
+            sink: Sink::try_new(&output_handle).map_err(PlayerError::from_err_playback)?,
             output_stream: stream,
             output_handle: output_handle,
         })
     }
 
-    pub fn play_all(&mut self) -> Result<(), PlaybackError> {
-        for item in &mut self.runner {
+    pub fn play_all(&mut self) -> Result<(), PlayerError> {
+        while let Some(item) = self.runner.next() {
             self.sink.sleep_until_end();
             match item {
                 Ok(music) => {
                     if let Some(filename) =
                         music.field("filename").and_then(|x| x.to_owned().to_str())
                     {
-                        // NOTE: Default rodio::Decoder hangs here when decoding large files, but symphonia does not
-                        let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
-                        let stream = io::BufReader::new(file);
-                        let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
-                        self.sink.append(source);
+                        self.append_source(&filename)?;
                         Ok(())
                     } else {
-                        Err(PlaybackError::from_err(
+                        Err(PlayerError::from_err_playback(
                             "Field `filename` does not exist on item",
                         ))
                     }
                 }
-                Err(e) => Err(PlaybackError::from_err(e)),
+                Err(e) => Err(PlayerError::from_err_playback(e)),
             }?;
         }
         self.sink.sleep_until_end();
         Ok(())
     }
 
-    pub fn enqueue_all(&mut self) -> Result<Vec<MpsItem>, PlaybackError> {
+    pub fn enqueue_all(&mut self) -> Result<Vec<MpsItem>, PlayerError> {
         let mut enqueued = Vec::new();
-        for item in &mut self.runner {
+        while let Some(item) = self.runner.next() {
             match item {
                 Ok(music) => {
                     enqueued.push(music.clone());
                     if let Some(filename) =
                         music.field("filename").and_then(|x| x.to_owned().to_str())
                     {
-                        // NOTE: Default rodio::Decoder hangs here when decoding large files, but symphonia does not
-                        let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
-                        let stream = io::BufReader::new(file);
-                        let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
-                        self.sink.append(source);
+                        self.append_source(&filename)?;
                         Ok(())
                     } else {
-                        Err(PlaybackError::from_err(
+                        Err(PlayerError::from_err_playback(
                             "Field `filename` does not exist on item",
                         ))
                     }
                 }
-                Err(e) => Err(PlaybackError::from_err(e)),
+                Err(e) => Err(PlayerError::from_err_playback(e)),
             }?;
         }
         Ok(enqueued)
     }
 
-    pub fn enqueue(&mut self, count: usize) -> Result<Vec<MpsItem>, PlaybackError> {
+    pub fn enqueue(&mut self, count: usize) -> Result<Vec<MpsItem>, PlayerError> {
         let mut items_left = count;
         let mut enqueued = Vec::with_capacity(count);
         if items_left == 0 {
             return Ok(enqueued);
         }
-        for item in &mut self.runner {
+        while let Some(item) = self.runner.next() {
             match item {
                 Ok(music) => {
                     if let Some(filename) =
                         music.field("filename").and_then(|x| x.to_owned().to_str())
                     {
                         enqueued.push(music.clone());
-                        // NOTE: Default rodio::Decoder hangs here when decoding large files, but symphonia does not
-                        let file = fs::File::open(filename).map_err(PlaybackError::from_err)?;
-                        let stream = io::BufReader::new(file);
-                        let source = Decoder::new(stream).map_err(PlaybackError::from_err)?;
-                        self.sink.append(source);
+                        self.append_source(&filename)?;
                         items_left -= 1;
                         Ok(())
                     } else {
-                        Err(PlaybackError::from_err(
+                        Err(PlayerError::from_err_playback(
                             "Field `filename` does not exist on item",
                         ))
                     }
                 }
-                Err(e) => Err(PlaybackError::from_err(e)),
+                Err(e) => Err(PlayerError::from_err_playback(e)),
             }?;
             if items_left == 0 {
                 break;
@@ -145,7 +137,7 @@ impl<'a, T: MpsTokenReader + 'a> MpsPlayer<'a, T> {
         self.sink.empty()
     }
 
-    pub fn save_m3u8<W: io::Write>(&mut self, w: &mut W) -> Result<(), PlaybackError> {
+    pub fn save_m3u8<W: io::Write>(&mut self, w: &mut W) -> Result<(), PlayerError> {
         let mut playlist = MediaPlaylist {
             version: 6,
             ..Default::default()
@@ -165,15 +157,15 @@ impl<'a, T: MpsTokenReader + 'a> MpsPlayer<'a, T> {
                         });
                         Ok(())
                     } else {
-                        Err(PlaybackError::from_err(
+                        Err(PlayerError::from_err_playback(
                             "Field `filename` does not exist on item",
                         ))
                     }
                 }
-                Err(e) => Err(PlaybackError::from_err(e)),
+                Err(e) => Err(PlayerError::from_err_playback(e)),
             }?;
         }
-        playlist.write_to(w).map_err(PlaybackError::from_err)
+        playlist.write_to(w).map_err(PlayerError::from_err_playback)
     }
 
     pub fn is_paused(&self) -> bool {
@@ -184,18 +176,44 @@ impl<'a, T: MpsTokenReader + 'a> MpsPlayer<'a, T> {
         self.sink.set_volume(volume);
     }
 
-    pub fn new_sink(&mut self) -> Result<(), PlaybackError> {
+    pub fn new_sink(&mut self) -> Result<(), PlayerError> {
         let is_paused = self.sink.is_paused();
         let volume = self.sink.volume();
 
         self.stop();
-        self.sink = Sink::try_new(&self.output_handle).map_err(PlaybackError::from_err)?;
+        self.sink = Sink::try_new(&self.output_handle).map_err(PlayerError::from_err_playback)?;
 
         if is_paused {
             self.sink.pause();
         }
         self.sink.set_volume(volume);
         Ok(())
+    }
+
+    fn append_source(&mut self, filename: &str) -> Result<(), PlayerError> {
+        let uri = Uri::new(filename);
+        match uri.scheme() {
+            Some(s) => match &s.to_lowercase() as &str {
+                "file:" => {
+                    let file = fs::File::open(uri.path()).map_err(PlayerError::from_err_playback)?;
+                    let stream = io::BufReader::new(file);
+                    let source = Decoder::new(stream).map_err(PlayerError::from_err_playback)?;
+                    self.sink.append(source);
+                    Ok(())
+                },
+                //TODO "mpd:" => {},
+                scheme => Err(UriError::Unsupported(scheme.to_owned()).into())
+            },
+            None => {
+                //default
+                // NOTE: Default rodio::Decoder hangs here when decoding large files, but symphonia does not
+                let file = fs::File::open(uri.path()).map_err(PlayerError::from_err_playback)?;
+                let stream = io::BufReader::new(file);
+                let source = Decoder::new(stream).map_err(PlayerError::from_err_playback)?;
+                self.sink.append(source);
+                Ok(())
+            }
+        }
     }
 }
 
@@ -226,7 +244,7 @@ mod tests {
 
     #[allow(dead_code)]
     //#[test]
-    fn play_cursor() -> Result<(), PlaybackError> {
+    fn play_cursor() -> Result<(), PlayerError> {
         let cursor = io::Cursor::new("sql(`SELECT * FROM songs JOIN artists ON songs.artist = artists.artist_id WHERE artists.name like 'thundercat'`);");
         let runner = MpsFaye::with_stream(cursor);
         let mut player = MpsPlayer::new(runner)?;
@@ -234,7 +252,7 @@ mod tests {
     }
 
     #[test]
-    fn playlist() -> Result<(), PlaybackError> {
+    fn playlist() -> Result<(), PlayerError> {
         let cursor = io::Cursor::new("sql(`SELECT * FROM songs JOIN artists ON songs.artist = artists.artist_id WHERE artists.name like 'thundercat'`);");
         let runner = MpsFaye::with_stream(cursor);
         let mut player = MpsPlayer::new(runner)?;

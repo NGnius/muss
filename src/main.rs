@@ -55,10 +55,10 @@ use std::io;
 use std::path::PathBuf;
 
 use mps_interpreter::MpsFaye;
-use mps_player::{MpsController, MpsPlayer, PlaybackError};
+use mps_player::{MpsController, MpsPlayer, PlayerError};
 
 #[allow(dead_code)]
-fn play_cursor() -> Result<(), PlaybackError> {
+fn play_cursor() -> Result<(), PlayerError> {
     let cursor = io::Cursor::<&'static str>::new("sql(`SELECT * FROM songs JOIN artists ON songs.artist = artists.artist_id WHERE artists.name like 'thundercat'`);");
     let runner = MpsFaye::with_stream(cursor);
     let mut player = MpsPlayer::new(runner)?;

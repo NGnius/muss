@@ -434,8 +434,8 @@ fn display_history_line(state: &mut ReplState, args: &CliArgs) {
 }
 
 #[inline(always)]
-fn error_prompt(error: mps_player::PlaybackError, args: &CliArgs) {
-    eprintln!("E{}{}", args.prompt, error.message());
+fn error_prompt(error: mps_player::PlayerError, args: &CliArgs) {
+    eprintln!("E{}{}", args.prompt, error);
 }
 
 fn repl_commands(command_str: &str) {

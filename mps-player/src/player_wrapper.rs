@@ -5,7 +5,7 @@ use mps_interpreter::tokens::MpsTokenReader;
 use mps_interpreter::MpsItem;
 
 use super::MpsPlayer;
-use super::PlaybackError;
+use super::PlayerError;
 
 /// A wrapper around MpsPlayer so that playback can occur on a different thread.
 /// This allows for message passing between the player and controller.
@@ -212,7 +212,7 @@ impl ControlAction {
 #[derive(Clone, Debug)]
 pub enum PlayerAction {
     Acknowledge(ControlAction),
-    Exception(PlaybackError),
+    Exception(PlayerError),
     End,
     Empty,
 }
