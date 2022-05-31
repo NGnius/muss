@@ -14,6 +14,8 @@ pub(crate) mod uri;
 pub use controller::MpsController;
 pub use errors::{PlaybackError, UriError, PlayerError};
 pub use player::MpsPlayer;
+#[cfg(feature = "mpd")]
+pub use player::mpd_connection;
 //pub use utility::{play_script};
 
 #[cfg(test)]

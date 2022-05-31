@@ -47,7 +47,13 @@ pub fn repl(args: CliArgs) {
     term.set_title("mps");
     let (writer, reader) = channel_io();
     let volume = args.volume.clone();
-    let mpd = args.mpd.clone();
+    let mpd = match args.mpd.clone().map(|a| mps_player::mpd_connection(a.parse().unwrap())).transpose() {
+        Ok(mpd) => mpd,
+        Err(e) => {
+            eprintln!("Cannot connect to MPD address `{}`: {}", args.mpd.unwrap(), e);
+            return;
+        }
+    };
     let player_builder = move || {
         let runner = MpsFaye::with_stream(reader);
 
@@ -56,7 +62,7 @@ pub fn repl(args: CliArgs) {
             player.set_volume(vol);
         }
         if let Some(mpd) = mpd {
-            player.connect_mpd(mpd.parse().unwrap()).unwrap();
+            player.set_mpd(mpd);
         }
         player
     };

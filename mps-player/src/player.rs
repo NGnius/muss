@@ -6,7 +6,7 @@ use rodio::{decoder::Decoder, OutputStream, OutputStreamHandle, Sink};
 use m3u8_rs::{MediaPlaylist, MediaSegment};
 
 #[cfg(feature = "mpd")]
-use mpd::{Client, Song};
+use mpd::{Client, Song, error};
 
 use super::uri::Uri;
 
@@ -46,6 +46,11 @@ impl<'a, T: MpsTokenReader + 'a> MpsPlayer<'a, T> {
     pub fn connect_mpd(&mut self, addr: std::net::SocketAddr) -> Result<(), PlayerError> {
         self.mpd_connection = Some(Client::connect(addr).map_err(PlayerError::from_err_mpd)?);
         Ok(())
+    }
+
+    #[cfg(feature = "mpd")]
+    pub fn set_mpd(&mut self, client: Client<std::net::TcpStream>) {
+        self.mpd_connection = Some(client);
     }
 
     pub fn play_all(&mut self) -> Result<(), PlayerError> {
@@ -241,6 +246,11 @@ impl<'a, T: MpsTokenReader + 'a> MpsPlayer<'a, T> {
             }
         }
     }
+}
+
+#[cfg(feature = "mpd")]
+pub fn mpd_connection(addr: std::net::SocketAddr) -> error::Result<Client<std::net::TcpStream>> {
+    Client::connect(addr)
 }
 
 #[inline]

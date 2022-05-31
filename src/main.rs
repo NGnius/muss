@@ -81,7 +81,10 @@ fn main() {
         // build playback controller
         let script_file2 = script_file.clone();
         let volume = args.volume.clone();
-        let mpd = args.mpd.clone();
+        let mpd = match args.mpd.clone().map(|a| mps_player::mpd_connection(a.parse().unwrap())).transpose() {
+            Ok(mpd) => mpd,
+            Err(e) => panic!("Abort: Cannot connect to MPD: {}", e),
+        };
         let player_builder = move || {
             let script_reader = io::BufReader::new(
                 std::fs::File::open(&script_file2)
@@ -94,7 +97,7 @@ fn main() {
                 player.set_volume(vol);
             }
             if let Some(mpd) = mpd {
-                player.connect_mpd(mpd.parse().unwrap()).unwrap();
+                player.set_mpd(mpd);
             }
             player
         };
@@ -107,7 +110,7 @@ fn main() {
                 }));
             match player.save_m3u8(&mut writer) {
                 Ok(_) => println!(
-                    "Succes: Finished playlist `{}` from script `{}`",
+                    "Success: Finished playlist `{}` from script `{}`",
                     playlist_file, script_file
                 ),
                 Err(e) => eprintln!("{}", e),
@@ -116,7 +119,7 @@ fn main() {
             // live playback
             let ctrl = MpsController::create(player_builder);
             match ctrl.wait_for_done() {
-                Ok(_) => println!("Succes: Finished playback from script `{}`", script_file),
+                Ok(_) => println!("Success: Finished playback from script `{}`", script_file),
                 Err(e) => eprintln!("{}", e),
             }
         }
