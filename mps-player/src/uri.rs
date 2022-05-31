@@ -26,4 +26,9 @@ impl<'a> Uri<&'a str> {
             None => self.0
         }
     }
+
+    #[allow(dead_code)]
+    pub fn uri(&self) -> &'a str {
+        self.0
+    }
 }

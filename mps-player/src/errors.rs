@@ -5,6 +5,8 @@ use std::convert::Into;
 pub enum PlayerError {
     Playback(PlaybackError),
     Uri(UriError),
+    #[cfg(feature = "mpd")]
+    Mpd(String),
 }
 
 impl PlayerError {
@@ -15,6 +17,11 @@ impl PlayerError {
     /*pub(crate) fn from_err_uri<E: Display>(err: E) -> Self {
         Self::Uri(UriError::from_err(err))
     }*/
+
+    #[cfg(feature = "mpd")]
+    pub(crate) fn from_err_mpd<E: Display>(err: E) -> Self {
+        Self::Mpd(format!("{}", err))
+    }
 }
 
 impl Display for PlayerError {
@@ -22,6 +29,8 @@ impl Display for PlayerError {
         match self {
             Self::Playback(p) => (p as &dyn Display).fmt(f),
             Self::Uri(u) => (u as &dyn Display).fmt(f),
+            #[cfg(feature = "mpd")]
+            Self::Mpd(m) => (m as &dyn Display).fmt(f),
         }
     }
 }

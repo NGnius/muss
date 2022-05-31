@@ -67,6 +67,10 @@ fn play_cursor() -> Result<(), PlayerError> {
 
 fn main() {
     let args = cli::parse();
+    if let Err(e) = cli::validate(&args) {
+        eprintln!("{}", e);
+        return;
+    }
 
     if let Some(script_file) = &args.file {
         // interpret script
@@ -77,6 +81,7 @@ fn main() {
         // build playback controller
         let script_file2 = script_file.clone();
         let volume = args.volume.clone();
+        let mpd = args.mpd.clone();
         let player_builder = move || {
             let script_reader = io::BufReader::new(
                 std::fs::File::open(&script_file2)
@@ -84,9 +89,12 @@ fn main() {
             );
             let runner = MpsFaye::with_stream(script_reader);
 
-            let player = MpsPlayer::new(runner).unwrap();
+            let mut player = MpsPlayer::new(runner).unwrap();
             if let Some(vol) = volume {
                 player.set_volume(vol);
+            }
+            if let Some(mpd) = mpd {
+                player.connect_mpd(mpd.parse().unwrap()).unwrap();
             }
             player
         };

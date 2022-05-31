@@ -89,7 +89,7 @@ fn song_to_item(song: Song) -> MpsItem {
     */
 
     for (tag, value) in song.tags {
-        item.set_field(&tag, MpsTypePrimitive::parse(value));
+        item.set_field(&tag.to_lowercase(), MpsTypePrimitive::parse(value));
     }
     item
 }

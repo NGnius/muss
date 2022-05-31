@@ -5,6 +5,9 @@ use rodio::{decoder::Decoder, OutputStream, OutputStreamHandle, Sink};
 
 use m3u8_rs::{MediaPlaylist, MediaSegment};
 
+#[cfg(feature = "mpd")]
+use mpd::{Client, Song};
+
 use super::uri::Uri;
 
 use mps_interpreter::{tokens::MpsTokenReader, MpsFaye, MpsItem};
@@ -21,6 +24,8 @@ pub struct MpsPlayer<'a, T: MpsTokenReader + 'a> {
     #[allow(dead_code)]
     output_stream: OutputStream, // this is required for playback, so it must live as long as this struct instance
     output_handle: OutputStreamHandle,
+    #[cfg(feature = "mpd")]
+    mpd_connection: Option<Client<std::net::TcpStream>>,
 }
 
 impl<'a, T: MpsTokenReader + 'a> MpsPlayer<'a, T> {
@@ -32,7 +37,15 @@ impl<'a, T: MpsTokenReader + 'a> MpsPlayer<'a, T> {
             sink: Sink::try_new(&output_handle).map_err(PlayerError::from_err_playback)?,
             output_stream: stream,
             output_handle: output_handle,
+            #[cfg(feature = "mpd")]
+            mpd_connection: None,
         })
+    }
+
+    #[cfg(feature = "mpd")]
+    pub fn connect_mpd(&mut self, addr: std::net::SocketAddr) -> Result<(), PlayerError> {
+        self.mpd_connection = Some(Client::connect(addr).map_err(PlayerError::from_err_mpd)?);
+        Ok(())
     }
 
     pub fn play_all(&mut self) -> Result<(), PlayerError> {
@@ -149,7 +162,7 @@ impl<'a, T: MpsTokenReader + 'a> MpsPlayer<'a, T> {
                     if let Some(filename) =
                         music_filename(&music)
                     {
-                        println!("Adding file `{}` to playlist", filename);
+                        //println!("Adding file `{}` to playlist", filename);
                         playlist.segments.push(MediaSegment {
                             uri: filename,
                             title: music_title(&music),
@@ -201,7 +214,20 @@ impl<'a, T: MpsTokenReader + 'a> MpsPlayer<'a, T> {
                     self.sink.append(source);
                     Ok(())
                 },
-                //TODO "mpd:" => {},
+                #[cfg(feature = "mpd")]
+                "mpd:" => {
+                    if let Some(mpd_client) = &mut self.mpd_connection {
+                        //println!("Pushing {} into MPD queue", uri.path());
+                        let song = Song {
+                            file: uri.path().to_owned(),
+                            ..Default::default()
+                        };
+                        mpd_client.push(song).map_err(PlayerError::from_err_playback)?;
+                        Ok(())
+                    } else {
+                        Err(PlayerError::from_err_playback("Cannot play MPD song: no MPD client connected"))
+                    }
+                },
                 scheme => Err(UriError::Unsupported(scheme.to_owned()).into())
             },
             None => {

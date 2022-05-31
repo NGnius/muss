@@ -22,8 +22,19 @@ pub struct CliArgs {
     /// The volume at which to playback audio, out of 1.0
     #[clap(long)]
     pub volume: Option<f32>,
+
+    /// MPD server for music playback
+    #[clap(short, long)]
+    pub mpd: Option<String>,
 }
 
 pub fn parse() -> CliArgs {
     CliArgs::parse()
+}
+
+pub fn validate(args: &CliArgs) -> Result<(), String> {
+    if let Some(mpd_addr) = &args.mpd {
+        let _: std::net::SocketAddr = mpd_addr.parse().map_err(|e| format!("Unrecognized MPS address `{}`: {}", mpd_addr, e))?;
+    }
+    Ok(())
 }

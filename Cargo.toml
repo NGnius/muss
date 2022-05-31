@@ -29,7 +29,7 @@ mps-player = { version = "0.8.0", path = "./mps-player", default-features = fals
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # TODO fix need to specify OS-specific dependency of mps-player
-mps-player = { version = "0.8.0", path = "./mps-player", features = ["mpris-player"] }
+mps-player = { version = "0.8.0", path = "./mps-player", features = ["mpris-player", "mpd"] }
 
 [profile.release]
 debug = false

@@ -47,23 +47,36 @@ pub fn repl(args: CliArgs) {
     term.set_title("mps");
     let (writer, reader) = channel_io();
     let volume = args.volume.clone();
+    let mpd = args.mpd.clone();
     let player_builder = move || {
         let runner = MpsFaye::with_stream(reader);
 
-        let player = MpsPlayer::new(runner).unwrap();
+        let mut player = MpsPlayer::new(runner).unwrap();
         if let Some(vol) = volume {
             player.set_volume(vol);
+        }
+        if let Some(mpd) = mpd {
+            player.connect_mpd(mpd.parse().unwrap()).unwrap();
         }
         player
     };
     let mut state = ReplState::new(writer, term);
     if let Some(playlist_file) = &args.playlist {
-        writeln!(
-            state.terminal,
-            "Playlist mode (output: `{}`)",
-            playlist_file
-        )
-        .expect("Failed to write to terminal output");
+        if args.mpd.is_some() {
+            writeln!(
+                state.terminal,
+                "Playlist mode (output: `{}` & MPD)",
+                playlist_file
+            )
+            .expect("Failed to write to terminal output");
+        } else {
+            writeln!(
+                state.terminal,
+                "Playlist mode (output: `{}`)",
+                playlist_file
+            )
+            .expect("Failed to write to terminal output");
+        }
         let mut player = player_builder();
         let mut playlist_writer =
             io::BufWriter::new(std::fs::File::create(playlist_file).unwrap_or_else(|_| {
@@ -85,8 +98,13 @@ pub fn repl(args: CliArgs) {
                 .expect("Failed to flush playlist to file");
         });
     } else {
-        writeln!(state.terminal, "Playback mode (output: audio device)")
-            .expect("Failed to write to terminal output");
+        if args.mpd.is_some() {
+            writeln!(state.terminal, "Playback mode (output: audio device & MPD)")
+                .expect("Failed to write to terminal output");
+        } else {
+            writeln!(state.terminal, "Playback mode (output: audio device)")
+                .expect("Failed to write to terminal output");
+        }
         let ctrl = MpsController::create_repl(player_builder);
         read_loop(&args, &mut state, || {
             if args.wait {
