@@ -78,7 +78,18 @@ impl MpsDefaultAnalyzer {
     fn get_path(item: &MpsItem) -> Result<&str, RuntimeMsg> {
         if let Some(path) = item.field(PATH_FIELD) {
             if let MpsTypePrimitive::String(path) = path {
-                Ok(path)
+                if path.starts_with("file://") {
+                    //println!("path guess: `{}`", path.get(7..).unwrap());
+                    Ok(path.get(7..).unwrap())
+                } else if !path.contains("://") {
+                    Ok(path)
+                } else {
+                    Err(RuntimeMsg(format!(
+                        "Field {} on item is not a supported URI, it's {}",
+                        PATH_FIELD, path
+                    )))
+                }
+
             } else {
                 Err(RuntimeMsg(format!(
                     "Field {} on item is not String, it's {}",
@@ -116,17 +127,25 @@ impl MpsMusicAnalyzer for MpsDefaultAnalyzer {
         let path_from = Self::get_path(from)?;
         let path_to = Self::get_path(to)?;
         for response in self.responses.iter() {
-            if let ResponseType::Distance {
-                path1,
-                path2,
-                distance,
-            } = response
-            {
-                if path1 == path_from && path2 == path_to {
-                    return match distance {
-                        Ok(d) => Ok(d as f64),
-                        Err(e) => Err(RuntimeMsg(format!("Bliss error: {}", e))),
-                    };
+            match response {
+                ResponseType::Distance {
+                    path1,
+                    path2,
+                    distance,
+                } => {
+                    //println!("Got distance from `{}` to `{}`: {}", path1, path2, distance.as_ref().ok().unwrap_or(&f32::INFINITY));
+                    if path1 == path_from && path2 == path_to {
+                        return match distance {
+                            Ok(d) => Ok(d as f64),
+                            Err(e) => Err(RuntimeMsg(format!("Bliss error: {}", e))),
+                        };
+                    }
+                }
+                ResponseType::Song { .. } => {},
+                ResponseType::UnsupportedSong { path, msg } => {
+                    if path == path_to || path == path_from {
+                        return Err(RuntimeMsg(format!("Bliss error: {}", msg)));
+                    }
                 }
             }
         }
@@ -191,6 +210,10 @@ enum ResponseType {
         path: String,
         song: Result<Song, BlissError>,
     },
+    UnsupportedSong {
+        path: String,
+        msg: String,
+    }
 }
 
 #[cfg(feature = "bliss-audio-symphonia")]
@@ -225,10 +248,11 @@ impl CacheThread {
                     distance,
                 } => {
                     self.insert_distance(path1, path2, distance);
-                }
+                },
                 ResponseType::Song { path, song } => {
                     self.insert_song(path, song);
-                }
+                },
+                ResponseType::UnsupportedSong { .. } => {},
             }
         }
     }
@@ -284,6 +308,12 @@ impl CacheThread {
                             return result;
                         } else {
                             self.insert_song(path2, song);
+                        }
+                    },
+                    ResponseType::UnsupportedSong {path: unsupported_path, ..} => {
+                        self.song_in_progress.remove(&unsupported_path);
+                        if path == unsupported_path {
+                            return None;
                         }
                     }
                 }
@@ -358,9 +388,15 @@ impl CacheThread {
                                 distance,
                             } => {
                                 self.insert_distance(path1, path2, distance);
-                            }
+                            },
                             ResponseType::Song { path: path2, song } => {
                                 self.insert_song(path2.clone(), song.clone());
+                                if self.song_in_progress.len() <= available_parallelism {
+                                    break 'inner4;
+                                }
+                            },
+                            ResponseType::UnsupportedSong {path: unsupported_path, ..} => {
+                                self.song_in_progress.remove(&unsupported_path);
                                 if self.song_in_progress.len() <= available_parallelism {
                                     break 'inner4;
                                 }
@@ -409,6 +445,18 @@ impl CacheThread {
                         }
                         ResponseType::Song { path, song } => {
                             self.insert_song(path, song);
+                        },
+                        ResponseType::UnsupportedSong { path: unsupported_path, msg } => {
+                            self.song_in_progress.remove(&unsupported_path);
+                            if let Err(_) = self.responses.send(ResponseType::UnsupportedSong {
+                                path: unsupported_path.clone(),
+                                msg: msg
+                            }) {
+                                return true;
+                            }
+                            if unsupported_path == key.0 || unsupported_path == key.1 {
+                                break 'inner1;
+                            }
                         }
                     }
                 }
@@ -424,6 +472,20 @@ impl CacheThread {
         worker_tx: &Sender<ResponseType>,
         worker_results: &Receiver<ResponseType>,
     ) -> bool {
+        let path = if path.starts_with("file://") {
+            //println!("path guess: `{}`", path.get(7..).unwrap());
+            path.get(7..).unwrap().to_owned()
+        } else if !path.contains("://") {
+            path
+        } else {
+            if let Err(_) = self.responses.send(ResponseType::UnsupportedSong {
+                msg: format!("Song path is not a supported URI, it's `{}`", path),
+                path: path,
+            }) {
+                return true;
+            }
+            return false;
+        };
         if let Some(song) = self.song_cache.get(&path) {
             if ack {
                 let song = song.to_owned();
@@ -460,6 +522,12 @@ impl CacheThread {
                                 if self.song_in_progress.len() <= available_parallelism {
                                     break 'inner2;
                                 }
+                            },
+                            ResponseType::UnsupportedSong { path, .. } => {
+                                self.song_in_progress.remove(&path);
+                                if self.song_in_progress.len() <= available_parallelism {
+                                    break 'inner2;
+                                }
                             }
                         }
                     }
@@ -493,7 +561,19 @@ impl CacheThread {
                                     path: path,
                                     song: song,
                                 }) {
-                                    return false;
+                                    return true;
+                                }
+                                break 'inner3;
+                            }
+                        }
+                        ResponseType::UnsupportedSong { path: unsupported_path, msg } => {
+                            self.song_in_progress.remove(&unsupported_path);
+                            if unsupported_path == path {
+                                if let Err(_) = self.responses.send(ResponseType::UnsupportedSong {
+                                    path: unsupported_path,
+                                    msg: msg
+                                }) {
+                                    return true;
                                 }
                                 break 'inner3;
                             }

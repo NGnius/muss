@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
 use super::field_filter::{FieldFilterErrorHandling, VariableOrValue};
-use crate::lang::utility::{assert_name, assert_token, assert_token_raw, check_name};
+use crate::lang::utility::{assert_token, assert_token_raw, check_name};
 use crate::lang::MpsLanguageDictionary;
 use crate::lang::MpsTypePrimitive;
 use crate::lang::{MpsFilterFactory, MpsFilterPredicate, MpsFilterStatementFactory};
@@ -17,11 +17,14 @@ pub struct FieldLikeFilter {
     field_name: String,
     field_errors: FieldFilterErrorHandling,
     val: VariableOrValue,
+    negate: bool,
 }
 
 impl FieldLikeFilter {
     fn sanitise_string(s: &str) -> String {
-        s.replace(|c: char| c.is_whitespace() || c == '_' || c == '-', " ")
+        #[cfg(feature = "unidecode")]
+        let s = unidecode::unidecode(s);
+        s.replace(|c: char| c.is_whitespace() || c == '_' || c == '-', "")
             .replace(|c: char| !(c.is_whitespace() || c.is_alphanumeric()), "")
             .to_lowercase()
     }
@@ -54,7 +57,12 @@ impl MpsFilterPredicate for FieldLikeFilter {
         if let Some(field) = music_item_lut.field(&self.field_name) {
             let field_str = Self::sanitise_string(&field.as_str());
             let var_str = Self::sanitise_string(variable);
-            Ok(field_str.contains(&var_str))
+            let matches = field_str.contains(&var_str);
+            if self.negate {
+                Ok(!matches)
+            } else {
+                Ok(matches)
+            }
         } else {
             match self.field_errors {
                 FieldFilterErrorHandling::Error => Err(RuntimeMsg(format!(
@@ -83,11 +91,11 @@ impl MpsFilterFactory<FieldLikeFilter> for FieldLikeFilterFactory {
         let tokens_len = tokens.len();
         (tokens_len >= 2 // field like variable
             && tokens[0].is_name()
-            && check_name("like", tokens[1]))
+            && (check_name("like", tokens[1]) || check_name("unlike", tokens[1])))
             || (tokens_len >= 3 // field? like variable OR field! like variable
             && tokens[0].is_name()
             && (tokens[1].is_interrogation() || tokens[1].is_exclamation())
-            && check_name("like", tokens[2]))
+            && (check_name("like", tokens[2]) || check_name("unlike", tokens[2])))
     }
 
     fn build_filter(
@@ -112,7 +120,21 @@ impl MpsFilterFactory<FieldLikeFilter> for FieldLikeFilterFactory {
         } else {
             FieldFilterErrorHandling::Error
         };
-        assert_name("like", tokens)?;
+        let name = assert_token(
+            |t| match t {
+                MpsToken::Name(s) => {
+                    match &s as _ {
+                        "unlike" | "like" => Some(s),
+                        _ => None,
+                    }
+                },
+                _ => None
+            },
+            MpsToken::Literal("like|unlike".into()),
+            tokens,
+        )?;
+        let is_negated = name == "unlike";
+        //assert_name("like", tokens)?;
         if tokens[0].is_literal() {
             let literal = assert_token(
                 |t| match t {
@@ -128,6 +150,7 @@ impl MpsFilterFactory<FieldLikeFilter> for FieldLikeFilterFactory {
                 field_name: field,
                 field_errors: error_handling,
                 val: value,
+                negate: is_negated,
             })
         } else {
             let variable = VariableOrValue::Variable(assert_token(
@@ -143,6 +166,7 @@ impl MpsFilterFactory<FieldLikeFilter> for FieldLikeFilterFactory {
                 field_name: field,
                 field_errors: FieldFilterErrorHandling::Error,
                 val: variable,
+                negate: is_negated,
             })
         }
     }

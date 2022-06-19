@@ -45,6 +45,8 @@
 //!
 //! ### field like something
 //!
+//! ### field unlike something
+//!
 //! ### field matches some_regex
 //!
 //! ### field != something

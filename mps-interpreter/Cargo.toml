@@ -17,6 +17,7 @@ rand = { version = "0.8" }
 shellexpand = { version = "2", optional = true }
 bliss-audio-symphonia = { version = "0.4", optional = true, path = "../bliss-rs" }
 mpd = { version = "0.0.12", optional = true }
+unidecode = { version = "0.3.0", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
@@ -28,5 +29,5 @@ harness = false
 [features]
 default = [ "music_library", "ergonomics", "advanced" ]
 music_library = [ "symphonia", "mpd" ] # song metadata parsing and database auto-population
-ergonomics = ["shellexpand"] # niceties like ~ in pathes
+ergonomics = ["shellexpand", "unidecode"] # niceties like ~ in paths and unicode string sanitisation
 advanced = ["bliss-audio-symphonia"] # advanced language features like bliss playlist generation

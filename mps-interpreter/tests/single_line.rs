@@ -350,6 +350,11 @@ fn execute_likefilter_line() -> Result<(), MpsError> {
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(album like `24K Magic`)",
         false,
         true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(album unlike `24K Magic`)",
+        true,
+        true,
     )
 }
 
