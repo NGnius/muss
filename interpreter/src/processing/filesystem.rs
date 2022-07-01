@@ -338,14 +338,22 @@ pub trait FilesystemQuerier: Debug {
         #[cfg(feature = "shellexpand")]
         match folder {
             Some(path) => Ok(Some(
-                shellexpand::full(path)
+                shellexpand::full(self.canonicalize(path))
                     .map_err(|e| RuntimeMsg(format!("Path expansion error: {}", e)))?
                     .into_owned(),
             )),
             None => Ok(None),
         }
         #[cfg(not(feature = "shellexpand"))]
-        Ok(folder.and_then(|s| Some(s.to_string())))
+        Ok(folder.and_then(|s| Some(self.canonicalize(s).to_string())))
+    }
+
+    fn canonicalize<'a>(&self, path: &'a str) -> &'a str {
+        if let Some(new_path) = path.strip_prefix("file://") {
+            new_path
+        } else {
+            path
+        }
     }
 }
 

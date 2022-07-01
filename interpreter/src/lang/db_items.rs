@@ -1,6 +1,6 @@
 use std::path::Path;
 
-pub const DEFAULT_SQLITE_FILEPATH: &str = "metadata.sqlite";
+pub const DEFAULT_SQLITE_FILEPATH: &str = "metadata.muss.sqlite";
 
 pub trait DatabaseObj: Sized {
     fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Self>;

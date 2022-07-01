@@ -275,7 +275,7 @@ fn music_filename(item: &Item) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mps_interpreter::Interpreter;
+    use muss_interpreter::Interpreter;
     use std::io;
 
     #[allow(dead_code)]
