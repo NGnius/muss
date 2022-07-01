@@ -1,5 +1,5 @@
 [package]
-name = "mps-interpreter"
+name = "muss-interpreter"
 version = "0.8.0"
 edition = "2021"
 license = "LGPL-2.1-only OR GPL-3.0-only"

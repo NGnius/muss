@@ -2,7 +2,7 @@ use std::path::Path;
 use std::io;
 use std::fs;
 
-use mps_interpreter::{Intrepreter, tokens::TokenReader};
+use muss_interpreter::{Intrepreter, tokens::TokenReader};
 
 use super::{Player, PlaybackError};
 

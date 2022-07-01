@@ -1,7 +1,7 @@
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread::JoinHandle;
 
-use mps_interpreter::tokens::TokenReader;
+use muss_interpreter::tokens::TokenReader;
 
 use super::os_controls::SystemControlWrapper;
 use super::player_wrapper::{ControlAction, PlayerServer, PlayerAction};

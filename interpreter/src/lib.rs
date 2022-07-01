@@ -1,19 +1,19 @@
-//! All necessary components to interpret and run a MPS script.
+//! All necessary components to interpret and run a Muss script.
 //!
-//! MpsFaye is the new interpreter, which replaces the old MpsInterpretor and MpsRunner types.
-//! MpsDebugger can be used to run scripts with a custom debug harness.
-//! Since MPS is centered around iterators, script execution is also done by iterating.
+//! Interpreter is the Muss script interpreter.
+//! Debugger can be used to run scripts within a custom debug harness.
+//! Since Muss is centered around iterators, script execution is also done by iterating.
 //!
 //!
 //! ```
 //! use std::io::Cursor;
-//! use mps_interpreter::*;
+//! use muss_interpreter::*;
 //!
 //! let cursor = Cursor::new(
 //! "files(folder=`~/Music/`, recursive=true)" // retrieve all files from Music folder
 //! );
 //!
-//! let interpreter = MpsFaye::with_stream(cursor);
+//! let interpreter = Interpreter::with_stream(cursor);
 //!
 //! // warning: my library has ~3800 songs, so this outputs too much information to be useful.
 //! for result in interpreter {
@@ -26,15 +26,15 @@
 //!
 //! # Standard Vocabulary
 //! By default, the standard vocabulary is used to parse the stream when iterating the interpreter.
-//! The standard vocabulary defines the valid statement syntax for MPS and parses syntax into special Rust Iterators which can be used to execute the statement.
-//! To declare your own vocabulary, use MpsRunner::with_settings to provide a MpsInterpretor with a custom vocabulary (I'm not sure why you would, but I'm not going to stop you).
+//! The standard vocabulary defines the valid statement syntax for Muss and parses syntax into special Rust Iterators which can be used to execute the statement.
+//! To declare your own vocabulary, use Interpretor::with or Interpreter::with_vocab with a custom vocabulary (I'm not sure why you would, but I'm not going to stop you).
 //!
 //! ## Oddities
-//! The MPS standard syntax does a few things that most other languages don't, because I wanted it to.
+//! The Muss standard syntax does a few things that most other languages don't, because I wanted it to.
 //!
 //! \` can be used in place of " -- To make it easier to write SQL, string literals may be surrounded by backticks instead of quotation marks.
 //!
-//! ; -- The REPL will automatically place semicolons when Enter is pressed and it's not inside of brackets or a literal. MPS requires semicolons at the end of every statement, though, so MPS files must use semicolons.
+//! ; -- The REPL will automatically place semicolons when Enter is pressed and it's not inside of brackets or a literal. Muss requires semicolons at the end of every statement, though, so Muss files must use semicolons.
 //!
 //! ## Filters
 //! Operations to reduce the items in an iterable: `iterable.(filter);`.
@@ -59,7 +59,7 @@
 //!
 //! ### field < something -- e.g. `iterable.(title == "Romantic Traffic");`
 //!
-//! Compare all items, keeping only those that match the condition. Valid field names are those of the MpsMusicItem (title, artist, album, genre, track, etc.), though this will change when proper object support is added. Optionally, a ? or ! can be added to the end of the field name to skip items whose field is missing/incomparable, or keep all items whose field is missing/incomparable (respectively).
+//! Compare all items, keeping only those that match the condition. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Optionally, a ? or ! can be added to the end of the field name to skip items whose field is missing/incomparable, or keep all items whose field is missing/incomparable (respectively).
 //!
 //!
 //! ### start..end -- e.g. `iterable.(0..42);`
@@ -109,7 +109,7 @@
 //!
 //! ### sql("SQL query here");
 //!
-//! Perform a raw SQLite query on the database which MPS auto-generates. An iterator of the results is returned.
+//! Perform a raw SQLite query on the database which Muss auto-generates. An iterator of the results is returned.
 //!
 //! ### song("something");
 //!
@@ -168,7 +168,7 @@
 //!
 //! ### field -- e.g. `iterable~(filename);`
 //!
-//! Sort by a MpsItem field. Valid field names change depending on what information is available when the MpsItem is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
+//! Sort by a Item field. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
 //!
 //! ### shuffle
 //! ### random shuffle -- e.g. `iterable~(shuffle);`
@@ -201,7 +201,7 @@
 //! The empty or null constant.
 //!
 //! ### if condition { something } else { something_else } -- e.g.
-//! ```mps
+//! ```muss
 //! if item.title == `Romantic Traffic` {
 //!
 //!    } else {

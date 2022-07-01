@@ -1,7 +1,7 @@
 //! Sort, filter and analyse your music to create great playlists.
-//! This project implements the interpreter (mps-interpreter), music player (mps-player), and CLI interface for MPS (root).
+//! This project implements the interpreter (`./interpreter`), music player (`./player`), and CLI interface for Muss (`./`).
 //! The CLI interface includes a REPL for running scripts.
-//! The REPL interactive mode also provides more details about using MPS through the `?help` command.
+//! The REPL interactive mode also provides more details about using Muss through the `?help` command.
 //!
 //! # Usage
 //! To access the REPL, simply run `cargo run`. You will need the [Rust toolchain installed](https://rustup.rs/). For a bit of extra performance, run `cargo run --release` instead.
@@ -11,38 +11,38 @@
 //! ## One-liners
 //!
 //! All songs by artist `<artist>` (in your library), sorted by similarity to a random first song by the artist.
-//! ```mps
+//! ```muss
 //! files().(artist? like "<artist>")~(shuffle)~(advanced bliss_next);
 //! ```
 //!
 //! All songs with a `.flac` file extension (anywhere in their path -- not necessarily at the end).
-//! ```mps
+//! ```muss
 //! files().(filename? like ".flac");
 //! ```
 //!
 //! All songs by artist `<artist1>` or `<artist2>`, sorted by similarity to a random first song by either artist.
-//! ```mps
+//! ```muss
 //! files().(artist? like "<artist1>" || artist? like "<artist2>")~(shuffle)~(advanced bliss_next);
 //! ```
 //!
 //! ## Bigger examples
 //!
-//! For now, check out `./src/tests`, `./mps-player/tests`, and `./mps-interpreter/tests` for examples.
+//! For now, check out `./src/tests`, `./player/tests`, and `./interpreter/tests` for examples.
 //! One day I'll add pretty REPL example pictures and some script files...
 //! // TODO
 //!
 //! # FAQ
 //!
-//! ## Can I use MPS right now?
-//! **Sure!** It's never complete, but MPS is completely useable right now. Hopefully most of the bugs have been ironed out as well :)
+//! ## Can I use Muss right now?
+//! **Sure!** It's never complete, but Muss is completely useable right now. Hopefully most of the bugs have been ironed out as well :)
 //!
 //! ## Why write a new language?
 //! **I thought it would be fun**. I also wanted to be able to play my music without having to be at the whim of someone else's algorithm (and music), and playing just by album or artist was getting boring. Designing a language specifically for iteration seemed like a cool & novel way of doing it, too (though every approach is a novel approach for me).
 //!
-//! ## What is MPS?
-//! **Music Playlist Script (MPS) is technically a query language for music files.** It uses an (auto-generated) SQLite3 database for SQL queries and can also directly query the filesystem. Queries can be modified by using filters, functions, and sorters built-in to MPS (see mps-interpreter's README.md).
+//! ## What is Muss?
+//! **Music Set Script (MuSS) is a language for describing a playlist of music.** It uses an (auto-generated) SQLite3 database for SQL queries and can also directly query the filesystem. Queries can be modified by using filters, functions, and sorters built-in to Muss (see interpreter's README.md).
 //!
-//! ## Is MPS a scripting language?
+//! ## Is Muss a scripting language?
 //! **Yes**. It evolved from a simple query language into something that can do arbitrary calculations. Whether it's Turing-complete is still unproven, but it's powerful enough for what I want it to do.
 //!
 
@@ -54,8 +54,8 @@ mod repl;
 use std::io;
 use std::path::PathBuf;
 
-use mps_interpreter::Interpreter;
-use mps_player::{Controller, Player, PlayerError};
+use muss_interpreter::Interpreter;
+use muss_player::{Controller, Player, PlayerError};
 
 #[allow(dead_code)]
 fn play_cursor() -> Result<(), PlayerError> {
@@ -81,7 +81,7 @@ fn main() {
         // build playback controller
         let script_file2 = script_file.clone();
         let volume = args.volume.clone();
-        let mpd = match args.mpd.clone().map(|a| mps_player::mpd_connection(a.parse().unwrap())).transpose() {
+        let mpd = match args.mpd.clone().map(|a| muss_player::mpd_connection(a.parse().unwrap())).transpose() {
             Ok(mpd) => mpd,
             Err(e) => panic!("Abort: Cannot connect to MPD: {}", e),
         };
@@ -125,7 +125,7 @@ fn main() {
         }
     } else {
         // start REPL
-        println!("Welcome to MPS interactive mode!");
+        println!("Welcome to Muss interactive mode!");
         println!("Run ?help for usage instructions.");
         //println!("End a statement with ; to execute it.");
         repl::repl(args)

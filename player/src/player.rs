@@ -10,7 +10,7 @@ use mpd::{Client, Song, error};
 
 use super::uri::Uri;
 
-use mps_interpreter::{tokens::TokenReader, Interpreter, Item};
+use muss_interpreter::{tokens::TokenReader, Interpreter, Item};
 
 //use super::PlaybackError;
 use super::PlayerError;

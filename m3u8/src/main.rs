@@ -1,6 +1,6 @@
-//! Minimal CLI tool to generate a m3u8 playlist from a MPS file.
+//! Minimal CLI tool to generate a m3u8 playlist from a Muss script.
 //! This does not support playback, so it can run on any platform with a filesystem.
-//! Use `mps-m3u8 --help` for usage instructions.
+//! Use `muss-m3u8 --help` for usage instructions.
 //!
 
 mod cli;

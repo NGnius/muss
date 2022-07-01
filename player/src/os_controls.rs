@@ -7,7 +7,7 @@ use std::thread::JoinHandle;
 use mpris_player::{Metadata, MprisPlayer, PlaybackStatus};
 
 #[cfg(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))]
-use mps_interpreter::Item;
+use muss_interpreter::Item;
 
 //use super::Controller;
 use super::player_wrapper::{ControlAction, PlaybackAction};

@@ -1,8 +1,8 @@
 use std::sync::mpsc::{Receiver, Sender};
 use std::{thread, thread::JoinHandle};
 
-use mps_interpreter::tokens::TokenReader;
-use mps_interpreter::Item;
+use muss_interpreter::tokens::TokenReader;
+use muss_interpreter::Item;
 
 use super::Player;
 use super::PlayerError;

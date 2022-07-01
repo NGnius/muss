@@ -4,8 +4,8 @@ use std::io::{self, Write};
 
 use console::{Key, Term};
 
-use mps_interpreter::Interpreter;
-use mps_player::{Controller, Player};
+use muss_interpreter::Interpreter;
+use muss_player::{Controller, Player};
 
 use super::channel_io::{channel_io, ChannelWriter};
 use super::cli::CliArgs;
@@ -47,7 +47,7 @@ pub fn repl(args: CliArgs) {
     term.set_title("mps");
     let (writer, reader) = channel_io();
     let volume = args.volume.clone();
-    let mpd = match args.mpd.clone().map(|a| mps_player::mpd_connection(a.parse().unwrap())).transpose() {
+    let mpd = match args.mpd.clone().map(|a| muss_player::mpd_connection(a.parse().unwrap())).transpose() {
         Ok(mpd) => mpd,
         Err(e) => {
             eprintln!("Cannot connect to MPD address `{}`: {}", args.mpd.unwrap(), e);
@@ -458,7 +458,7 @@ fn display_history_line(state: &mut ReplState, args: &CliArgs) {
 }
 
 #[inline(always)]
-fn error_prompt(error: mps_player::PlayerError, args: &CliArgs) {
+fn error_prompt(error: muss_player::PlayerError, args: &CliArgs) {
     eprintln!("E{}{}", args.prompt, error);
 }
 

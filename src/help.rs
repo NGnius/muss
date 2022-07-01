@@ -1,4 +1,4 @@
-/// Standard help string containing usage information for MPS.
+/// Standard help string containing usage information for Muss.
 pub const HELP_STRING: &str =
 "This language is all about iteration. Almost everything is an iterator or operates on iterators. By default, any operation which is not an assignment will cause the script runner to handle (play/save) the items which that statement contains.
 
@@ -13,7 +13,7 @@ These always return an iterable which can be manipulated.
     Initialize the SQLite database connection using the provided parameters. This must be performed before any other database operation (otherwise the database will already be connected with default settings). Returns an empty iterable.
 
  sql(`SQL query here`)
-    Perform a raw SQLite query on the database which MPS auto-generates. An iterator of the results is returned.
+    Perform a raw SQLite query on the database which Muss auto-generates. An iterator of the results is returned.
 
  song(`something`)
     Retrieve all songs in the database with a title like something.
@@ -68,7 +68,7 @@ Operations to reduce the items in an iterable: iterable.(filter)
  field > something
  field <= something
  field < something -- e.g. iterable.(title == `Romantic Traffic`)
-    Compare all items, keeping only those that match the condition. Valid field names change depending on what information is available when the MpsItem is populated, but usually title, artist, album, genre, track, filename are valid fields. Optionally, a ? or ! can be added to the end of the field name to skip items whose field is missing/incomparable, or keep all items whose field is missing/incomparable (respectively).
+    Compare all items, keeping only those that match the condition. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Optionally, a ? or ! can be added to the end of the field name to skip items whose field is missing/incomparable, or keep all items whose field is missing/incomparable (respectively).
 
  start..end -- e.g. iterable.(0..42)
     Keep only the items that are at the start index up to the end index. Start and/or end may be omitted to start/stop at the iterable's existing start/end (respectively). This stops once the end condition is met, leaving the rest of the iterator unconsumed.
@@ -100,17 +100,17 @@ pub const SORTERS: &str =
 Operations to sort the items in an iterable: iterable~(sorter) OR iterable.sort(sorter)
 
  field -- e.g. iterable~(filename)
-    Sort by a MpsItem field. Valid field names change depending on what information is available when the MpsItem is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
+    Sort by a Item field. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
 
  shuffle
  random shuffle -- e.g. iterable~(shuffle)
     Shuffle the songs in the iterator. This is random for up to 2^16 items, and then the randomness degrades (but at that point you won't notice).
 
  advanced bliss_first -- e.g. iterable~(advanced bliss_first)
-    Sort by the distance (similarity) from the first song in the iterator. Songs which are more similar (lower distance) to the first song in the iterator will be placed closer to the first song, while less similar songs will be sorted to the end. This uses the bliss music analyser, which is a very slow operation and can cause music playback interruptions for large iterators. Requires `advanced` mps-interpreter feature.
+    Sort by the distance (similarity) from the first song in the iterator. Songs which are more similar (lower distance) to the first song in the iterator will be placed closer to the first song, while less similar songs will be sorted to the end. This uses the bliss music analyser, which is a very slow operation and can cause music playback interruptions for large iterators. Requires `advanced` interpreter feature.
 
  advanced bliss_next -- e.g. iterable~(advanced bliss_next)
-    Sort by the distance (similarity) between the last played song in the iterator. Similar to bliss_first. Songs which are more similar (lower distance) to the first song in the iterator will be placed closer to the first song, while less similar songs will be sorted to the end. This uses the bliss music analyser, which is a very slow operation and can cause music playback interruptions for large iterators. Requires `advanced` mps-interpreter feature.";
+    Sort by the distance (similarity) between the last played song in the iterator. Similar to bliss_first. Songs which are more similar (lower distance) to the first song in the iterator will be placed closer to the first song, while less similar songs will be sorted to the end. This uses the bliss music analyser, which is a very slow operation and can cause music playback interruptions for large iterators. Requires `advanced` interpreter feature.";
 
 pub const PROCEDURES: &str =
 "PROCEDURES (?procedures)
