@@ -34,7 +34,7 @@
 //! # FAQ
 //!
 //! ## Can I use MPS right now?
-//! **Sure!** It's not complete, but MPS is completely useable for basic music queries right now. Hopefully most of the bugs have been ironed out as well :)
+//! **Sure!** It's never complete, but MPS is completely useable right now. Hopefully most of the bugs have been ironed out as well :)
 //!
 //! ## Why write a new language?
 //! **I thought it would be fun**. I also wanted to be able to play my music without having to be at the whim of someone else's algorithm (and music), and playing just by album or artist was getting boring. Designing a language specifically for iteration seemed like a cool & novel way of doing it, too (though every approach is a novel approach for me).
@@ -54,14 +54,14 @@ mod repl;
 use std::io;
 use std::path::PathBuf;
 
-use mps_interpreter::MpsFaye;
-use mps_player::{MpsController, MpsPlayer, PlayerError};
+use mps_interpreter::Interpreter;
+use mps_player::{Controller, Player, PlayerError};
 
 #[allow(dead_code)]
 fn play_cursor() -> Result<(), PlayerError> {
     let cursor = io::Cursor::<&'static str>::new("sql(`SELECT * FROM songs JOIN artists ON songs.artist = artists.artist_id WHERE artists.name like 'thundercat'`);");
-    let runner = MpsFaye::with_stream(cursor);
-    let mut player = MpsPlayer::new(runner)?;
+    let runner = Interpreter::with_stream(cursor);
+    let mut player = Player::new(runner)?;
     player.play_all()
 }
 
@@ -90,9 +90,9 @@ fn main() {
                 std::fs::File::open(&script_file2)
                     .unwrap_or_else(|_| panic!("Abort: Cannot open file `{}`", &script_file2)),
             );
-            let runner = MpsFaye::with_stream(script_reader);
+            let runner = Interpreter::with_stream(script_reader);
 
-            let mut player = MpsPlayer::new(runner).unwrap();
+            let mut player = Player::new(runner).unwrap();
             if let Some(vol) = volume {
                 player.set_volume(vol);
             }
@@ -117,7 +117,7 @@ fn main() {
             }
         } else {
             // live playback
-            let ctrl = MpsController::create(player_builder);
+            let ctrl = Controller::create(player_builder);
             match ctrl.wait_for_done() {
                 Ok(_) => println!("Success: Finished playback from script `{}`", script_file),
                 Err(e) => eprintln!("{}", e),

@@ -4,8 +4,8 @@ use std::io::{self, Write};
 
 use console::{Key, Term};
 
-use mps_interpreter::MpsFaye;
-use mps_player::{MpsController, MpsPlayer};
+use mps_interpreter::Interpreter;
+use mps_player::{Controller, Player};
 
 use super::channel_io::{channel_io, ChannelWriter};
 use super::cli::CliArgs;
@@ -55,9 +55,9 @@ pub fn repl(args: CliArgs) {
         }
     };
     let player_builder = move || {
-        let runner = MpsFaye::with_stream(reader);
+        let runner = Interpreter::with_stream(reader);
 
-        let mut player = MpsPlayer::new(runner).unwrap();
+        let mut player = Player::new(runner).unwrap();
         if let Some(vol) = volume {
             player.set_volume(vol);
         }
@@ -111,7 +111,7 @@ pub fn repl(args: CliArgs) {
             writeln!(state.terminal, "Playback mode (output: audio device)")
                 .expect("Failed to write to terminal output");
         }
-        let ctrl = MpsController::create_repl(player_builder);
+        let ctrl = Controller::create_repl(player_builder);
         read_loop(&args, &mut state, || {
             if args.wait {
                 match ctrl.wait_for_empty() {

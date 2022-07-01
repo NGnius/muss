@@ -38,7 +38,7 @@ One day I'll add pretty REPL example pictures and some script files...
 ## FAQ
 
 ### Can I use MPS right now?
-**Sure!** It's not complete, but MPS is completely useable for basic music queries right now. Hopefully most of the bugs have been ironed out as well :)
+**Sure!** It's never complete, but MPS is completely useable right now. Hopefully most of the bugs have been ironed out as well :)
 
 ### Why write a new language?
 **I thought it would be fun**. I also wanted to be able to play my music without having to be at the whim of someone else's algorithm (and music), and playing just by album or artist was getting boring. Designing a language specifically for iteration seemed like a cool & novel way of doing it, too (though every approach is a novel approach for me).

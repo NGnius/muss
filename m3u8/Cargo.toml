@@ -1,0 +1,19 @@
+[package]
+name = "mps-m3u8"
+version = "0.8.0"
+edition = "2021"
+authors = ["NGnius <ngniusness@gmail.com>"]
+description = "Minimal playlist generator for MPS files"
+license = "LGPL-2.1-only OR GPL-3.0-only"
+repository = "https://github.com/NGnius/mps"
+keywords = ["audio", "playlist", "scripting", "language"]
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# local
+mps-interpreter = { version = "0.8.0", path = "../interpreter" }
+# external
+clap = { version = "3.0", features = ["derive"] }
+m3u8-rs = { version = "^3.0.0" }
