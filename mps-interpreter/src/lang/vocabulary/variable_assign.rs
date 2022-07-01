@@ -21,6 +21,7 @@ pub struct AssignStatement {
     context: Option<MpsContext>,
     is_declaration: bool,
     is_simple: bool,
+    is_tried: bool,
 }
 
 impl Display for AssignStatement {
@@ -42,6 +43,7 @@ impl std::clone::Clone for AssignStatement {
             context: None,
             is_declaration: self.is_declaration,
             is_simple: self.is_simple,
+            is_tried: self.is_tried,
         }
     }
 }
@@ -50,6 +52,11 @@ impl Iterator for AssignStatement {
     type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.is_tried {
+            return None;
+        } else {
+            self.is_tried = true;
+        }
         if let Some(inner_statement) = &mut self.inner_statement {
             if inner_statement.is_fake() {
                 Some(Err(RuntimeError {
@@ -148,6 +155,7 @@ impl MpsOp for AssignStatement {
             context: None,
             is_declaration: self.is_declaration,
             is_simple: self.is_simple,
+            is_tried: false,
         })
     }
 }
@@ -195,6 +203,7 @@ impl MpsOpFactory<AssignStatement> for AssignStatementFactory {
                 context: None,
                 is_declaration: is_decl,
                 is_simple: true,
+                is_tried: false,
             })
         } else {
             let inner_statement = dict.try_build_statement(tokens)?;
@@ -205,6 +214,7 @@ impl MpsOpFactory<AssignStatement> for AssignStatementFactory {
                 context: None,
                 is_declaration: is_decl,
                 is_simple: false,
+                is_tried: false,
             })
         }
     }

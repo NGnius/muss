@@ -1,0 +1,25 @@
+[package]
+name = "mps-interpreter-fuzz"
+version = "0.0.0"
+authors = ["Automatically generated"]
+publish = false
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.mps-interpreter]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "faye_fuzz"
+path = "fuzz_targets/faye_fuzz.rs"
+test = false
+doc = false

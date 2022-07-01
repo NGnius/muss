@@ -55,6 +55,7 @@ pub struct MpsFilterStatement<P: MpsFilterPredicate + 'static> {
     iterable: VariableOrOp,
     context: Option<MpsContext>,
     other_filters: Option<PseudoOp>,
+    is_failing: bool,
 }
 
 impl<P: MpsFilterPredicate + 'static> std::clone::Clone for MpsFilterStatement<P> {
@@ -64,6 +65,7 @@ impl<P: MpsFilterPredicate + 'static> std::clone::Clone for MpsFilterStatement<P
             iterable: self.iterable.clone(),
             context: None,
             other_filters: self.other_filters.clone(),
+            is_failing: self.is_failing,
         }
     }
 }
@@ -119,6 +121,7 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
 
     fn reset(&mut self) -> Result<(), RuntimeError> {
         let fake = PseudoOp::Fake(format!("{}", self));
+        self.is_failing = false;
         self.predicate
             .reset()
             .map_err(|x| x.with(RuntimeOp(fake.clone())))?;
@@ -189,6 +192,7 @@ impl<P: MpsFilterPredicate + 'static> MpsOp for MpsFilterStatement<P> {
                 .other_filters
                 .as_ref()
                 .map(|x| PseudoOp::from(x.try_real_ref().unwrap().dup())),
+            is_failing: false,
         })
     }
 }
@@ -197,11 +201,11 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
     type Item = MpsIteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.predicate.is_complete() && self.other_filters.is_none() {
+        if (self.predicate.is_complete() && self.other_filters.is_none()) || self.is_failing {
             return None;
         }
-        let self_clone = self.clone();
-        let self_clone2 = self_clone.clone();
+        //let self_clone = self.clone();
+        //let self_clone2 = self_clone.clone();
         let fake = PseudoOp::Fake(format!("{}", self));
         //let ctx = self.context.as_mut().unwrap();
         match &mut self.iterable {
@@ -319,14 +323,17 @@ impl<P: MpsFilterPredicate + 'static> Iterator for MpsFilterStatement<P> {
                     Ok(x) => {
                         return Some(Err(RuntimeError {
                             line: 0,
-                            op: (Box::new(self_clone2) as Box<dyn MpsOp>).into(),
+                            op: fake,
                             msg: format!(
                                 "Expected operation/iterable type in variable {}, got {}",
                                 &variable_name, x
                             ),
                         }))
                     }
-                    Err(e) => return Some(Err(e.with(RuntimeOp(fake.clone())))),
+                    Err(e) => {
+                        self.is_failing = true; // this is unrecoverable and reproducible, so it shouldn't be tried again (to prevent error spam)
+                        return Some(Err(e.with(RuntimeOp(fake.clone()))))
+                    },
                 };
                 let mut maybe_result = None;
                 let ctx = self.context.take().unwrap();
@@ -610,6 +617,7 @@ impl<P: MpsFilterPredicate + 'static, F: MpsFilterFactory<P> + 'static> BoxedMps
                 iterable: op,
                 context: None,
                 other_filters: another_filter,
+                is_failing: false,
             }))
         }
     }
