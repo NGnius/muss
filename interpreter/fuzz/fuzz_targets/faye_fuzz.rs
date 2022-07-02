@@ -1,6 +1,6 @@
 #![no_main]
 #[macro_use] extern crate libfuzzer_sys;
-extern crate mps_interpreter;
+extern crate muss_interpreter;
 
 fuzz_target!(|data: &[u8]| {
     if let Ok(s) = std::str::from_utf8(data) {
@@ -9,7 +9,7 @@ fuzz_target!(|data: &[u8]| {
         print!("len:{},data:<non-ut8>,", data.len());
     }
     let mut cursor = std::io::Cursor::new(data);
-    let interpreter = mps_interpreter::MpsFaye::with_stream(&mut cursor);
+    let interpreter = muss_interpreter::Interpreter::with_stream(&mut cursor);
     for item in interpreter {
         match item {
             Err(e) => print!("err:{},", e),

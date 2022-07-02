@@ -566,7 +566,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "mps-interpreter"
+name = "muss-interpreter"
 version = "0.8.0"
 dependencies = [
  "bliss-audio-symphonia",
@@ -581,11 +581,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "mps-interpreter-fuzz"
+name = "muss-interpreter-fuzz"
 version = "0.0.0"
 dependencies = [
  "libfuzzer-sys",
- "mps-interpreter",
+ "muss-interpreter",
 ]
 
 [[package]]
