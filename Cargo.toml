@@ -25,7 +25,7 @@ clap = { version = "3.0", features = ["derive"] }
 console = { version = "0.15" }
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
-muss-player = { version = "0.8.0", path = "./player", default-features = false }
+muss-player = { version = "0.8.0", path = "./player", default-features = false, features = ["mpd"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # TODO fix need to specify OS-specific dependency of mps-player
