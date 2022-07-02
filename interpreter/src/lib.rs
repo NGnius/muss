@@ -168,7 +168,7 @@
 //!
 //! ### field -- e.g. `iterable~(filename);`
 //!
-//! Sort by a Item field. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
+//! Sort by an Item field. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
 //!
 //! ### shuffle
 //! ### random shuffle -- e.g. `iterable~(shuffle);`
@@ -243,7 +243,7 @@
 //!
 //! ### file(filepath) -- e.g. `file("~/Music/Romantic Traffic.flac"),`
 //!
-//! Load a item from file, populating the item with the song's tags.
+//! Load an item from file, populating the item with the song's tags.
 //!
 
 mod context;

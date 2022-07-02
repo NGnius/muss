@@ -100,7 +100,7 @@ pub const SORTERS: &str =
 Operations to sort the items in an iterable: iterable~(sorter) OR iterable.sort(sorter)
 
  field -- e.g. iterable~(filename)
-    Sort by a Item field. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
+    Sort by an Item field. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
 
  shuffle
  random shuffle -- e.g. iterable~(shuffle)
@@ -160,4 +160,4 @@ Comma-separated procedure steps will be executed sequentially (like a for loop i
     Format a value into a string. This behaves differently depending on the value's type: When the value is an Item, the item's corresponding field will replace all `{field}` instances in the format string. When the value is a primitive type (String, Int, Bool, etc.), the value's text equivalent will replace all `{}` instances in the format string. When the value is an iterable operation (Op), the operation's script equivalent will replace all `{}` instances in the format string.
 
  file(filepath) -- e.g. file(`~/Music/Romantic Traffic.flac`)
-    Load a item from file, populating the item with the song's tags.";
+    Load an item from file, populating the item with the song's tags.";

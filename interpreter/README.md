@@ -170,7 +170,7 @@ Operations to sort the items in an iterable: `iterable~(sorter)` OR `iterable.so
 
 #### field -- e.g. `iterable~(filename);`
 
-Sort by a Item field. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
+Sort by an Item field. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
 
 #### shuffle
 #### random shuffle -- e.g. `iterable~(shuffle);`
@@ -244,7 +244,7 @@ Various algebraic operations: brackets (order of operations), negation, subtract
 
 #### file(filepath) -- e.g. `file("~/Music/Romantic Traffic.flac"),`
 
-Load a item from file, populating the item with the song's tags.
+Load an item from file, populating the item with the song's tags.
 
 
 License: LGPL-2.1-only OR GPL-3.0-only

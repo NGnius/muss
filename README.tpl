@@ -1,6 +1,6 @@
 # {{crate}}
 
-![repl_demo](https://raw.githubusercontent.com/NGnius/mps/master/extras/demo.png)
+![repl_demo](https://raw.githubusercontent.com/NGnius/muss/master/extras/demo.png)
 
 {{readme}}
 
@@ -8,7 +8,7 @@
 
 {{license}}
 
-**NOTE**: When advanced features are enabled, GPL-3.0 must be used.
+**NOTE**: Advanced features make use of [a fork of bliss-rs](https://github.com/NGnius/bliss-rs) a GPL-3.0 licensed music analysis library.
 
 ## Contribution
 

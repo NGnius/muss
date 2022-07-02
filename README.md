@@ -1,6 +1,6 @@
 # muss
 
-![repl_demo](https://raw.githubusercontent.com/NGnius/mps/master/extras/demo.png)
+![repl_demo](https://raw.githubusercontent.com/NGnius/muss/master/extras/demo.png)
 
 Sort, filter and analyse your music to create great playlists.
 This project implements the interpreter (`./interpreter`), music player (`./player`), and CLI interface for Muss (`./`).
@@ -54,7 +54,7 @@ One day I'll add pretty REPL example pictures and some script files...
 
 LGPL-2.1-only OR GPL-3.0-only
 
-**NOTE**: When advanced features are enabled, GPL-3.0 must be used.
+**NOTE**: Advanced features make use of [a fork of bliss-rs](https://github.com/NGnius/bliss-rs) a GPL-3.0 licensed music analysis library.
 
 ## Contribution
 
