@@ -338,6 +338,10 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
                     }
                     ';' => {
                         if state.in_literal.is_none() {
+                            state
+                                .terminal
+                                .write_line("")
+                                .expect(TERMINAL_WRITE_ERROR);
                             let statement = state.statement_buf.iter().collect::<String>();
                             let statement_result = statement.trim();
                             if !statement_result.starts_with('?') {
@@ -348,28 +352,18 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
                                 execute(state, args);
                                 state.statement_buf.clear();
                             }
+                            let last_line = state.current_line[0..state.current_line.len() - 1].iter().collect::<String>();
+                            state.current_line.clear();
+                            if !last_line.is_empty()
+                                && ((!state.history.is_empty()
+                                    && state.history[state.history.len() - 1] != last_line)
+                                    || state.history.is_empty())
+                            {
+                                state.history.push(last_line);
+                            }
+                            state.selected_history = 0;
+                            prompt(state, args);
                         }
-                    }
-                    '\n' => {
-                        let statement = state.statement_buf.iter().collect::<String>();
-                        let statement_result = statement.trim();
-                        if statement_result.starts_with('?') {
-                            //println!("Got {}", statement_result.unwrap());
-                            repl_commands(statement_result, state, args);
-                            state.statement_buf.clear();
-                        } else if state.bracket_depth == 0
-                            && state.in_literal.is_none()
-                            && state.curly_depth == 0
-                        {
-                            state.statement_buf.push(';');
-                            state
-                                .writer
-                                .write(state.statement_buf.iter().collect::<String>().as_bytes())
-                                .expect(INTERPRETER_WRITE_ERROR);
-                            execute(state, args);
-                            state.statement_buf.clear();
-                        }
-                        prompt(state, args);
                     }
                     _ => {}
                 }
