@@ -1,7 +1,7 @@
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread::JoinHandle;
 
-use muss_interpreter::tokens::TokenReader;
+use muss_interpreter::{Item, InterpreterError};
 
 use super::os_controls::SystemControlWrapper;
 use super::player_wrapper::{ControlAction, PlayerServer, PlayerAction};
@@ -20,9 +20,8 @@ pub struct Controller {
 
 impl Controller {
     pub fn create<
-        'a,
-        F: FnOnce() -> Player<'a, T> + Send + 'static,
-        T: TokenReader + 'static,
+        F: FnOnce() -> Player<I> + Send + 'static,
+        I: std::iter::Iterator<Item=Result<Item, InterpreterError>>,
     >(
         player_gen: F,
     ) -> Self {
@@ -48,9 +47,8 @@ impl Controller {
     }
 
     pub fn create_repl<
-        'a,
-        F: FnOnce() -> Player<'a, T> + Send + 'static,
-        T: TokenReader + 'static,
+        F: FnOnce() -> Player<I> + Send + 'static,
+        I: std::iter::Iterator<Item=Result<Item, InterpreterError>>,
     >(
         player_gen: F,
     ) -> Self {

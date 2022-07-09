@@ -1,31 +1,33 @@
 use std::iter::Iterator;
 
 use super::tokens::TokenReader;
-use super::{InterpreterError, Interpreter, Item};
+use super::{Interpreter, InterpreterItem};
 
 /// Wrapper for InterpreterError with a built-in callback function for every iteration of the interpreter.
-pub struct Debugger<'a, 'b, T>
+pub struct Debugger<'a, T, F>
 where
     T: TokenReader,
+    F: Fn(
+        &mut Interpreter<'a, T>,
+        Option<InterpreterItem>,
+    ) -> Option<InterpreterItem>,
 {
     interpreter: Interpreter<'a, T>,
-    transmuter: &'b dyn Fn(
-        &mut Interpreter<'a, T>,
-        Option<Result<Item, InterpreterError>>,
-    ) -> Option<Result<Item, InterpreterError>>,
+    transmuter: F,
 }
 
-impl<'a, 'b, T> Debugger<'a, 'b, T>
+impl<'a, T, F> Debugger<'a, T, F>
 where
     T: TokenReader,
+    F: Fn(
+        &mut Interpreter<'a, T>,
+        Option<InterpreterItem>,
+    ) -> Option<InterpreterItem>,
 {
     /// Create a new instance of Debugger using the provided interpreter and callback.
     pub fn new(
         faye: Interpreter<'a, T>,
-        item_handler: &'b dyn Fn(
-            &mut Interpreter<'a, T>,
-            Option<Result<Item, InterpreterError>>,
-        ) -> Option<Result<Item, InterpreterError>>,
+        item_handler: F,
     ) -> Self {
         Self {
             interpreter: faye,
@@ -34,11 +36,15 @@ where
     }
 }
 
-impl<'a, 'b, T> Iterator for Debugger<'a, 'b, T>
+impl<'a, T, F> Iterator for Debugger<'a, T, F>
 where
     T: TokenReader,
+    F: Fn(
+        &mut Interpreter<'a, T>,
+        Option<InterpreterItem>,
+    ) -> Option<InterpreterItem>,
 {
-    type Item = Result<Item, InterpreterError>;
+    type Item = InterpreterItem;
 
     fn next(&mut self) -> Option<Self::Item> {
         let next_item = self.interpreter.next();

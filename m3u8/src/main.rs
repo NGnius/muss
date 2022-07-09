@@ -11,7 +11,7 @@ use std::path::Path;
 
 use m3u8_rs::{MediaPlaylist, MediaSegment};
 
-use mps_interpreter::{Interpreter, Item};
+use muss_interpreter::{Interpreter, Item};
 
 fn main() {
     let args = cli::parse();

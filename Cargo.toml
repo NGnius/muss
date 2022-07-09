@@ -1,6 +1,6 @@
 [package]
 name = "muss"
-version = "0.8.0"
+version = "0.9.0"
 edition = "2021"
 authors = ["NGnius (Graham) <ngniusness@gmail.com>"]
 description = "Music Set Script language (MuSS)"
@@ -19,17 +19,18 @@ members = [
 
 [dependencies]
 # local
-muss-interpreter = { version = "0.8.0", path = "./interpreter" }
+muss-interpreter = { version = "0.9.0", path = "./interpreter" }
 # external
 clap = { version = "3.0", features = ["derive"] }
 console = { version = "0.15" }
+lazy_static = { version = "1.4" }
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
-muss-player = { version = "0.8.0", path = "./player", default-features = false, features = ["mpd"] }
+muss-player = { version = "0.9.0", path = "./player", default-features = false, features = ["mpd"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # TODO fix need to specify OS-specific dependency of mps-player
-muss-player = { version = "0.8.0", path = "./player", features = ["mpris-player", "mpd"] }
+muss-player = { version = "0.9.0", path = "./player", features = ["mpris-player", "mpd"] }
 
 [profile.release]
 debug = false

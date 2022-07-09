@@ -60,6 +60,12 @@ impl<'a, R: Read> Interpreter<'a, Tokenizer<R>> {
         let tokenizer = Tokenizer::new(stream);
         Self::with_standard_vocab(tokenizer)
     }
+
+    pub fn with_stream_and_callback(stream: R, callback: &'a dyn Fn(&mut Interpreter<'a, Tokenizer<R>>, InterpreterEvent) -> Result<(), InterpreterError>) -> Self {
+        let tokenizer = Tokenizer::new(stream);
+        let vocab = LanguageDictionary::standard();
+        Self::with(vocab, tokenizer, callback)
+    }
 }
 
 impl<'a, T> Interpreter<'a, T>
@@ -127,11 +133,13 @@ where
     }
 }
 
+pub type InterpreterItem = Result<Item, InterpreterError>;
+
 impl<'a, T> Iterator for Interpreter<'a, T>
 where
     T: TokenReader,
 {
-    type Item = Result<Item, InterpreterError>;
+    type Item = InterpreterItem;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {

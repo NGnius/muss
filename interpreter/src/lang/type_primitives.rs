@@ -33,6 +33,7 @@ impl TypePrimitive {
         }
     }
 
+    /// Pretty-print the value, without type info
     pub fn as_str(&self) -> String {
         match self {
             Self::String(s) => s.clone(),

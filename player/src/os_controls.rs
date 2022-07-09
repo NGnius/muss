@@ -59,7 +59,7 @@ impl SystemControlWrapper {
         self.dbus_ctrl = Some(tx);
         let control_clone1 = self.control.clone();
         self.dbus_handle = Some(std::thread::spawn(move || {
-            let dbus_conn = MprisPlayer::new("mps".into(), "mps".into(), "ngnius.mps".into());
+            let dbus_conn = MprisPlayer::new("muss".into(), "muss".into(), "ngnius.muss".into());
             //let (msg_tx, msg_rx) = channel();
             // dbus setup
             //self.dbus_conn.set_supported_mime_types(vec![]);

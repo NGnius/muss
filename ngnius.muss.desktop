@@ -1,10 +1,10 @@
 [Desktop Entry]
 Categories=AudioVideo;Player;
 Comment=
-Exec=mps %U
+Exec=muss %U
 GenericName=Music Player
 Icon=utilities-terminal
-Name=MPS
+Name=Muss
 StartupNotify=false
 Terminal=true
 Type=Application

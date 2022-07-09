@@ -263,7 +263,7 @@ pub mod tokens;
 pub use context::Context;
 pub use debug::Debugger;
 pub use errors::InterpreterError;
-pub use faye::{Interpreter, InterpreterEvent};
+pub use faye::{Interpreter, InterpreterEvent, InterpreterItem};
 //pub use interpretor::{interpretor, Interpretor};
 pub use item::Item;
 //pub(crate) use item::ItemRuntimeUtil;

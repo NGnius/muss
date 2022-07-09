@@ -1,8 +1,8 @@
 use std::sync::mpsc::{Receiver, Sender};
 use std::{thread, thread::JoinHandle};
 
-use muss_interpreter::tokens::TokenReader;
-use muss_interpreter::Item;
+//use muss_interpreter::tokens::TokenReader;
+use muss_interpreter::{Item, InterpreterError};
 
 use super::Player;
 use super::PlayerError;
@@ -11,17 +11,17 @@ use super::PlayerError;
 /// This allows for message passing between the player and controller.
 ///
 /// You will probably never directly interact with this, instead using Controller to communicate.
-pub struct PlayerServer<'a, T: TokenReader + 'a> {
-    player: Player<'a, T>,
+pub struct PlayerServer<I: std::iter::Iterator<Item=Result<Item, InterpreterError>>> {
+    player: Player<I>,
     control: Receiver<ControlAction>,
     event: Sender<PlayerAction>,
     playback: Sender<PlaybackAction>,
     keep_alive: bool,
 }
 
-impl<'a, T: TokenReader + 'a> PlayerServer<'a, T> {
+impl<I: std::iter::Iterator<Item=Result<Item, InterpreterError>>> PlayerServer<I> {
     pub fn new(
-        player: Player<'a, T>,
+        player: Player<I>,
         ctrl: Receiver<ControlAction>,
         event: Sender<PlayerAction>,
         playback: Sender<PlaybackAction>,
@@ -146,7 +146,7 @@ impl<'a, T: TokenReader + 'a> PlayerServer<'a, T> {
         self.on_end();
     }
 
-    pub fn spawn<F: FnOnce() -> Player<'a, T> + Send + 'static>(
+    pub fn spawn<F: FnOnce() -> Player<I> + Send + 'static>(
         factory: F,
         ctrl_tx: Sender<ControlAction>,
         ctrl_rx: Receiver<ControlAction>,

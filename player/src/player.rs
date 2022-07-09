@@ -10,16 +10,18 @@ use mpd::{Client, Song, error};
 
 use super::uri::Uri;
 
-use muss_interpreter::{tokens::TokenReader, Interpreter, Item};
+use muss_interpreter::{Item, InterpreterError};
 
 //use super::PlaybackError;
 use super::PlayerError;
 use super::UriError;
 
+//type Interpreter = std::iter::Iterator<Item=Result<Item, InterpreterError>>;
+
 /// Playback functionality for a script.
 /// This takes the output of the runner and plays or saves it.
-pub struct Player<'a, T: TokenReader + 'a> {
-    runner: Interpreter<'a, T>,
+pub struct Player<I: std::iter::Iterator<Item=Result<Item, InterpreterError>>> {
+    runner: I,
     sink: Sink,
     #[allow(dead_code)]
     output_stream: OutputStream, // this is required for playback, so it must live as long as this struct instance
@@ -28,8 +30,8 @@ pub struct Player<'a, T: TokenReader + 'a> {
     mpd_connection: Option<Client<std::net::TcpStream>>,
 }
 
-impl<'a, T: TokenReader + 'a> Player<'a, T> {
-    pub fn new(runner: Interpreter<'a, T>) -> Result<Self, PlayerError> {
+impl<I: std::iter::Iterator<Item=Result<Item, InterpreterError>>> Player<I> {
+    pub fn new(runner: I) -> Result<Self, PlayerError> {
         let (stream, output_handle) =
             OutputStream::try_default().map_err(PlayerError::from_err_playback)?;
         Ok(Self {

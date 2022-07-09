@@ -2,7 +2,8 @@
 pub const HELP_STRING: &str =
 "This language is all about iteration. Almost everything is an iterator or operates on iterators. By default, any operation which is not an assignment will cause the script runner to handle (play/save) the items which that statement contains.
 
-To view the currently-supported operations, try ?functions, ?filters, ?procedures, or ?sorters";
+To view Muss syntax, try ?functions, ?filters, ?procedures, or ?sorters
+To view REPL commands, try ?commands";
 
 pub const FUNCTIONS: &str =
 "FUNCTIONS (?functions)
@@ -161,3 +162,26 @@ Comma-separated procedure steps will be executed sequentially (like a for loop i
 
  file(filepath) -- e.g. file(`~/Music/Romantic Traffic.flac`)
     Load an item from file, populating the item with the song's tags.";
+
+pub const REPL_COMMANDS: &str =
+"COMMANDS (?commands)
+REPL-specific operations to help with writing Muss scripts: ?command
+
+ help
+ filters
+ functions
+ procedures
+ sorters
+    Show various help strings for the Muss language and syntax.
+
+ list
+    List remaining items to be played instead of playing them. If no items are about to be played, list all items in the next statement. In playlist mode, only the latter functionality applies.
+
+ skip
+    Skip remaining items to be played. If no items are about to be played, skip all items in the next statement. This is a no-output version of ?list.
+
+ normal
+    Cancel any active ?skip or ?list operation.
+
+ verbose
+    Toggle verbose messages, like extra information on items in ?list and other goodies.";

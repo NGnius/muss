@@ -1,6 +1,6 @@
 [package]
 name = "muss-m3u8"
-version = "0.8.0"
+version = "0.9.0"
 edition = "2021"
 authors = ["NGnius <ngniusness@gmail.com>"]
 description = "Minimal playlist generator for MPS files"
@@ -13,7 +13,7 @@ readme = "README.md"
 
 [dependencies]
 # local
-muss-interpreter = { version = "0.8.0", path = "../interpreter" }
+muss-interpreter = { version = "0.9.0", path = "../interpreter" }
 # external
 clap = { version = "3.0", features = ["derive"] }
 m3u8-rs = { version = "^3.0.0" }
