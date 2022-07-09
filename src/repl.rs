@@ -479,6 +479,54 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
                     }
                 }
             }
+            Key::Del => {
+                if state.cursor_rightward_position != 0 {
+                    let removed_char = state
+                        .current_line
+                        .remove(state.current_line.len() - state.cursor_rightward_position);
+                    state.statement_buf.remove(
+                        state.statement_buf.len() - state.cursor_rightward_position,
+                    );
+                    // re-sync unclosed syntax tracking
+                    match removed_char {
+                        '"' | '`' => {
+                            if let Some(c2) = state.in_literal {
+                                if removed_char == c2 {
+                                    state.in_literal = None;
+                                }
+                            } else {
+                                state.in_literal = Some(removed_char);
+                            }
+                        }
+                        '(' => {
+                            if state.bracket_depth != 0 {
+                                state.bracket_depth -= 1
+                            }
+                        }
+                        ')' => state.bracket_depth += 1,
+                        '{' => {
+                            if state.curly_depth != 0 {
+                                state.curly_depth -= 1
+                            }
+                        }
+                        '}' => state.curly_depth += 1,
+                        _ => {}
+                    }
+                    // re-print end of line to remove character in middle
+                    for i in state.current_line.len() + 1 - state.cursor_rightward_position
+                        ..state.current_line.len()
+                    {
+                        write!(state.terminal, "{}", state.current_line[i])
+                            .expect(TERMINAL_WRITE_ERROR);
+                    }
+                    write!(state.terminal, " ").expect(TERMINAL_WRITE_ERROR);
+                    state
+                        .terminal
+                        .move_cursor_left(state.cursor_rightward_position)
+                        .expect(TERMINAL_WRITE_ERROR);
+                    state.cursor_rightward_position -= 1;
+                }
+            }
             Key::Enter => {
                 state
                     .terminal
