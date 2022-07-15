@@ -91,23 +91,30 @@ fn interpreter_event_callback<'a, T: muss_interpreter::tokens::TokenReader>(_int
     Ok(())
 }
 
+#[inline]
+fn item_prompt(terminal: &mut Term, args: &CliArgs) {
+    write!(terminal, "*I{}", args.prompt)
+        .expect(TERMINAL_WRITE_ERROR);
+}
+
 fn pretty_print_item(item: &Item, terminal: &mut Term, args: &CliArgs, verbose: bool) {
+    item_prompt(terminal, args);
     if verbose {
-        writeln!(terminal, "I{}--\\/-- `{}` --\\/--", args.prompt,
+        writeln!(terminal, "--\\/-- `{}` --\\/--",
             item.field("title").unwrap_or(&TypePrimitive::Empty).as_str()
         ).expect(TERMINAL_WRITE_ERROR);
         let mut fields: Vec<&_> = item.iter().collect();
         fields.sort();
         for field in fields {
             if field != "title" {
-                writeln!(terminal, "I{}  {}: `{}`",
-                    args.prompt, field,
+                writeln!(terminal, "  {}: `{}`",
+                    field,
                     item.field(field).unwrap_or(&TypePrimitive::Empty).as_str()
                 ).expect(TERMINAL_WRITE_ERROR);
             }
         }
     } else {
-         writeln!(terminal, "I{}`{}` by `{}`", args.prompt,
+         writeln!(terminal, "`{}` by `{}`",
             item.field("title").unwrap_or(&TypePrimitive::Empty).as_str(),
             item.field("artist").unwrap_or(&TypePrimitive::Empty).as_str(),
         ).expect(TERMINAL_WRITE_ERROR);
@@ -614,7 +621,7 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
 
 #[inline(always)]
 fn prompt(state: &mut ReplState, args: &CliArgs) {
-    write!(state.terminal, "{}{}", state.line_number, args.prompt)
+    write!(state.terminal, "{: >2}{}", state.line_number, args.prompt)
         .expect(TERMINAL_WRITE_ERROR);
     state.line_number += 1;
     state
@@ -649,7 +656,7 @@ fn display_history_line(state: &mut ReplState, args: &CliArgs) {
 
 #[inline(always)]
 fn error_prompt(error: muss_player::PlayerError, args: &CliArgs) {
-    eprintln!("E{}{}", args.prompt, error);
+    eprintln!("*E{}{}", args.prompt, error);
 }
 
 fn repl_commands(command_str: &str, state: &mut ReplState, _args: &CliArgs) {

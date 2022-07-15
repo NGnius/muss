@@ -498,7 +498,7 @@ impl CacheThread {
             }
         } else {
             if !self.song_in_progress.contains(&path) {
-                // every song is roughly 2 threads -- Song::new(...) spawns a thread
+                // every song is roughly 2 threads -- Song::from_path(...) spawns a thread
                 let available_parallelism =
                     std::thread::available_parallelism().ok().map(|x| x.get()).unwrap_or(DEFAULT_PARALLELISM) / 2;
                 let available_parallelism = if available_parallelism != 0 {
@@ -535,7 +535,7 @@ impl CacheThread {
                 let path_clone = path.clone();
                 let results = worker_tx.clone();
                 std::thread::spawn(move || {
-                    let song_result = Song::new(&path_clone);
+                    let song_result = Song::from_path(&path_clone);
                     results
                         .send(ResponseType::Song {
                             path: path_clone,
@@ -620,7 +620,7 @@ fn worker_distance(
     let song1 = if let Some(song) = song1.1 {
         song
     } else {
-        let new_song1 = Song::new(path1);
+        let new_song1 = Song::from_path(path1);
         results
             .send(ResponseType::Song {
                 path: path1.to_string(),
@@ -633,7 +633,7 @@ fn worker_distance(
     let song2 = if let Some(song) = song2.1 {
         song
     } else {
-        let new_song2 = Song::new(path2);
+        let new_song2 = Song::from_path(path2);
         results
             .send(ResponseType::Song {
                 path: path2.to_string(),
