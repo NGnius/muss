@@ -29,13 +29,13 @@ use criterion::{criterion_group, criterion_main, Criterion};
 }*/
 
 fn faye_benchmark(c: &mut Criterion) {
-    let f = File::open("benches/lots_of_empty.mps").unwrap();
+    let f = File::open("benches/lots_of_empty.muss").unwrap();
     let mut reader = BufReader::with_capacity(1024 * 1024 /* 1 MiB */, f);
     // read everything into buffer before starting
     let mut buf = Vec::with_capacity(1024 * 1024);
     reader.read_to_end(&mut buf).unwrap();
     drop(buf);
-    c.bench_function("muss-faye lots_of_empty.mps", |b| {
+    c.bench_function("muss-faye lots_of_empty.muss", |b| {
         b.iter(|| {
             //let f = File::open("benches/lots_of_empty.mps").unwrap();
             //let mut reader = BufReader::new(f);
