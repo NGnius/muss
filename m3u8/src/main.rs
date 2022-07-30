@@ -33,9 +33,7 @@ fn main() {
         for item in runner {
             match item {
                 Ok(music) => {
-                    if let Some(filename) =
-                        music_filename(&music)
-                    {
+                    if let Some(filename) = music_filename(&music) {
                         playlist.segments.push(MediaSegment {
                             uri: filename,
                             title: music_title(&music),
@@ -56,9 +54,7 @@ fn main() {
         for item in runner {
             match item {
                 Ok(music) => {
-                    if let Some(filename) =
-                        music_filename(&music)
-                    {
+                    if let Some(filename) = music_filename(&music) {
                         playlist.segments.push(MediaSegment {
                             uri: filename,
                             title: music_title(&music),
@@ -99,5 +95,3 @@ fn music_filename(item: &Item) -> Option<String> {
         None
     }
 }
-
-

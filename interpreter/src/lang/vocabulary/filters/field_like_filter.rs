@@ -40,11 +40,7 @@ impl Display for FieldLikeFilter {
 }
 
 impl FilterPredicate for FieldLikeFilter {
-    fn matches(
-        &mut self,
-        music_item_lut: &Item,
-        ctx: &mut Context,
-    ) -> Result<bool, RuntimeMsg> {
+    fn matches(&mut self, music_item_lut: &Item, ctx: &mut Context) -> Result<bool, RuntimeMsg> {
         let variable = match &self.val {
             VariableOrValue::Variable(name) => match ctx.variables.get(name)? {
                 Type::Primitive(TypePrimitive::String(s)) => Ok(s),
@@ -122,13 +118,11 @@ impl FilterFactory<FieldLikeFilter> for FieldLikeFilterFactory {
         };
         let name = assert_token(
             |t| match t {
-                Token::Name(s) => {
-                    match &s as _ {
-                        "unlike" | "like" => Some(s),
-                        _ => None,
-                    }
+                Token::Name(s) => match &s as _ {
+                    "unlike" | "like" => Some(s),
+                    _ => None,
                 },
-                _ => None
+                _ => None,
             },
             Token::Literal("like|unlike".into()),
             tokens,

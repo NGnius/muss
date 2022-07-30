@@ -7,10 +7,7 @@ use super::{Interpreter, InterpreterItem};
 pub struct Debugger<'a, T, F>
 where
     T: TokenReader,
-    F: Fn(
-        &mut Interpreter<'a, T>,
-        Option<InterpreterItem>,
-    ) -> Option<InterpreterItem>,
+    F: Fn(&mut Interpreter<'a, T>, Option<InterpreterItem>) -> Option<InterpreterItem>,
 {
     interpreter: Interpreter<'a, T>,
     transmuter: F,
@@ -19,16 +16,10 @@ where
 impl<'a, T, F> Debugger<'a, T, F>
 where
     T: TokenReader,
-    F: Fn(
-        &mut Interpreter<'a, T>,
-        Option<InterpreterItem>,
-    ) -> Option<InterpreterItem>,
+    F: Fn(&mut Interpreter<'a, T>, Option<InterpreterItem>) -> Option<InterpreterItem>,
 {
     /// Create a new instance of Debugger using the provided interpreter and callback.
-    pub fn new(
-        faye: Interpreter<'a, T>,
-        item_handler: F,
-    ) -> Self {
+    pub fn new(faye: Interpreter<'a, T>, item_handler: F) -> Self {
         Self {
             interpreter: faye,
             transmuter: item_handler,
@@ -39,10 +30,7 @@ where
 impl<'a, T, F> Iterator for Debugger<'a, T, F>
 where
     T: TokenReader,
-    F: Fn(
-        &mut Interpreter<'a, T>,
-        Option<InterpreterItem>,
-    ) -> Option<InterpreterItem>,
+    F: Fn(&mut Interpreter<'a, T>, Option<InterpreterItem>) -> Option<InterpreterItem>,
 {
     type Item = InterpreterItem;
 

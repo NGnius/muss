@@ -8,9 +8,7 @@ use crate::Item;
 
 use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::LanguageDictionary;
-use crate::lang::{
-    FunctionFactory, FunctionStatementFactory, IteratorItem, Op, PseudoOp,
-};
+use crate::lang::{FunctionFactory, FunctionStatementFactory, IteratorItem, Op, PseudoOp};
 use crate::lang::{RuntimeError, SyntaxError};
 
 #[derive(Debug)]
@@ -285,8 +283,7 @@ fn next_comma(tokens: &VecDeque<Token>) -> usize {
     tokens.len()
 }
 
-pub type RepeatStatementFactory =
-    FunctionStatementFactory<RepeatStatement, RepeatFunctionFactory>;
+pub type RepeatStatementFactory = FunctionStatementFactory<RepeatStatement, RepeatFunctionFactory>;
 
 #[inline(always)]
 pub fn repeat_function_factory() -> RepeatStatementFactory {

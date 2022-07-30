@@ -47,11 +47,7 @@ impl Display for FieldFilter {
 }
 
 impl FilterPredicate for FieldFilter {
-    fn matches(
-        &mut self,
-        music_item_lut: &Item,
-        ctx: &mut Context,
-    ) -> Result<bool, RuntimeMsg> {
+    fn matches(&mut self, music_item_lut: &Item, ctx: &mut Context) -> Result<bool, RuntimeMsg> {
         let variable = match &self.val {
             VariableOrValue::Variable(name) => match ctx.variables.get(name)? {
                 Type::Primitive(t) => Ok(t),

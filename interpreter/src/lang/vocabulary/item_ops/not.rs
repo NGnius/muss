@@ -32,9 +32,7 @@ impl ItemOp for NotItemOp {
     fn execute(&self, context: &mut Context) -> Result<Type, RuntimeMsg> {
         let rhs = self.rhs.execute(context)?;
         if let Type::Primitive(rhs) = &rhs {
-            Ok(Type::Primitive(
-                rhs.try_not().map_err(RuntimeMsg)?,
-            ))
+            Ok(Type::Primitive(rhs.try_not().map_err(RuntimeMsg)?))
         } else {
             Err(RuntimeMsg(format!(
                 "Cannot apply logical NOT to `{}` ({}): not primitive type",

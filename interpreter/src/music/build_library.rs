@@ -3,10 +3,7 @@ use std::path::Path;
 use super::Library;
 use crate::lang::db::*;
 
-pub fn build_library_from_files<P: AsRef<Path>>(
-    path: P,
-    lib: &mut Library,
-) -> std::io::Result<()> {
+pub fn build_library_from_files<P: AsRef<Path>>(path: P, lib: &mut Library) -> std::io::Result<()> {
     //let mut result = Library::new();
     lib.read_path(path, 10)?;
     Ok(())

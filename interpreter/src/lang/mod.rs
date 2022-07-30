@@ -20,9 +20,7 @@ pub(crate) mod utility;
 pub use dictionary::LanguageDictionary;
 pub(crate) use error::LanguageError;
 pub use error::{RuntimeError, RuntimeMsg, RuntimeOp, SyntaxError};
-pub use filter::{
-    FilterFactory, FilterPredicate, FilterStatement, FilterStatementFactory,
-};
+pub use filter::{FilterFactory, FilterPredicate, FilterStatement, FilterStatementFactory};
 pub use filter_replace::FilterReplaceStatement;
 pub use function::{FunctionFactory, FunctionStatementFactory};
 pub use iter_block::{ItemBlockFactory, ItemOp, ItemOpFactory};

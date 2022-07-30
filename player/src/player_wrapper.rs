@@ -2,7 +2,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::{thread, thread::JoinHandle};
 
 //use muss_interpreter::tokens::TokenReader;
-use muss_interpreter::{Item, InterpreterError};
+use muss_interpreter::{InterpreterError, Item};
 
 use super::Player;
 use super::PlayerError;
@@ -11,7 +11,7 @@ use super::PlayerError;
 /// This allows for message passing between the player and controller.
 ///
 /// You will probably never directly interact with this, instead using Controller to communicate.
-pub struct PlayerServer<I: std::iter::Iterator<Item=Result<Item, InterpreterError>>> {
+pub struct PlayerServer<I: std::iter::Iterator<Item = Result<Item, InterpreterError>>> {
     player: Player<I>,
     control: Receiver<ControlAction>,
     event: Sender<PlayerAction>,
@@ -19,7 +19,7 @@ pub struct PlayerServer<I: std::iter::Iterator<Item=Result<Item, InterpreterErro
     keep_alive: bool,
 }
 
-impl<I: std::iter::Iterator<Item=Result<Item, InterpreterError>>> PlayerServer<I> {
+impl<I: std::iter::Iterator<Item = Result<Item, InterpreterError>>> PlayerServer<I> {
     pub fn new(
         player: Player<I>,
         ctrl: Receiver<ControlAction>,

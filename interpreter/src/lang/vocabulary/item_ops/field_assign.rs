@@ -78,7 +78,7 @@ impl ItemOpFactory<FieldAssignItemOp> for FieldAssignItemOpFactory {
         factory: &ItemBlockFactory,
         dict: &LanguageDictionary,
     ) -> Result<FieldAssignItemOp, SyntaxError> {
-        let var_name =if tokens[0].is_dot() {
+        let var_name = if tokens[0].is_dot() {
             "item".to_string()
         } else {
             assert_token(

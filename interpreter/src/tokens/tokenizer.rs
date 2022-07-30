@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
-use super::Token;
 use super::ParseError;
+use super::Token;
 
 pub trait TokenReader {
     fn current_line(&self) -> usize;

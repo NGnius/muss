@@ -1,12 +1,12 @@
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread::JoinHandle;
 
-use muss_interpreter::{Item, InterpreterError};
+use muss_interpreter::{InterpreterError, Item};
 
 use super::os_controls::SystemControlWrapper;
-use super::player_wrapper::{ControlAction, PlayerServer, PlayerAction};
-use super::Player;
+use super::player_wrapper::{ControlAction, PlayerAction, PlayerServer};
 use super::PlaybackError;
+use super::Player;
 use super::PlayerError;
 
 /// A controller for a Player running on another thread.
@@ -21,7 +21,7 @@ pub struct Controller {
 impl Controller {
     pub fn create<
         F: FnOnce() -> Player<I> + Send + 'static,
-        I: std::iter::Iterator<Item=Result<Item, InterpreterError>>,
+        I: std::iter::Iterator<Item = Result<Item, InterpreterError>>,
     >(
         player_gen: F,
     ) -> Self {
@@ -48,7 +48,7 @@ impl Controller {
 
     pub fn create_repl<
         F: FnOnce() -> Player<I> + Send + 'static,
-        I: std::iter::Iterator<Item=Result<Item, InterpreterError>>,
+        I: std::iter::Iterator<Item = Result<Item, InterpreterError>>,
     >(
         player_gen: F,
     ) -> Self {
@@ -87,14 +87,15 @@ impl Controller {
                 Ok(())
             } else {
                 Err(PlaybackError {
-                    msg: "Incorrect acknowledgement received for Controller control action"
-                        .into(),
-                }.into())
+                    msg: "Incorrect acknowledgement received for Controller control action".into(),
+                }
+                .into())
             }
         } else {
             Err(PlaybackError {
                 msg: "Invalid acknowledgement received for Controller control action".into(),
-            }.into())
+            }
+            .into())
         }
     }
 
@@ -146,7 +147,8 @@ impl Controller {
             Ok(x) => Ok(x),
             Err(_) => Err(PlaybackError {
                 msg: "PlayerServer did not exit correctly".into(),
-            }.into()),
+            }
+            .into()),
         }
     }
 
@@ -208,10 +210,13 @@ impl Controller {
                 if action == to_send {
                     break;
                 } else {
-                    result.push(PlaybackError {
-                        msg: "Incorrect acknowledgement received for Controller control action"
-                            .into(),
-                    }.into());
+                    result.push(
+                        PlaybackError {
+                            msg: "Incorrect acknowledgement received for Controller control action"
+                                .into(),
+                        }
+                        .into(),
+                    );
                 }
             } else if let Err(e) = self.handle_event(msg) {
                 result.push(e);

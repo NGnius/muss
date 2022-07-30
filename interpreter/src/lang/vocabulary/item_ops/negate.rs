@@ -32,9 +32,7 @@ impl ItemOp for NegateItemOp {
     fn execute(&self, context: &mut Context) -> Result<Type, RuntimeMsg> {
         let rhs = self.rhs.execute(context)?;
         if let Type::Primitive(rhs) = &rhs {
-            Ok(Type::Primitive(
-                rhs.try_negate().map_err(RuntimeMsg)?,
-            ))
+            Ok(Type::Primitive(rhs.try_negate().map_err(RuntimeMsg)?))
         } else {
             Err(RuntimeMsg(format!(
                 "Cannot negate `{}` ({}): not primitive type",

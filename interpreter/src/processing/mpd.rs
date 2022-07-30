@@ -1,14 +1,14 @@
 use core::fmt::Debug;
 use std::collections::VecDeque;
-use std::net::{SocketAddr, TcpStream};
 use std::iter::Iterator;
+use std::net::{SocketAddr, TcpStream};
 
 use mpd::Client;
-use mpd::{Query, Term, Song};
+use mpd::{Query, Song, Term};
 
 use crate::lang::RuntimeMsg;
-use crate::Item;
 use crate::lang::TypePrimitive;
+use crate::Item;
 
 /// Music Player Daemon interface for interacting with it's database
 pub trait MpdQuerier: Debug {
@@ -16,7 +16,11 @@ pub trait MpdQuerier: Debug {
 
     fn search(&mut self, params: Vec<(&str, String)>) -> Result<VecDeque<Item>, RuntimeMsg>;
 
-    fn one_shot_search(&self, addr: SocketAddr, params: Vec<(&str, String)>) -> Result<VecDeque<Item>, RuntimeMsg>;
+    fn one_shot_search(
+        &self,
+        addr: SocketAddr,
+        params: Vec<(&str, String)>,
+    ) -> Result<VecDeque<Item>, RuntimeMsg>;
 }
 
 #[derive(Default, Debug)]
@@ -26,7 +30,10 @@ pub struct MpdExecutor {
 
 impl MpdQuerier for MpdExecutor {
     fn connect(&mut self, addr: SocketAddr) -> Result<(), RuntimeMsg> {
-        self.connection = Some(Client::connect(addr).map_err(|e| RuntimeMsg(format!("MPD connection error: {}", e)))?);
+        self.connection = Some(
+            Client::connect(addr)
+                .map_err(|e| RuntimeMsg(format!("MPD connection error: {}", e)))?,
+        );
         Ok(())
     }
 
@@ -40,19 +47,31 @@ impl MpdQuerier for MpdExecutor {
         for (term, value) in params {
             query_mut = query_mut.and(str_to_term(term), value);
         }
-        let songs = self.connection.as_mut().unwrap().search(query_mut, None).map_err(|e| RuntimeMsg(format!("MPD search error: {}", e)))?;
+        let songs = self
+            .connection
+            .as_mut()
+            .unwrap()
+            .search(query_mut, None)
+            .map_err(|e| RuntimeMsg(format!("MPD search error: {}", e)))?;
         Ok(songs.into_iter().map(song_to_item).collect())
     }
 
-    fn one_shot_search(&self, addr: SocketAddr, params: Vec<(&str, String)>) -> Result<VecDeque<Item>, RuntimeMsg> {
-        let mut connection = Client::connect(addr).map_err(|e| RuntimeMsg(format!("MPD connection error: {}", e)))?;
+    fn one_shot_search(
+        &self,
+        addr: SocketAddr,
+        params: Vec<(&str, String)>,
+    ) -> Result<VecDeque<Item>, RuntimeMsg> {
+        let mut connection = Client::connect(addr)
+            .map_err(|e| RuntimeMsg(format!("MPD connection error: {}", e)))?;
         //let music_dir = connection.music_directory().map_err(|e| RuntimeMsg(format!("MPD command error: {}", e)))?;
         let mut query = Query::new();
         let mut query_mut = &mut query;
         for (term, value) in params {
             query_mut = query_mut.and(str_to_term(term), value);
         }
-        let songs = connection.search(query_mut, None).map_err(|e| RuntimeMsg(format!("MPD search error: {}", e)))?;
+        let songs = connection
+            .search(query_mut, None)
+            .map_err(|e| RuntimeMsg(format!("MPD search error: {}", e)))?;
         Ok(songs.into_iter().map(song_to_item).collect())
     }
 }
@@ -101,6 +120,6 @@ fn str_to_term(s: &str) -> Term<'_> {
         "file" => Term::File,
         "base" => Term::Base,
         "lastmod" => Term::LastMod,
-        x => Term::Tag(x.into())
+        x => Term::Tag(x.into()),
     }
 }

@@ -189,10 +189,7 @@ impl Iterator for ItemBlockStatement {
                     return Some(Err(RuntimeError {
                         line: 0,
                         op: PseudoOp::from_printable(self),
-                        msg: format!(
-                            "Expected `item` like Type::Item(Item[...]), got {}",
-                            x
-                        ),
+                        msg: format!("Expected `item` like Type::Item(Item[...]), got {}", x),
                     }))
                 }
                 None => {}
@@ -214,10 +211,7 @@ pub struct ItemBlockFactory {
 }
 
 impl ItemBlockFactory {
-    pub fn push<
-        T: ItemOpFactory<Y> + 'static,
-        Y: Deref<Target = dyn ItemOp> + ItemOp + 'static,
-    >(
+    pub fn push<T: ItemOpFactory<Y> + 'static, Y: Deref<Target = dyn ItemOp> + ItemOp + 'static>(
         mut self,
         factory: T,
     ) -> Self {
@@ -314,10 +308,7 @@ fn replace_item_var(ctx: &mut Context, item: Type) -> Option<Type> {
     old_var
 }
 
-fn restore_item_var(
-    ctx: &mut Context,
-    old_var: Option<Type>,
-) -> Result<Option<Type>, RuntimeMsg> {
+fn restore_item_var(ctx: &mut Context, old_var: Option<Type>) -> Result<Option<Type>, RuntimeMsg> {
     let new_var = if ctx.variables.exists(ITEM_VARIABLE_NAME) {
         Some(ctx.variables.remove(ITEM_VARIABLE_NAME)?)
     } else {

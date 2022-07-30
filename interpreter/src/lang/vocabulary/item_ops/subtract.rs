@@ -35,9 +35,7 @@ impl ItemOp for SubtractItemOp {
         if let Type::Primitive(lhs) = &lhs {
             let rhs = self.rhs.execute(context)?;
             if let Type::Primitive(rhs) = &rhs {
-                Ok(Type::Primitive(
-                    lhs.try_subtract(rhs).map_err(RuntimeMsg)?,
-                ))
+                Ok(Type::Primitive(lhs.try_subtract(rhs).map_err(RuntimeMsg)?))
             } else {
                 Err(RuntimeMsg(format!(
                     "Cannot subtract right-hand side `{}` ({}): not primitive type",

@@ -16,14 +16,14 @@ impl<'a> Uri<&'a str> {
             Some(end) => {
                 // proper URI
                 if let Some(query_start) = self.0.find('?') {
-                    self.0.get(end+2..query_start).unwrap()
+                    self.0.get(end + 2..query_start).unwrap()
                 } else if let Some(frag_start) = self.0.find('#') {
-                    self.0.get(end+2..frag_start).unwrap()
+                    self.0.get(end + 2..frag_start).unwrap()
                 } else {
-                    self.0.get(end+2..).unwrap()
+                    self.0.get(end + 2..).unwrap()
                 }
-            },
-            None => self.0
+            }
+            None => self.0,
         }
     }
 

@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use regex::Regex;
 
-use crate::lang::{TypePrimitive, RuntimeMsg};
+use crate::lang::{RuntimeMsg, TypePrimitive};
 use crate::Item;
 
 const DEFAULT_REGEX: &str = r"/(?P<artist>[^/]+)/(?P<album>[^/]+)/(?:(?:(?P<disc>\d+)\s+)?(?P<track>\d+)\.?\s+)?(?P<title>[^/]+)\.(?P<format>(?:mp3)|(?:wav)|(?:ogg)|(?:flac)|(?:mp4)|(?:aac))$";
@@ -41,7 +41,8 @@ impl Iterator for SortedReadDir {
                 }
             }
             self.dir_iter_complete = true;
-            self.cache.sort_by_key(|b| std::cmp::Reverse(b.path().to_string_lossy().to_lowercase()));
+            self.cache
+                .sort_by_key(|b| std::cmp::Reverse(b.path().to_string_lossy().to_lowercase()));
             /*self.cache.sort_by(
                 |a, b| b.path().to_string_lossy().to_lowercase().cmp(
                     &a.path().to_string_lossy().to_lowercase())
@@ -227,7 +228,7 @@ impl FileIter {
         if let Some(captures) = captures {
             for name in capture_names.flatten() {
                 if item.field(name).is_some() {
-                        // do nothing
+                    // do nothing
                 } else if let Some(value) = captures.name(name).map(|m| m.as_str().to_string()) {
                     item.set_field(name, TypePrimitive::parse(value));
                 }

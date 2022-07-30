@@ -6,11 +6,11 @@ use rodio::{decoder::Decoder, OutputStream, OutputStreamHandle, Sink};
 use m3u8_rs::{MediaPlaylist, MediaSegment};
 
 #[cfg(feature = "mpd")]
-use mpd::{Client, Song, error};
+use mpd::{error, Client, Song};
 
 use super::uri::Uri;
 
-use muss_interpreter::{Item, InterpreterError};
+use muss_interpreter::{InterpreterError, Item};
 
 //use super::PlaybackError;
 use super::PlayerError;
@@ -20,7 +20,7 @@ use super::UriError;
 
 /// Playback functionality for a script.
 /// This takes the output of the runner and plays or saves it.
-pub struct Player<I: std::iter::Iterator<Item=Result<Item, InterpreterError>>> {
+pub struct Player<I: std::iter::Iterator<Item = Result<Item, InterpreterError>>> {
     runner: I,
     sink: Sink,
     #[allow(dead_code)]
@@ -30,7 +30,7 @@ pub struct Player<I: std::iter::Iterator<Item=Result<Item, InterpreterError>>> {
     mpd_connection: Option<Client<std::net::TcpStream>>,
 }
 
-impl<I: std::iter::Iterator<Item=Result<Item, InterpreterError>>> Player<I> {
+impl<I: std::iter::Iterator<Item = Result<Item, InterpreterError>>> Player<I> {
     pub fn new(runner: I) -> Result<Self, PlayerError> {
         let (stream, output_handle) =
             OutputStream::try_default().map_err(PlayerError::from_err_playback)?;
@@ -166,9 +166,7 @@ impl<I: std::iter::Iterator<Item=Result<Item, InterpreterError>>> Player<I> {
         for item in &mut self.runner {
             match item {
                 Ok(music) => {
-                    if let Some(filename) =
-                        music_filename(&music)
-                    {
+                    if let Some(filename) = music_filename(&music) {
                         //println!("Adding file `{}` to playlist", filename);
                         playlist.segments.push(MediaSegment {
                             uri: filename,
@@ -215,12 +213,13 @@ impl<I: std::iter::Iterator<Item=Result<Item, InterpreterError>>> Player<I> {
         match uri.scheme() {
             Some(s) => match &s.to_lowercase() as &str {
                 "file:" => {
-                    let file = fs::File::open(uri.path()).map_err(PlayerError::from_err_playback)?;
+                    let file =
+                        fs::File::open(uri.path()).map_err(PlayerError::from_err_playback)?;
                     let stream = io::BufReader::new(file);
                     let source = Decoder::new(stream).map_err(PlayerError::from_err_playback)?;
                     self.sink.append(source);
                     Ok(())
-                },
+                }
                 #[cfg(feature = "mpd")]
                 "mpd:" => {
                     if let Some(mpd_client) = &mut self.mpd_connection {
@@ -229,13 +228,17 @@ impl<I: std::iter::Iterator<Item=Result<Item, InterpreterError>>> Player<I> {
                             file: uri.path().to_owned(),
                             ..Default::default()
                         };
-                        mpd_client.push(song).map_err(PlayerError::from_err_playback)?;
+                        mpd_client
+                            .push(song)
+                            .map_err(PlayerError::from_err_playback)?;
                         Ok(())
                     } else {
-                        Err(PlayerError::from_err_playback("Cannot play MPD song: no MPD client connected"))
+                        Err(PlayerError::from_err_playback(
+                            "Cannot play MPD song: no MPD client connected",
+                        ))
                     }
-                },
-                scheme => Err(UriError::Unsupported(scheme.to_owned()).into())
+                }
+                scheme => Err(UriError::Unsupported(scheme.to_owned()).into()),
             },
             None => {
                 //default

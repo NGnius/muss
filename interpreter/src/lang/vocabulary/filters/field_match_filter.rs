@@ -33,11 +33,7 @@ impl Display for FieldRegexFilter {
 }
 
 impl FilterPredicate for FieldRegexFilter {
-    fn matches(
-        &mut self,
-        music_item_lut: &Item,
-        ctx: &mut Context,
-    ) -> Result<bool, RuntimeMsg> {
+    fn matches(&mut self, music_item_lut: &Item, ctx: &mut Context) -> Result<bool, RuntimeMsg> {
         let variable = match &self.val {
             VariableOrValue::Variable(name) => match ctx.variables.get(name)? {
                 Type::Primitive(TypePrimitive::String(s)) => Ok(s),

@@ -237,15 +237,14 @@ impl<P: FilterPredicate + 'static> Iterator for FilterStatement<P> {
                                     // handle other filters
                                     // make fake inner item
                                     let single_op = SingleItem::new_ok(item.clone());
-                                    match ctx.variables.declare(
-                                        INNER_VARIABLE_NAME,
-                                        Type::Op(Box::new(single_op)),
-                                    ) {
+                                    match ctx
+                                        .variables
+                                        .declare(INNER_VARIABLE_NAME, Type::Op(Box::new(single_op)))
+                                    {
                                         Ok(x) => x,
                                         Err(e) => {
                                             //self.context = Some(op.escape());
-                                            maybe_result =
-                                                Some(Err(e.with(RuntimeOp(fake))));
+                                            maybe_result = Some(Err(e.with(RuntimeOp(fake))));
                                             self.context = Some(ctx);
                                             break;
                                         }
@@ -268,9 +267,8 @@ impl<P: FilterPredicate + 'static> Iterator for FilterStatement<P> {
                                                 Ok(_) => {}
                                                 Err(e) => match maybe_result {
                                                     Some(Ok(_)) => {
-                                                        maybe_result = Some(Err(
-                                                            e.with(RuntimeOp(fake))
-                                                        ))
+                                                        maybe_result =
+                                                            Some(Err(e.with(RuntimeOp(fake))))
                                                     }
                                                     Some(Err(e2)) => maybe_result = Some(Err(e2)), // already failing, do not replace error,
                                                     None => {} // impossible
@@ -332,8 +330,8 @@ impl<P: FilterPredicate + 'static> Iterator for FilterStatement<P> {
                     }
                     Err(e) => {
                         self.is_failing = true; // this is unrecoverable and reproducible, so it shouldn't be tried again (to prevent error spam)
-                        return Some(Err(e.with(RuntimeOp(fake))))
-                    },
+                        return Some(Err(e.with(RuntimeOp(fake))));
+                    }
                 };
                 let mut maybe_result = None;
                 let ctx = self.context.take().unwrap();
@@ -457,17 +455,12 @@ impl<P: FilterPredicate + 'static> Iterator for FilterStatement<P> {
     }
 }
 
-pub struct FilterStatementFactory<
-    P: FilterPredicate + 'static,
-    F: FilterFactory<P> + 'static,
-> {
+pub struct FilterStatementFactory<P: FilterPredicate + 'static, F: FilterFactory<P> + 'static> {
     filter_factory: F,
     idc: PhantomData<P>,
 }
 
-impl<P: FilterPredicate + 'static, F: FilterFactory<P> + 'static>
-    FilterStatementFactory<P, F>
-{
+impl<P: FilterPredicate + 'static, F: FilterFactory<P> + 'static> FilterStatementFactory<P, F> {
     pub fn new(factory: F) -> Self {
         Self {
             filter_factory: factory,

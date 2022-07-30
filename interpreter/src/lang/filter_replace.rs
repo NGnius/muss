@@ -354,10 +354,7 @@ fn declare_or_replace_item(
     Ok(old_item)
 }
 
-fn remove_or_replace_item(
-    old_item: Option<Type>,
-    ctx: &mut Context,
-) -> Result<(), RuntimeMsg> {
+fn remove_or_replace_item(old_item: Option<Type>, ctx: &mut Context) -> Result<(), RuntimeMsg> {
     ctx.variables.remove(ITEM_VARIABLE_NAME)?;
     if let Some(old_item) = old_item {
         ctx.variables.declare(ITEM_VARIABLE_NAME, old_item)?;

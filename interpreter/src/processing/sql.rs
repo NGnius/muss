@@ -1,6 +1,6 @@
 use core::fmt::Debug;
-use std::fmt::Write;
 use std::collections::{HashMap, HashSet};
+use std::fmt::Write;
 
 use crate::lang::db::*;
 use crate::lang::RuntimeMsg;

@@ -4,8 +4,7 @@ use std::iter::Iterator;
 
 use crate::lang::utility::assert_token;
 use crate::lang::{
-    FunctionFactory, FunctionStatementFactory, IteratorItem, LanguageDictionary, Op,
-    PseudoOp,
+    FunctionFactory, FunctionStatementFactory, IteratorItem, LanguageDictionary, Op, PseudoOp,
 };
 use crate::lang::{RuntimeError, RuntimeMsg, RuntimeOp, SyntaxError};
 use crate::tokens::Token;

@@ -5,7 +5,7 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use crate::lang::utility::{assert_name, check_name};
 use crate::lang::SyntaxError;
 #[cfg(feature = "advanced")]
-use crate::lang::{IteratorItem, Op, Sorter, RuntimeMsg};
+use crate::lang::{IteratorItem, Op, RuntimeMsg, Sorter};
 use crate::lang::{LanguageDictionary, SortStatementFactory, SorterFactory};
 use crate::tokens::Token;
 #[cfg(feature = "advanced")]

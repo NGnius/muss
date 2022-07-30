@@ -1,17 +1,17 @@
 mod filesystem;
-#[cfg(feature = "advanced")]
-mod music_analysis;
 #[cfg(feature = "mpd")]
 mod mpd;
+#[cfg(feature = "advanced")]
+mod music_analysis;
 mod sql;
 mod variables;
 
 //pub type OpGetter = dyn FnMut() -> crate::lang::PseudoOp;
 
 pub mod database {
-    pub use super::sql::{DatabaseQuerier, SQLiteExecutor, QueryResult};
     #[cfg(feature = "mpd")]
-    pub use super::mpd::{MpdQuerier, MpdExecutor};
+    pub use super::mpd::{MpdExecutor, MpdQuerier};
+    pub use super::sql::{DatabaseQuerier, QueryResult, SQLiteExecutor};
 }
 
 pub mod general {

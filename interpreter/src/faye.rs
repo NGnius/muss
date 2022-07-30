@@ -61,7 +61,13 @@ impl<'a, R: Read> Interpreter<'a, Tokenizer<R>> {
         Self::with_standard_vocab(tokenizer)
     }
 
-    pub fn with_stream_and_callback(stream: R, callback: &'a dyn Fn(&mut Interpreter<'a, Tokenizer<R>>, InterpreterEvent) -> Result<(), InterpreterError>) -> Self {
+    pub fn with_stream_and_callback(
+        stream: R,
+        callback: &'a dyn Fn(
+            &mut Interpreter<'a, Tokenizer<R>>,
+            InterpreterEvent,
+        ) -> Result<(), InterpreterError>,
+    ) -> Self {
         let tokenizer = Tokenizer::new(stream);
         let vocab = LanguageDictionary::standard();
         Self::with(vocab, tokenizer, callback)
@@ -89,7 +95,10 @@ where
     pub fn with(
         vocab: LanguageDictionary,
         token_reader: T,
-        callback: &'a dyn Fn(&mut Interpreter<'a, T>, InterpreterEvent) -> Result<(), InterpreterError>,
+        callback: &'a dyn Fn(
+            &mut Interpreter<'a, T>,
+            InterpreterEvent,
+        ) -> Result<(), InterpreterError>,
     ) -> Self {
         Self {
             tokenizer: token_reader,
@@ -190,7 +199,10 @@ where
     }
 }
 
-fn error_with_ctx<T: std::convert::Into<InterpreterError>>(error: T, line: usize) -> InterpreterError {
+fn error_with_ctx<T: std::convert::Into<InterpreterError>>(
+    error: T,
+    line: usize,
+) -> InterpreterError {
     let mut err = error.into();
     err.set_line(line);
     err

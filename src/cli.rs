@@ -34,7 +34,9 @@ pub fn parse() -> CliArgs {
 
 pub fn validate(args: &CliArgs) -> Result<(), String> {
     if let Some(mpd_addr) = &args.mpd {
-        let _: std::net::SocketAddr = mpd_addr.parse().map_err(|e| format!("Unrecognized MPS address `{}`: {}", mpd_addr, e))?;
+        let _: std::net::SocketAddr = mpd_addr
+            .parse()
+            .map_err(|e| format!("Unrecognized MPS address `{}`: {}", mpd_addr, e))?;
     }
     Ok(())
 }

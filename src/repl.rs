@@ -1,27 +1,25 @@
 //! Read, Execute, Print Loop functionality
 #![allow(clippy::single_match)]
-use std::sync::{RwLock};
-use std::sync::mpsc::{self, Receiver};
 use std::io::{self, Write};
+use std::sync::mpsc::{self, Receiver};
+use std::sync::RwLock;
 
 use lazy_static::lazy_static;
 
 use console::{Key, Term};
 
-use muss_interpreter::{Interpreter, Debugger, Item, InterpreterEvent, InterpreterError};
 use muss_interpreter::lang::TypePrimitive;
+use muss_interpreter::{Debugger, Interpreter, InterpreterError, InterpreterEvent, Item};
 use muss_player::{Controller, Player};
 
 use super::channel_io::{channel_io, ChannelWriter};
 use super::cli::CliArgs;
 
 lazy_static! {
-    static ref DEBUG_STATE: RwLock<DebugState> = RwLock::new(
-        DebugState {
-            debug_flag: DebugFlag::Normal,
-            verbose: false,
-        }
-    );
+    static ref DEBUG_STATE: RwLock<DebugState> = RwLock::new(DebugState {
+        debug_flag: DebugFlag::Normal,
+        verbose: false,
+    });
 }
 
 const TERMINAL_WRITE_ERROR: &str = "Failed to write to terminal output";
@@ -55,7 +53,7 @@ struct DebugState {
 enum DebugFlag {
     Skip,
     List,
-    Normal
+    Normal,
 }
 
 impl ReplState {
@@ -80,59 +78,79 @@ impl ReplState {
     }
 }
 
-fn interpreter_event_callback<T: muss_interpreter::tokens::TokenReader>(_interpreter: &mut Interpreter<'_, T>, event: InterpreterEvent) -> Result<(), InterpreterError> {
+fn interpreter_event_callback<T: muss_interpreter::tokens::TokenReader>(
+    _interpreter: &mut Interpreter<'_, T>,
+    event: InterpreterEvent,
+) -> Result<(), InterpreterError> {
     match event {
         InterpreterEvent::StatementComplete => {
             if let Ok(mut d_state) = DEBUG_STATE.write() {
                 d_state.debug_flag = DebugFlag::Normal;
             }
-        },
-        _ => {},
+        }
+        _ => {}
     }
     Ok(())
 }
 
 #[inline]
 fn item_prompt(terminal: &mut Term, args: &CliArgs) {
-    write!(terminal, "*I{}", args.prompt)
-        .expect(TERMINAL_WRITE_ERROR);
+    write!(terminal, "*I{}", args.prompt).expect(TERMINAL_WRITE_ERROR);
 }
 
 fn pretty_print_item(item: &Item, terminal: &mut Term, args: &CliArgs, verbose: bool) {
     item_prompt(terminal, args);
     if verbose {
-        writeln!(terminal, "--\\/-- `{}` --\\/--",
-            item.field("title").unwrap_or(&TypePrimitive::Empty).as_str()
-        ).expect(TERMINAL_WRITE_ERROR);
+        writeln!(
+            terminal,
+            "--\\/-- `{}` --\\/--",
+            item.field("title")
+                .unwrap_or(&TypePrimitive::Empty)
+                .as_str()
+        )
+        .expect(TERMINAL_WRITE_ERROR);
         let mut fields: Vec<&_> = item.iter().collect();
         fields.sort();
         for field in fields {
             if field != "title" {
-                writeln!(terminal, "  {}: `{}`",
+                writeln!(
+                    terminal,
+                    "  {}: `{}`",
                     field,
                     item.field(field).unwrap_or(&TypePrimitive::Empty).as_str()
-                ).expect(TERMINAL_WRITE_ERROR);
+                )
+                .expect(TERMINAL_WRITE_ERROR);
             }
         }
     } else {
-         writeln!(terminal, "`{}` by `{}`",
-            item.field("title").unwrap_or(&TypePrimitive::Empty).as_str(),
-            item.field("artist").unwrap_or(&TypePrimitive::Empty).as_str(),
-        ).expect(TERMINAL_WRITE_ERROR);
+        writeln!(
+            terminal,
+            "`{}` by `{}`",
+            item.field("title")
+                .unwrap_or(&TypePrimitive::Empty)
+                .as_str(),
+            item.field("artist")
+                .unwrap_or(&TypePrimitive::Empty)
+                .as_str(),
+        )
+        .expect(TERMINAL_WRITE_ERROR);
     }
     //writeln!(terminal, "I{}----", args.prompt).expect(TERMINAL_WRITE_ERROR);
 }
 
 fn handle_list_rx(state: &mut ReplState, args: &CliArgs) {
     //let items = state.list_rx.try_iter().collect::<Vec<_>>();
-    let d_state = DEBUG_STATE.read().expect("Failed to get read lock for debug state info").clone();
+    let d_state = DEBUG_STATE
+        .read()
+        .expect("Failed to get read lock for debug state info")
+        .clone();
     for item in state.list_rx.try_iter() {
         match item {
             Ok(item) => pretty_print_item(&item, &mut state.terminal, args, d_state.verbose),
             Err(e) => error_prompt(
-                muss_player::PlayerError::Playback(
-                    muss_player::PlaybackError::from_err(e)
-                ), args),
+                muss_player::PlayerError::Playback(muss_player::PlaybackError::from_err(e)),
+                args,
+            ),
         }
     }
     let flag = d_state.debug_flag;
@@ -140,11 +158,13 @@ fn handle_list_rx(state: &mut ReplState, args: &CliArgs) {
         DebugFlag::List => {
             while let Ok(item) = state.list_rx.recv() {
                 match item {
-                    Ok(item) => pretty_print_item(&item, &mut state.terminal, args, d_state.verbose),
+                    Ok(item) => {
+                        pretty_print_item(&item, &mut state.terminal, args, d_state.verbose)
+                    }
                     Err(e) => error_prompt(
-                        muss_player::PlayerError::Playback(
-                            muss_player::PlaybackError::from_err(e)
-                        ), args),
+                        muss_player::PlayerError::Playback(muss_player::PlaybackError::from_err(e)),
+                        args,
+                    ),
                 }
                 // stop listing if no longer in list mode
                 let flag = if let Ok(d_state) = DEBUG_STATE.read() {
@@ -153,11 +173,11 @@ fn handle_list_rx(state: &mut ReplState, args: &CliArgs) {
                     DebugFlag::Normal
                 };
                 match flag {
-                    DebugFlag::List => {},
+                    DebugFlag::List => {}
                     _ => break,
                 }
             }
-        },
+        }
         _ => {}
     }
 }
@@ -167,18 +187,26 @@ pub fn repl(args: CliArgs) {
     term.set_title("muss");
     let (writer, reader) = channel_io();
     let volume = args.volume;
-    let mpd = match args.mpd.clone().map(|a| muss_player::mpd_connection(a.parse().unwrap())).transpose() {
+    let mpd = match args
+        .mpd
+        .clone()
+        .map(|a| muss_player::mpd_connection(a.parse().unwrap()))
+        .transpose()
+    {
         Ok(mpd) => mpd,
         Err(e) => {
-            eprintln!("Cannot connect to MPD address `{}`: {}", args.mpd.unwrap(), e);
+            eprintln!(
+                "Cannot connect to MPD address `{}`: {}",
+                args.mpd.unwrap(),
+                e
+            );
             return;
         }
     };
     let (list_tx, list_rx) = mpsc::channel();
     let mut state = ReplState::new(writer, term, list_rx);
     let player_builder = move || {
-        let runner = Interpreter::with_stream_and_callback(reader,
-            &interpreter_event_callback);
+        let runner = Interpreter::with_stream_and_callback(reader, &interpreter_event_callback);
         let debugger = Debugger::new(runner, move |interpretor, item| {
             let flag = if let Ok(d_state) = DEBUG_STATE.read() {
                 d_state.debug_flag
@@ -192,7 +220,7 @@ pub fn repl(args: CliArgs) {
                         // NOTE: recursion occurs here
                     }
                     None
-                },
+                }
                 DebugFlag::List => {
                     if let Some(x) = item {
                         list_tx.send(x.map_err(|e| e.to_string())).unwrap_or(());
@@ -286,7 +314,11 @@ pub fn repl(args: CliArgs) {
     }
 }
 
-fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut ReplState, mut execute: F) -> ! {
+fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(
+    args: &CliArgs,
+    state: &mut ReplState,
+    mut execute: F,
+) -> ! {
     prompt(state, args);
     loop {
         match state
@@ -296,13 +328,11 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
         {
             Key::Char(read_c) => {
                 if state.cursor_rightward_position == 0 {
-                    write!(state.terminal, "{}", read_c)
-                        .expect(TERMINAL_WRITE_ERROR);
+                    write!(state.terminal, "{}", read_c).expect(TERMINAL_WRITE_ERROR);
                     state.statement_buf.push(read_c);
                     state.current_line.push(read_c);
                 } else {
-                    write!(state.terminal, "{}", read_c)
-                        .expect(TERMINAL_WRITE_ERROR);
+                    write!(state.terminal, "{}", read_c).expect(TERMINAL_WRITE_ERROR);
                     for i in state.current_line.len() - state.cursor_rightward_position
                         ..state.current_line.len()
                     {
@@ -346,21 +376,22 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
                     }
                     ';' => {
                         if state.in_literal.is_none() {
-                            state
-                                .terminal
-                                .write_line("")
-                                .expect(TERMINAL_WRITE_ERROR);
+                            state.terminal.write_line("").expect(TERMINAL_WRITE_ERROR);
                             let statement = state.statement_buf.iter().collect::<String>();
                             let statement_result = statement.trim();
                             if !statement_result.starts_with('?') {
                                 state
                                     .writer
-                                    .write_all(state.statement_buf.iter().collect::<String>().as_bytes())
+                                    .write_all(
+                                        state.statement_buf.iter().collect::<String>().as_bytes(),
+                                    )
                                     .expect(INTERPRETER_WRITE_ERROR);
                                 execute(state, args);
                                 state.statement_buf.clear();
                             }
-                            let last_line = state.current_line[0..state.current_line.len() - 1].iter().collect::<String>();
+                            let last_line = state.current_line[0..state.current_line.len() - 1]
+                                .iter()
+                                .collect::<String>();
                             state.current_line.clear();
                             if !last_line.is_empty()
                                 && ((!state.history.is_empty()
@@ -415,8 +446,7 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
                                     .terminal
                                     .move_cursor_left(1)
                                     .expect(TERMINAL_WRITE_ERROR);
-                                write!(state.terminal, " ")
-                                    .expect(TERMINAL_WRITE_ERROR);
+                                write!(state.terminal, " ").expect(TERMINAL_WRITE_ERROR);
                                 state
                                     .terminal
                                     .flush()
@@ -433,9 +463,9 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
                     let removed_char = state
                         .current_line
                         .remove(state.current_line.len() - state.cursor_rightward_position - 1);
-                    state.statement_buf.remove(
-                        state.statement_buf.len() - state.cursor_rightward_position - 1,
-                    );
+                    state
+                        .statement_buf
+                        .remove(state.statement_buf.len() - state.cursor_rightward_position - 1);
                     // re-sync unclosed syntax tracking
                     match removed_char {
                         '"' | '`' => {
@@ -484,9 +514,9 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
                     let removed_char = state
                         .current_line
                         .remove(state.current_line.len() - state.cursor_rightward_position);
-                    state.statement_buf.remove(
-                        state.statement_buf.len() - state.cursor_rightward_position,
-                    );
+                    state
+                        .statement_buf
+                        .remove(state.statement_buf.len() - state.cursor_rightward_position);
                     // re-sync unclosed syntax tracking
                     match removed_char {
                         '"' | '`' => {
@@ -528,10 +558,7 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
                 }
             }
             Key::Enter => {
-                state
-                    .terminal
-                    .write_line("")
-                    .expect(TERMINAL_WRITE_ERROR);
+                state.terminal.write_line("").expect(TERMINAL_WRITE_ERROR);
                 let statement = state.statement_buf.iter().collect::<String>();
                 let statement_result = statement.trim();
                 if statement_result.starts_with('?') {
@@ -578,10 +605,7 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
                     1 => {
                         state.selected_history = 0;
                         state.line_number -= 1;
-                        state
-                            .terminal
-                            .clear_line()
-                            .expect(TERMINAL_WRITE_ERROR);
+                        state.terminal.clear_line().expect(TERMINAL_WRITE_ERROR);
                         prompt(state, args);
                         // clear stale input buffer
                         state.statement_buf.clear();
@@ -589,12 +613,12 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
                         state.in_literal = None;
                         state.bracket_depth = 0;
                         state.curly_depth = 0;
-                    },
-                    0 => {},
+                    }
+                    0 => {}
                     _ => {
                         state.selected_history -= 1;
                         display_history_line(state, args);
-                    },
+                    }
                 }
             }
             Key::ArrowLeft => {
@@ -624,8 +648,7 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
 
 #[inline(always)]
 fn prompt(state: &mut ReplState, args: &CliArgs) {
-    write!(state.terminal, "{: >2}{}", state.line_number, args.prompt)
-        .expect(TERMINAL_WRITE_ERROR);
+    write!(state.terminal, "{: >2}{}", state.line_number, args.prompt).expect(TERMINAL_WRITE_ERROR);
     state.line_number += 1;
     state
         .terminal
@@ -637,10 +660,7 @@ fn prompt(state: &mut ReplState, args: &CliArgs) {
 fn display_history_line(state: &mut ReplState, args: &CliArgs) {
     // get historical line
     state.line_number -= 1;
-    state
-        .terminal
-        .clear_line()
-        .expect(TERMINAL_WRITE_ERROR);
+    state.terminal.clear_line().expect(TERMINAL_WRITE_ERROR);
     prompt(state, args);
     let new_statement = state.history[state.history.len() - state.selected_history].trim();
     state
@@ -665,42 +685,62 @@ fn error_prompt(error: muss_player::PlayerError, args: &CliArgs) {
 fn repl_commands(command_str: &str, state: &mut ReplState, _args: &CliArgs) {
     let words: Vec<&str> = command_str.split(' ').map(|s| s.trim()).collect();
     match words[0] {
-        "?help" => writeln!(state.terminal, "{}", super::help::HELP_STRING).expect(TERMINAL_WRITE_ERROR),
-        "?function" | "?functions" => writeln!(state.terminal, "{}", super::help::FUNCTIONS).expect(TERMINAL_WRITE_ERROR),
-        "?filter" | "?filters" => writeln!(state.terminal, "{}", super::help::FILTERS).expect(TERMINAL_WRITE_ERROR),
-        "?sort" | "?sorter" | "?sorters" => writeln!(state.terminal, "{}", super::help::SORTERS).expect(TERMINAL_WRITE_ERROR),
-        "?proc" | "?procedure" | "?procedures" => writeln!(state.terminal, "{}", super::help::PROCEDURES).expect(TERMINAL_WRITE_ERROR),
+        "?help" => {
+            writeln!(state.terminal, "{}", super::help::HELP_STRING).expect(TERMINAL_WRITE_ERROR)
+        }
+        "?function" | "?functions" => {
+            writeln!(state.terminal, "{}", super::help::FUNCTIONS).expect(TERMINAL_WRITE_ERROR)
+        }
+        "?filter" | "?filters" => {
+            writeln!(state.terminal, "{}", super::help::FILTERS).expect(TERMINAL_WRITE_ERROR)
+        }
+        "?sort" | "?sorter" | "?sorters" => {
+            writeln!(state.terminal, "{}", super::help::SORTERS).expect(TERMINAL_WRITE_ERROR)
+        }
+        "?proc" | "?procedure" | "?procedures" => {
+            writeln!(state.terminal, "{}", super::help::PROCEDURES).expect(TERMINAL_WRITE_ERROR)
+        }
         "?list" => {
             {
-                let mut debug_state = DEBUG_STATE.write().expect("Failed to get write lock for debug state");
+                let mut debug_state = DEBUG_STATE
+                    .write()
+                    .expect("Failed to get write lock for debug state");
                 debug_state.debug_flag = DebugFlag::List;
             }
             writeln!(state.terminal, "Listing upcoming items").expect(TERMINAL_WRITE_ERROR);
-
-        },
+        }
         "?skip" => {
             {
-                let mut debug_state = DEBUG_STATE.write().expect("Failed to get write lock for debug state");
+                let mut debug_state = DEBUG_STATE
+                    .write()
+                    .expect("Failed to get write lock for debug state");
                 debug_state.debug_flag = DebugFlag::Skip;
             }
             writeln!(state.terminal, "Skipping upcoming items").expect(TERMINAL_WRITE_ERROR);
-        },
+        }
         "?normal" => {
             {
-                let mut debug_state = DEBUG_STATE.write().expect("Failed to get write lock for debug state");
+                let mut debug_state = DEBUG_STATE
+                    .write()
+                    .expect("Failed to get write lock for debug state");
                 debug_state.debug_flag = DebugFlag::Normal;
             }
             writeln!(state.terminal, "Resuming normal operation").expect(TERMINAL_WRITE_ERROR);
-        },
+        }
         "?verbose" => {
             let verbose = {
-                let mut debug_state = DEBUG_STATE.write().expect("Failed to get write lock for debug state");
+                let mut debug_state = DEBUG_STATE
+                    .write()
+                    .expect("Failed to get write lock for debug state");
                 debug_state.verbose = !debug_state.verbose;
                 debug_state.verbose
             };
-            writeln!(state.terminal, "Verbosed toggled to {}", verbose).expect(TERMINAL_WRITE_ERROR);
-        },
-        "?commands" => writeln!(state.terminal, "{}", super::help::REPL_COMMANDS).expect(TERMINAL_WRITE_ERROR),
+            writeln!(state.terminal, "Verbosed toggled to {}", verbose)
+                .expect(TERMINAL_WRITE_ERROR);
+        }
+        "?commands" => {
+            writeln!(state.terminal, "{}", super::help::REPL_COMMANDS).expect(TERMINAL_WRITE_ERROR)
+        }
         _ => writeln!(state.terminal, "Unknown command, try ?help").expect(TERMINAL_WRITE_ERROR),
     }
 }

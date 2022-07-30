@@ -71,7 +71,7 @@ impl Library {
         self.songs.insert(song.song_id, song);
     }
 
-    pub fn all_metadata(& self) -> Vec<&'_ DbMetaItem> {
+    pub fn all_metadata(&self) -> Vec<&'_ DbMetaItem> {
         self.metadata.values().collect()
     }
 

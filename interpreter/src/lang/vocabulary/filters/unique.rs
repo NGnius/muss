@@ -151,8 +151,7 @@ pub fn unique_field_filter() -> UniqueFieldFilterStatementFactory {
     UniqueFieldFilterStatementFactory::new(UniqueFilterFactory)
 }
 
-pub type UniqueFilterStatementFactory =
-    FilterStatementFactory<UniqueFilter, UniqueFilterFactory>;
+pub type UniqueFilterStatementFactory = FilterStatementFactory<UniqueFilter, UniqueFilterFactory>;
 
 #[inline(always)]
 pub fn unique_filter() -> UniqueFilterStatementFactory {

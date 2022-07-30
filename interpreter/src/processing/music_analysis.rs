@@ -58,12 +58,7 @@ impl std::default::Default for DefaultAnalyzer {
 
 #[cfg(feature = "bliss-audio-symphonia")]
 impl DefaultAnalyzer {
-    fn request_distance(
-        &mut self,
-        from: &Item,
-        to: &Item,
-        ack: bool,
-    ) -> Result<(), RuntimeMsg> {
+    fn request_distance(&mut self, from: &Item, to: &Item, ack: bool) -> Result<(), RuntimeMsg> {
         let path_from = Self::get_path(from)?;
         let path_to = Self::get_path(to)?;
         self.requests
@@ -89,7 +84,6 @@ impl DefaultAnalyzer {
                         PATH_FIELD, path
                     )))
                 }
-
             } else {
                 Err(RuntimeMsg(format!(
                     "Field {} on item is not String, it's {}",
@@ -141,7 +135,7 @@ impl MusicAnalyzer for DefaultAnalyzer {
                         };
                     }
                 }
-                ResponseType::Song { .. } => {},
+                ResponseType::Song { .. } => {}
                 ResponseType::UnsupportedSong { path, msg } => {
                     if path == path_to || path == path_from {
                         return Err(RuntimeMsg(format!("Bliss error: {}", msg)));
@@ -213,7 +207,7 @@ enum ResponseType {
     UnsupportedSong {
         path: String,
         msg: String,
-    }
+    },
 }
 
 #[cfg(feature = "bliss-audio-symphonia")]
@@ -248,11 +242,11 @@ impl CacheThread {
                     distance,
                 } => {
                     self.insert_distance(path1, path2, distance);
-                },
+                }
                 ResponseType::Song { path, song } => {
                     self.insert_song(path, song);
-                },
-                ResponseType::UnsupportedSong { .. } => {},
+                }
+                ResponseType::UnsupportedSong { .. } => {}
             }
         }
     }
@@ -263,7 +257,8 @@ impl CacheThread {
             // avoid using too much memory -- songs are big memory objects
             self.song_cache.clear();
         }
-        self.song_cache.insert(path, song_result.map(|x| x.as_ref().to_owned()));
+        self.song_cache
+            .insert(path, song_result.map(|x| x.as_ref().to_owned()));
     }
 
     fn insert_distance(
@@ -309,8 +304,11 @@ impl CacheThread {
                         } else {
                             self.insert_song(path2, song);
                         }
-                    },
-                    ResponseType::UnsupportedSong {path: unsupported_path, ..} => {
+                    }
+                    ResponseType::UnsupportedSong {
+                        path: unsupported_path,
+                        ..
+                    } => {
                         self.song_in_progress.remove(&unsupported_path);
                         if path == unsupported_path {
                             return None;
@@ -319,10 +317,7 @@ impl CacheThread {
                 }
             }
         } else if self.song_cache.contains_key(path) {
-            let result = self
-                .song_cache
-                .get(path)
-                .and_then(|r| r.clone().ok());
+            let result = self.song_cache.get(path).and_then(|r| r.clone().ok());
             if result.is_none() && auto_add {
                 self.song_in_progress.insert(path.to_owned());
             }
@@ -346,11 +341,15 @@ impl CacheThread {
         if let Some(result) = self.distance_cache.get(&key) {
             if ack {
                 let result = result.to_owned();
-                if self.responses.send(ResponseType::Distance {
-                    path1: path1,
-                    path2: path2,
-                    distance: result,
-                }).is_err() {
+                if self
+                    .responses
+                    .send(ResponseType::Distance {
+                        path1: path1,
+                        path2: path2,
+                        distance: result,
+                    })
+                    .is_err()
+                {
                     return true;
                 }
             }
@@ -360,17 +359,26 @@ impl CacheThread {
                 // also prevents deadlock in self.get_song_option()
                 // due to waiting on song that isn't being processed yet
                 // (first call adds it to song_in_progress set, second call just waits)
-                if ack && self.responses.send(ResponseType::Distance {
-                        path1: path1,
-                        path2: path2,
-                        distance: Ok(0.0),
-                    }).is_err() {
+                if ack
+                    && self
+                        .responses
+                        .send(ResponseType::Distance {
+                            path1: path1,
+                            path2: path2,
+                            distance: Ok(0.0),
+                        })
+                        .is_err()
+                {
                     return true;
                 }
             } else if !self.distance_in_progress.contains(&key) {
                 // distance worker uses 3 threads (it's own thread + 1 extra per song) for 2 songs
-                let available_parallelism =
-                    (std::thread::available_parallelism().ok().map(|x| x.get()).unwrap_or(DEFAULT_PARALLELISM) * 2) / 3;
+                let available_parallelism = (std::thread::available_parallelism()
+                    .ok()
+                    .map(|x| x.get())
+                    .unwrap_or(DEFAULT_PARALLELISM)
+                    * 2)
+                    / 3;
                 let available_parallelism = if available_parallelism != 0 {
                     available_parallelism - 1
                 } else {
@@ -386,14 +394,17 @@ impl CacheThread {
                                 distance,
                             } => {
                                 self.insert_distance(path1, path2, distance);
-                            },
+                            }
                             ResponseType::Song { path: path2, song } => {
                                 self.insert_song(path2.clone(), song.clone());
                                 if self.song_in_progress.len() <= available_parallelism {
                                     break 'inner4;
                                 }
-                            },
-                            ResponseType::UnsupportedSong {path: unsupported_path, ..} => {
+                            }
+                            ResponseType::UnsupportedSong {
+                                path: unsupported_path,
+                                ..
+                            } => {
                                 self.song_in_progress.remove(&unsupported_path);
                                 if self.song_in_progress.len() <= available_parallelism {
                                     break 'inner4;
@@ -431,11 +442,15 @@ impl CacheThread {
                                 distance.clone(),
                             );
                             if path1_2 == key.0 && path2_2 == key.1 {
-                                if self.responses.send(ResponseType::Distance {
-                                    path1: path1_2,
-                                    path2: path2_2,
-                                    distance: distance,
-                                }).is_err() {
+                                if self
+                                    .responses
+                                    .send(ResponseType::Distance {
+                                        path1: path1_2,
+                                        path2: path2_2,
+                                        distance: distance,
+                                    })
+                                    .is_err()
+                                {
                                     return true;
                                 }
                                 break 'inner1;
@@ -443,13 +458,20 @@ impl CacheThread {
                         }
                         ResponseType::Song { path, song } => {
                             self.insert_song(path, song);
-                        },
-                        ResponseType::UnsupportedSong { path: unsupported_path, msg } => {
+                        }
+                        ResponseType::UnsupportedSong {
+                            path: unsupported_path,
+                            msg,
+                        } => {
                             self.song_in_progress.remove(&unsupported_path);
-                            if self.responses.send(ResponseType::UnsupportedSong {
-                                path: unsupported_path.clone(),
-                                msg: msg
-                            }).is_err() {
+                            if self
+                                .responses
+                                .send(ResponseType::UnsupportedSong {
+                                    path: unsupported_path.clone(),
+                                    msg: msg,
+                                })
+                                .is_err()
+                            {
                                 return true;
                             }
                             if unsupported_path == key.0 || unsupported_path == key.1 {
@@ -476,10 +498,14 @@ impl CacheThread {
         } else if !path.contains("://") {
             path
         } else {
-            if self.responses.send(ResponseType::UnsupportedSong {
-                msg: format!("Song path is not a supported URI, it's `{}`", path),
-                path: path,
-            }).is_err() {
+            if self
+                .responses
+                .send(ResponseType::UnsupportedSong {
+                    msg: format!("Song path is not a supported URI, it's `{}`", path),
+                    path: path,
+                })
+                .is_err()
+            {
                 return true;
             }
             return false;
@@ -487,18 +513,25 @@ impl CacheThread {
         if let Some(song) = self.song_cache.get(&path) {
             if ack {
                 let song = song.to_owned();
-                if self.responses.send(ResponseType::Song {
-                    path: path,
-                    song: song.map(Box::new),
-                }).is_err() {
+                if self
+                    .responses
+                    .send(ResponseType::Song {
+                        path: path,
+                        song: song.map(Box::new),
+                    })
+                    .is_err()
+                {
                     return true;
                 }
             }
         } else {
             if !self.song_in_progress.contains(&path) {
                 // every song is roughly 2 threads -- Song::from_path(...) spawns a thread
-                let available_parallelism =
-                    std::thread::available_parallelism().ok().map(|x| x.get()).unwrap_or(DEFAULT_PARALLELISM) / 2;
+                let available_parallelism = std::thread::available_parallelism()
+                    .ok()
+                    .map(|x| x.get())
+                    .unwrap_or(DEFAULT_PARALLELISM)
+                    / 2;
                 let available_parallelism = if available_parallelism != 0 {
                     available_parallelism - 1
                 } else {
@@ -520,7 +553,7 @@ impl CacheThread {
                                 if self.song_in_progress.len() <= available_parallelism {
                                     break 'inner2;
                                 }
-                            },
+                            }
                             ResponseType::UnsupportedSong { path, .. } => {
                                 self.song_in_progress.remove(&path);
                                 if self.song_in_progress.len() <= available_parallelism {
@@ -555,22 +588,33 @@ impl CacheThread {
                         ResponseType::Song { path: path2, song } => {
                             self.insert_song(path2.clone(), song.clone());
                             if path2 == path {
-                                if self.responses.send(ResponseType::Song {
-                                    path: path,
-                                    song: song,
-                                }).is_err() {
+                                if self
+                                    .responses
+                                    .send(ResponseType::Song {
+                                        path: path,
+                                        song: song,
+                                    })
+                                    .is_err()
+                                {
                                     return true;
                                 }
                                 break 'inner3;
                             }
                         }
-                        ResponseType::UnsupportedSong { path: unsupported_path, msg } => {
+                        ResponseType::UnsupportedSong {
+                            path: unsupported_path,
+                            msg,
+                        } => {
                             self.song_in_progress.remove(&unsupported_path);
                             if unsupported_path == path {
-                                if self.responses.send(ResponseType::UnsupportedSong {
-                                    path: unsupported_path,
-                                    msg: msg
-                                }).is_err() {
+                                if self
+                                    .responses
+                                    .send(ResponseType::UnsupportedSong {
+                                        path: unsupported_path,
+                                        msg: msg,
+                                    })
+                                    .is_err()
+                                {
                                     return true;
                                 }
                                 break 'inner3;
@@ -639,7 +683,11 @@ fn worker_distance(
             })
             .unwrap_or(());
         if new_song2.is_err() {
-            eprintln!("Song error on `{}`: {}", path2, new_song2.clone().err().unwrap());
+            eprintln!(
+                "Song error on `{}`: {}",
+                path2,
+                new_song2.clone().err().unwrap()
+            );
         }
         new_song2?
     };

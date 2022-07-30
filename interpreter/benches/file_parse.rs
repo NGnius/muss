@@ -51,5 +51,8 @@ fn faye_benchmark(c: &mut Criterion) {
     });
 }
 
-criterion_group!(parse_benches, /*interpretor_benchmark,*/ faye_benchmark);
+criterion_group!(
+    parse_benches,
+    /*interpretor_benchmark,*/ faye_benchmark
+);
 criterion_main!(parse_benches);

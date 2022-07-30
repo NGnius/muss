@@ -2,7 +2,7 @@
 use super::processing::advanced::{DefaultAnalyzer, MusicAnalyzer};
 use super::processing::database::{DatabaseQuerier, SQLiteExecutor};
 #[cfg(feature = "mpd")]
-use super::processing::database::{MpdQuerier, MpdExecutor};
+use super::processing::database::{MpdExecutor, MpdQuerier};
 use super::processing::general::{
     FilesystemExecutor, FilesystemQuerier, OpStorage, VariableStorer,
 };

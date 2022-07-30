@@ -1,5 +1,5 @@
-use std::fmt::{Debug, Display, Error, Formatter};
 use std::convert::From;
+use std::fmt::{Debug, Display, Error, Formatter};
 
 #[derive(Debug, Clone)]
 pub enum PlayerError {
@@ -67,7 +67,7 @@ impl From<PlaybackError> for PlayerError {
 #[derive(Debug, Clone)]
 pub enum UriError {
     Unsupported(String),
-    Message(String)
+    Message(String),
 }
 
 impl UriError {
@@ -81,7 +81,7 @@ impl Display for UriError {
         write!(f, "UriError: ")?;
         match self {
             Self::Unsupported(scheme) => write!(f, "Unsupported URI `{}//`", scheme),
-            Self::Message(msg) => write!(f, "{}", msg)
+            Self::Message(msg) => write!(f, "{}", msg),
         }
     }
 }

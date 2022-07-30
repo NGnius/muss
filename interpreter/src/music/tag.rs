@@ -149,7 +149,9 @@ impl Tags {
     pub fn artist(&self, id: u64, genre_id: u64) -> DbArtistItem {
         DbArtistItem {
             artist_id: id,
-            name: self.artist_name().unwrap_or_else(|| "Unknown Artist".into()),
+            name: self
+                .artist_name()
+                .unwrap_or_else(|| "Unknown Artist".into()),
             genre: genre_id,
         }
     }

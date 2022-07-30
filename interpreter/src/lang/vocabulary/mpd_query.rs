@@ -6,11 +6,11 @@ use std::net::SocketAddr;
 use crate::tokens::Token;
 use crate::Context;
 
-use crate::lang::{LanguageDictionary, repeated_tokens, Lookup};
-use crate::lang::{FunctionFactory, FunctionStatementFactory, IteratorItem, Op, PseudoOp};
-use crate::lang::{RuntimeError, SyntaxError, RuntimeOp};
 use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::TypePrimitive;
+use crate::lang::{repeated_tokens, LanguageDictionary, Lookup};
+use crate::lang::{FunctionFactory, FunctionStatementFactory, IteratorItem, Op, PseudoOp};
+use crate::lang::{RuntimeError, RuntimeOp, SyntaxError};
 use crate::processing::general::Type;
 use crate::Item;
 
@@ -50,49 +50,61 @@ impl Iterator for MpdQueryStatement {
         //let ctx = self.context.as_mut().unwrap();
         if self.results.is_none() {
             self.results = Some(VecDeque::with_capacity(0)); // in case of failure
-            // build address
+                                                             // build address
             let addr_str = match self.addr.get(self.context.as_mut().unwrap()) {
                 Ok(Type::Primitive(a)) => a.as_str(),
-                Ok(x) => return Some(Err(
-                    RuntimeError {
+                Ok(x) => {
+                    return Some(Err(RuntimeError {
                         line: 0,
                         msg: format!("Cannot use non-primitive `{}` as IP address", x),
                         op: PseudoOp::from_printable(self),
-                    }
-                )),
+                    }))
+                }
                 Err(e) => return Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self))))),
             };
             #[cfg(not(feature = "ergonomics"))]
             let addr: SocketAddr = match addr_str.parse() {
                 Ok(a) => a,
-                Err(e) => return Some(Err(RuntimeError {
-                    line: 0,
-                    op: PseudoOp::from_printable(self),
-                    msg: format!("Cannot convert `{}` to IP Address: {}", addr_str, e),
-                }))
+                Err(e) => {
+                    return Some(Err(RuntimeError {
+                        line: 0,
+                        op: PseudoOp::from_printable(self),
+                        msg: format!("Cannot convert `{}` to IP Address: {}", addr_str, e),
+                    }))
+                }
             };
             #[cfg(feature = "ergonomics")]
             let addr: SocketAddr = if addr_str.starts_with("localhost:") {
                 let port_str = addr_str.replace("localhost:", "");
                 let port = match port_str.parse::<u16>() {
                     Ok(p) => p,
-                    Err(e) => return Some(Err(RuntimeError {
-                        line: 0,
-                        op: PseudoOp::from_printable(self),
-                        msg: format!("Cannot convert `{}` to IP port: {}", port_str, e),
-                    }))
+                    Err(e) => {
+                        return Some(Err(RuntimeError {
+                            line: 0,
+                            op: PseudoOp::from_printable(self),
+                            msg: format!("Cannot convert `{}` to IP port: {}", port_str, e),
+                        }))
+                    }
                 };
-                SocketAddr::V4(std::net::SocketAddrV4::new(std::net::Ipv4Addr::LOCALHOST, port))
+                SocketAddr::V4(std::net::SocketAddrV4::new(
+                    std::net::Ipv4Addr::LOCALHOST,
+                    port,
+                ))
             } else if addr_str == "default" {
-                SocketAddr::V4(std::net::SocketAddrV4::new(std::net::Ipv4Addr::LOCALHOST, 6600))
+                SocketAddr::V4(std::net::SocketAddrV4::new(
+                    std::net::Ipv4Addr::LOCALHOST,
+                    6600,
+                ))
             } else {
                 match addr_str.parse() {
                     Ok(a) => a,
-                    Err(e) => return Some(Err(RuntimeError {
-                        line: 0,
-                        op: PseudoOp::from_printable(self),
-                        msg: format!("Cannot convert `{}` to IP Address: {}", addr_str, e),
-                    }))
+                    Err(e) => {
+                        return Some(Err(RuntimeError {
+                            line: 0,
+                            op: PseudoOp::from_printable(self),
+                            msg: format!("Cannot convert `{}` to IP Address: {}", addr_str, e),
+                        }))
+                    }
                 }
             };
             // build params
@@ -100,21 +112,29 @@ impl Iterator for MpdQueryStatement {
             for (term, value) in self.params.iter() {
                 let static_val = match value.get(self.context.as_mut().unwrap()) {
                     Ok(Type::Primitive(a)) => a.as_str(),
-                    Ok(x) => return Some(Err(
-                        RuntimeError {
+                    Ok(x) => {
+                        return Some(Err(RuntimeError {
                             line: 0,
                             msg: format!("Cannot use non-primitive `{}` MPS query value", x),
                             op: PseudoOp::from_printable(self),
-                        }
-                    )),
+                        }))
+                    }
                     Err(e) => return Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self))))),
                 };
                 new_params.push((term, static_val));
             }
-            self.results = Some(match self.context.as_mut().unwrap().mpd_database.one_shot_search(addr, new_params) {
-                Ok(items) => items,
-                Err(e) => return Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self)))))
-            });
+            self.results = Some(
+                match self
+                    .context
+                    .as_mut()
+                    .unwrap()
+                    .mpd_database
+                    .one_shot_search(addr, new_params)
+                {
+                    Ok(items) => items,
+                    Err(e) => return Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self))))),
+                },
+            );
         }
         let results = self.results.as_mut().unwrap();
         results.pop_front().map(Ok)
@@ -169,7 +189,10 @@ impl FunctionFactory<MpdQueryStatement> for MpdQueryFunctionFactory {
             Ok(MpdQueryStatement {
                 context: None,
                 addr: addr_lookup,
-                params: vec![("any".to_string(), Lookup::Static(Type::Primitive(TypePrimitive::String("".to_owned()))))],
+                params: vec![(
+                    "any".to_string(),
+                    Lookup::Static(Type::Primitive(TypePrimitive::String("".to_owned()))),
+                )],
                 results: None,
             })
         } else {
@@ -182,13 +205,15 @@ impl FunctionFactory<MpdQueryStatement> for MpdQueryFunctionFactory {
                             _ => None,
                         },
                         Token::Name("term".to_string()),
-                        tokens)?;
+                        tokens,
+                    )?;
                     assert_token_raw(Token::Equals, tokens)?;
                     let val = Lookup::parse(tokens)?;
                     Ok(Some((term, val)))
                 },
-                Token::Comma
-                ).ingest_all(tokens)?;
+                Token::Comma,
+            )
+            .ingest_all(tokens)?;
             Ok(MpdQueryStatement {
                 context: None,
                 addr: addr_lookup,
@@ -200,7 +225,8 @@ impl FunctionFactory<MpdQueryStatement> for MpdQueryFunctionFactory {
 }
 
 #[cfg(feature = "mpd")]
-pub type MpdQueryStatementFactory = FunctionStatementFactory<MpdQueryStatement, MpdQueryFunctionFactory>;
+pub type MpdQueryStatementFactory =
+    FunctionStatementFactory<MpdQueryStatement, MpdQueryFunctionFactory>;
 
 #[cfg(feature = "mpd")]
 #[inline(always)]

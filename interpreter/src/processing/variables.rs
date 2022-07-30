@@ -3,8 +3,8 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use std::collections::HashMap;
 
 use crate::lang::Op;
-use crate::lang::TypePrimitive;
 use crate::lang::RuntimeMsg;
+use crate::lang::TypePrimitive;
 use crate::Item;
 
 #[derive(Debug)]

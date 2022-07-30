@@ -5,8 +5,8 @@ use std::iter::Iterator;
 use crate::tokens::Token;
 use crate::Context;
 
-use crate::lang::{Lookup, LanguageDictionary, PseudoOp};
 use crate::lang::{FunctionFactory, FunctionStatementFactory, IteratorItem, Op};
+use crate::lang::{LanguageDictionary, Lookup, PseudoOp};
 use crate::lang::{RuntimeError, RuntimeOp, SyntaxError};
 use crate::processing::general::Type;
 use crate::Item;

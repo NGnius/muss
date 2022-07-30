@@ -15,10 +15,10 @@ pub(crate) mod uri;
 //mod utility;
 
 pub use controller::Controller;
-pub use errors::{PlaybackError, UriError, PlayerError};
-pub use player::Player;
+pub use errors::{PlaybackError, PlayerError, UriError};
 #[cfg(feature = "mpd")]
 pub use player::mpd_connection;
+pub use player::Player;
 //pub use utility::{play_script};
 
 #[cfg(test)]

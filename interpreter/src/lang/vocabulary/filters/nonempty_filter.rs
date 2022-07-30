@@ -2,8 +2,8 @@ use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
 use crate::lang::LanguageDictionary;
+use crate::lang::{utility::assert_token_raw, RuntimeMsg, SyntaxError};
 use crate::lang::{FilterFactory, FilterPredicate, FilterStatementFactory};
-use crate::lang::{RuntimeMsg, SyntaxError, utility::assert_token_raw};
 use crate::tokens::Token;
 use crate::Context;
 use crate::Item;
@@ -57,7 +57,8 @@ impl FilterFactory<NonEmptyFilter> for NonEmptyFilterFactory {
     }
 }
 
-pub type NonEmptyFilterStatementFactory = FilterStatementFactory<NonEmptyFilter, NonEmptyFilterFactory>;
+pub type NonEmptyFilterStatementFactory =
+    FilterStatementFactory<NonEmptyFilter, NonEmptyFilterFactory>;
 
 #[inline(always)]
 pub fn nonempty_filter() -> NonEmptyFilterStatementFactory {

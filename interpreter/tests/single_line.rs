@@ -1,6 +1,6 @@
 //! Integration tests for every syntax feature
 
-use muss_interpreter::tokens::{Token, Tokenizer, ParseError};
+use muss_interpreter::tokens::{ParseError, Token, Tokenizer};
 use muss_interpreter::*;
 use std::collections::VecDeque;
 use std::io::Cursor;
@@ -823,45 +823,21 @@ fn execute_emptiesop_line() -> Result<(), InterpreterError> {
 
 #[test]
 fn execute_nonemptyfilter_line() -> Result<(), InterpreterError> {
-    execute_single_line(
-        "files().(??)",
-        false,
-        true,
-    )?;
-    execute_single_line(
-        "empties(42).(??)",
-        true,
-        true,
-    )
+    execute_single_line("files().(??)", false, true)?;
+    execute_single_line("empties(42).(??)", true, true)
 }
 
 #[test]
 fn execute_mpdfunction_line() -> Result<(), InterpreterError> {
-    execute_single_line(
-        "mpd(`127.0.0.1:6600`, artist=`Bruno Mars`)",
-        false,
-        true,
-    )?;
+    execute_single_line("mpd(`127.0.0.1:6600`, artist=`Bruno Mars`)", false, true)?;
     execute_single_line(
         "mpd(`127.0.0.1:6600`, title=`something very long that should match absolutely nothing, probably, hopefully...`)",
         true,
         true,
     )?;
     #[cfg(feature = "ergonomics")]
-    execute_single_line(
-        "mpd(`localhost:6600`)",
-        false,
-        true,
-    )?;
+    execute_single_line("mpd(`localhost:6600`)", false, true)?;
     #[cfg(feature = "ergonomics")]
-    execute_single_line(
-        "mpd(`default`)",
-        false,
-        true,
-    )?;
-    execute_single_line(
-        "mpd(`127.0.0.1:6600`)",
-        false,
-        true,
-    )
+    execute_single_line("mpd(`default`)", false, true)?;
+    execute_single_line("mpd(`127.0.0.1:6600`)", false, true)
 }

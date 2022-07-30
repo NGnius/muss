@@ -5,8 +5,8 @@ use rand::{thread_rng, Rng};
 
 use crate::lang::utility::{assert_name, check_name};
 use crate::lang::{IteratorItem, LanguageDictionary, Op};
-use crate::lang::{SortStatementFactory, Sorter, SorterFactory};
 use crate::lang::{RuntimeMsg, SyntaxError};
+use crate::lang::{SortStatementFactory, Sorter, SorterFactory};
 use crate::tokens::Token;
 
 const RNG_LIMIT_BITMASK: usize = 0xffff; // bits to preserve in RNG
@@ -90,8 +90,7 @@ impl SorterFactory<ShuffleSorter> for ShuffleSorterFactory {
     }
 }
 
-pub type ShuffleSorterStatementFactory =
-    SortStatementFactory<ShuffleSorter, ShuffleSorterFactory>;
+pub type ShuffleSorterStatementFactory = SortStatementFactory<ShuffleSorter, ShuffleSorterFactory>;
 
 #[inline(always)]
 pub fn shuffle_sort() -> ShuffleSorterStatementFactory {

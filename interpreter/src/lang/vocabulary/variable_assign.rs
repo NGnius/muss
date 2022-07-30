@@ -7,9 +7,7 @@ use crate::Context;
 
 use crate::lang::utility::{assert_token, assert_token_raw, assert_type, check_is_type};
 use crate::lang::LanguageDictionary;
-use crate::lang::{
-    BoxedOpFactory, IteratorItem, Op, OpFactory, TypePrimitive, PseudoOp,
-};
+use crate::lang::{BoxedOpFactory, IteratorItem, Op, OpFactory, PseudoOp, TypePrimitive};
 use crate::lang::{RuntimeError, RuntimeOp, SyntaxError};
 use crate::processing::general::Type;
 
@@ -75,15 +73,13 @@ impl Iterator for AssignStatement {
                     Err(e) => return Some(Err(e)),
                 };
                 let result = if self.is_declaration {
-                    self
-                        .context
+                    self.context
                         .as_mut()
                         .unwrap()
                         .variables
                         .declare(&self.variable_name, Type::Op(real))
                 } else {
-                    self
-                        .context
+                    self.context
                         .as_mut()
                         .unwrap()
                         .variables
@@ -107,15 +103,13 @@ impl Iterator for AssignStatement {
         } else {
             let assign_type = self.assign_type.clone().unwrap();
             let result = if self.is_declaration {
-                self
-                    .context
+                self.context
                     .as_mut()
                     .unwrap()
                     .variables
                     .declare(&self.variable_name, Type::Primitive(assign_type))
             } else {
-                self
-                    .context
+                self.context
                     .as_mut()
                     .unwrap()
                     .variables

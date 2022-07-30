@@ -1,8 +1,8 @@
 use std::collections::VecDeque;
 use std::path::PathBuf;
 
-use super::TypePrimitive;
 use super::SyntaxError;
+use super::TypePrimitive;
 use crate::tokens::Token;
 
 pub fn assert_token<T, F: FnOnce(Token) -> Option<T>>(
@@ -29,10 +29,7 @@ pub fn assert_token<T, F: FnOnce(Token) -> Option<T>>(
     }
 }
 
-pub fn assert_token_raw(
-    token: Token,
-    tokens: &mut VecDeque<Token>,
-) -> Result<Token, SyntaxError> {
+pub fn assert_token_raw(token: Token, tokens: &mut VecDeque<Token>) -> Result<Token, SyntaxError> {
     let result = match tokens.pop_front() {
         Some(x) => Ok(x),
         None => Err(SyntaxError {

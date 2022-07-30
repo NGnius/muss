@@ -2,8 +2,8 @@ use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
 use crate::lang::{IteratorItem, LanguageDictionary, Op};
-use crate::lang::{SortStatementFactory, Sorter, SorterFactory};
 use crate::lang::{RuntimeMsg, SyntaxError};
+use crate::lang::{SortStatementFactory, Sorter, SorterFactory};
 use crate::tokens::Token;
 
 #[derive(Debug, Clone, Default)]
