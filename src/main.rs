@@ -80,7 +80,7 @@ fn main() {
         }
         // build playback controller
         let script_file2 = script_file.clone();
-        let volume = args.volume.clone();
+        let volume = args.volume;
         let mpd = match args.mpd.clone().map(|a| muss_player::mpd_connection(a.parse().unwrap())).transpose() {
             Ok(mpd) => mpd,
             Err(e) => panic!("Abort: Cannot connect to MPD: {}", e),

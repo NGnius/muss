@@ -41,7 +41,7 @@ impl MpdQuerier for MpdExecutor {
             query_mut = query_mut.and(str_to_term(term), value);
         }
         let songs = self.connection.as_mut().unwrap().search(query_mut, None).map_err(|e| RuntimeMsg(format!("MPD search error: {}", e)))?;
-        Ok(songs.into_iter().map(|x| song_to_item(x)).collect())
+        Ok(songs.into_iter().map(song_to_item).collect())
     }
 
     fn one_shot_search(&self, addr: SocketAddr, params: Vec<(&str, String)>) -> Result<VecDeque<Item>, RuntimeMsg> {
@@ -53,7 +53,7 @@ impl MpdQuerier for MpdExecutor {
             query_mut = query_mut.and(str_to_term(term), value);
         }
         let songs = connection.search(query_mut, None).map_err(|e| RuntimeMsg(format!("MPD search error: {}", e)))?;
-        Ok(songs.into_iter().map(|x| song_to_item(x)).collect())
+        Ok(songs.into_iter().map(song_to_item).collect())
     }
 }
 
@@ -95,7 +95,7 @@ fn song_to_item(song: Song) -> Item {
 }
 
 #[inline]
-fn str_to_term<'a>(s: &'a str) -> Term<'a> {
+fn str_to_term(s: &str) -> Term<'_> {
     match s {
         "any" => Term::Any,
         "file" => Term::File,

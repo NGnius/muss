@@ -246,6 +246,8 @@
 //! Load an item from file, populating the item with the song's tags.
 //!
 
+#![allow(clippy::redundant_field_names)]
+
 mod context;
 mod debug;
 mod errors;

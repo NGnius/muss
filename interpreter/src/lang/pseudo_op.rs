@@ -1,3 +1,4 @@
+#![allow(clippy::borrowed_box)]
 use std::fmt::{Debug, Display, Error, Formatter};
 
 use super::Op;

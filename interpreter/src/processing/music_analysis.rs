@@ -208,7 +208,7 @@ enum ResponseType {
     },
     Song {
         path: String,
-        song: Result<Song, BlissError>,
+        song: Result<Box<Song>, BlissError>,
     },
     UnsupportedSong {
         path: String,
@@ -257,13 +257,13 @@ impl CacheThread {
         }
     }
 
-    fn insert_song(&mut self, path: String, song_result: Result<Song, BlissError>) {
+    fn insert_song(&mut self, path: String, song_result: Result<Box<Song>, BlissError>) {
         self.song_in_progress.remove(&path);
         if self.song_cache.len() > MAX_SONG_CACHE_SIZE {
             // avoid using too much memory -- songs are big memory objects
             self.song_cache.clear();
         }
-        self.song_cache.insert(path, song_result);
+        self.song_cache.insert(path, song_result.map(|x| x.as_ref().to_owned()));
     }
 
     fn insert_distance(
@@ -305,7 +305,7 @@ impl CacheThread {
                             if result.is_none() && auto_add {
                                 self.song_in_progress.insert(path.to_owned());
                             }
-                            return result;
+                            return result.map(|x| x.as_ref().to_owned());
                         } else {
                             self.insert_song(path2, song);
                         }
@@ -322,7 +322,7 @@ impl CacheThread {
             let result = self
                 .song_cache
                 .get(path)
-                .and_then(|r| r.clone().ok().to_owned());
+                .and_then(|r| r.clone().ok());
             if result.is_none() && auto_add {
                 self.song_in_progress.insert(path.to_owned());
             }
@@ -331,7 +331,7 @@ impl CacheThread {
         if auto_add {
             self.song_in_progress.insert(path.to_owned());
         }
-        return None;
+        None
     }
 
     fn handle_distance_req(
@@ -346,11 +346,11 @@ impl CacheThread {
         if let Some(result) = self.distance_cache.get(&key) {
             if ack {
                 let result = result.to_owned();
-                if let Err(_) = self.responses.send(ResponseType::Distance {
+                if self.responses.send(ResponseType::Distance {
                     path1: path1,
                     path2: path2,
                     distance: result,
-                }) {
+                }).is_err() {
                     return true;
                 }
             }
@@ -360,14 +360,12 @@ impl CacheThread {
                 // also prevents deadlock in self.get_song_option()
                 // due to waiting on song that isn't being processed yet
                 // (first call adds it to song_in_progress set, second call just waits)
-                if ack {
-                    if let Err(_) = self.responses.send(ResponseType::Distance {
+                if ack && self.responses.send(ResponseType::Distance {
                         path1: path1,
                         path2: path2,
                         distance: Ok(0.0),
-                    }) {
-                        return true;
-                    }
+                    }).is_err() {
+                    return true;
                 }
             } else if !self.distance_in_progress.contains(&key) {
                 // distance worker uses 3 threads (it's own thread + 1 extra per song) for 2 songs
@@ -433,11 +431,11 @@ impl CacheThread {
                                 distance.clone(),
                             );
                             if path1_2 == key.0 && path2_2 == key.1 {
-                                if let Err(_) = self.responses.send(ResponseType::Distance {
+                                if self.responses.send(ResponseType::Distance {
                                     path1: path1_2,
                                     path2: path2_2,
                                     distance: distance,
-                                }) {
+                                }).is_err() {
                                     return true;
                                 }
                                 break 'inner1;
@@ -448,10 +446,10 @@ impl CacheThread {
                         },
                         ResponseType::UnsupportedSong { path: unsupported_path, msg } => {
                             self.song_in_progress.remove(&unsupported_path);
-                            if let Err(_) = self.responses.send(ResponseType::UnsupportedSong {
+                            if self.responses.send(ResponseType::UnsupportedSong {
                                 path: unsupported_path.clone(),
                                 msg: msg
-                            }) {
+                            }).is_err() {
                                 return true;
                             }
                             if unsupported_path == key.0 || unsupported_path == key.1 {
@@ -478,10 +476,10 @@ impl CacheThread {
         } else if !path.contains("://") {
             path
         } else {
-            if let Err(_) = self.responses.send(ResponseType::UnsupportedSong {
+            if self.responses.send(ResponseType::UnsupportedSong {
                 msg: format!("Song path is not a supported URI, it's `{}`", path),
                 path: path,
-            }) {
+            }).is_err() {
                 return true;
             }
             return false;
@@ -489,10 +487,10 @@ impl CacheThread {
         if let Some(song) = self.song_cache.get(&path) {
             if ack {
                 let song = song.to_owned();
-                if let Err(_) = self.responses.send(ResponseType::Song {
+                if self.responses.send(ResponseType::Song {
                     path: path,
-                    song: song,
-                }) {
+                    song: song.map(Box::new),
+                }).is_err() {
                     return true;
                 }
             }
@@ -539,7 +537,7 @@ impl CacheThread {
                     results
                         .send(ResponseType::Song {
                             path: path_clone,
-                            song: song_result,
+                            song: song_result.map(Box::new),
                         })
                         .unwrap_or(());
                 });
@@ -557,10 +555,10 @@ impl CacheThread {
                         ResponseType::Song { path: path2, song } => {
                             self.insert_song(path2.clone(), song.clone());
                             if path2 == path {
-                                if let Err(_) = self.responses.send(ResponseType::Song {
+                                if self.responses.send(ResponseType::Song {
                                     path: path,
                                     song: song,
-                                }) {
+                                }).is_err() {
                                     return true;
                                 }
                                 break 'inner3;
@@ -569,10 +567,10 @@ impl CacheThread {
                         ResponseType::UnsupportedSong { path: unsupported_path, msg } => {
                             self.song_in_progress.remove(&unsupported_path);
                             if unsupported_path == path {
-                                if let Err(_) = self.responses.send(ResponseType::UnsupportedSong {
+                                if self.responses.send(ResponseType::UnsupportedSong {
                                     path: unsupported_path,
                                     msg: msg
-                                }) {
+                                }).is_err() {
                                     return true;
                                 }
                                 break 'inner3;
@@ -624,7 +622,7 @@ fn worker_distance(
         results
             .send(ResponseType::Song {
                 path: path1.to_string(),
-                song: new_song1.clone(),
+                song: new_song1.clone().map(Box::new),
             })
             .unwrap_or(());
         new_song1?
@@ -637,7 +635,7 @@ fn worker_distance(
         results
             .send(ResponseType::Song {
                 path: path2.to_string(),
-                song: new_song2.clone(),
+                song: new_song2.clone().map(Box::new),
             })
             .unwrap_or(());
         if new_song2.is_err() {

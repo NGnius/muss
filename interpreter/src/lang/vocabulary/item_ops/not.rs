@@ -33,7 +33,7 @@ impl ItemOp for NotItemOp {
         let rhs = self.rhs.execute(context)?;
         if let Type::Primitive(rhs) = &rhs {
             Ok(Type::Primitive(
-                rhs.try_not().map_err(|e| RuntimeMsg(e))?,
+                rhs.try_not().map_err(RuntimeMsg)?,
             ))
         } else {
             Err(RuntimeMsg(format!(

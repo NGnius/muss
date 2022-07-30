@@ -48,7 +48,6 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         let next_item = self.interpreter.next();
-        let transmuted_next = (self.transmuter)(&mut self.interpreter, next_item);
-        transmuted_next
+        (self.transmuter)(&mut self.interpreter, next_item)
     }
 }

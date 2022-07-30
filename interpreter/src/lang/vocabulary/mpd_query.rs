@@ -117,7 +117,7 @@ impl Iterator for MpdQueryStatement {
             });
         }
         let results = self.results.as_mut().unwrap();
-        results.pop_front().map(|x| Ok(x))
+        results.pop_front().map(Ok)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {

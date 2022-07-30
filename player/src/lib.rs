@@ -3,6 +3,9 @@
 //! Music playback and m3u8 playlist generation are implemented in this part of the project.
 //!
 
+#![allow(clippy::match_like_matches_macro)]
+#![allow(clippy::redundant_field_names)]
+
 mod controller;
 mod errors;
 pub(crate) mod os_controls;

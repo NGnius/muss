@@ -165,7 +165,7 @@ impl<I: std::iter::Iterator<Item=Result<Item, InterpreterError>>> PlayerServer<I
     pub fn unblocking_timer_loop(ctrl_tx: Sender<ControlAction>, sleep_ms: u64) {
         let dur = std::time::Duration::from_millis(sleep_ms);
         loop {
-            if let Err(_) = ctrl_tx.send(ControlAction::NoOp { ack: false }) {
+            if ctrl_tx.send(ControlAction::NoOp { ack: false }).is_err() {
                 break;
             }
             thread::sleep(dur);

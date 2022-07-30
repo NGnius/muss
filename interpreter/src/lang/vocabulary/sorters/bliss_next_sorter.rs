@@ -68,18 +68,16 @@ impl Sorter for BlissNextSorter {
                 let mut ctx = iterator.escape();
                 for i in 1..self.item_buf.len() {
                     let item = &self.item_buf[i];
-                    match ctx.analysis.prepare_distance(first, item) {
-                        Err(e) => {
-                            iterator.enter(ctx);
-                            return Err(e);
-                        }
-                        Ok(_) => {}
+                    if let Err(e) = ctx.analysis.prepare_distance(first, item) {
+                        iterator.enter(ctx);
+                        return Err(e);
                     }
                 }
                 iterator.enter(ctx);
                 items_out.push_back(Ok(first.to_owned()));
             }
         } else {
+            #[allow(clippy::collapsible_else_if)]
             if self.item_buf.len() > 2 {
                 let last = self.item_buf.pop_front().unwrap();
                 let mut best_index = 0;
@@ -107,12 +105,9 @@ impl Sorter for BlissNextSorter {
                 let next = &self.item_buf[0];
                 for i in 1..self.item_buf.len() {
                     let item = &self.item_buf[i];
-                    match ctx.analysis.prepare_distance(next, item) {
-                        Err(e) => {
-                            iterator.enter(ctx);
-                            return Err(e);
-                        }
-                        Ok(_) => {}
+                    if let Err(e) = ctx.analysis.prepare_distance(next, item) {
+                        iterator.enter(ctx);
+                        return Err(e);
                     }
                 }
                 iterator.enter(ctx);

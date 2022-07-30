@@ -268,7 +268,7 @@ impl ReaderStateMachine {
             Self::Escaped { inside } => match inside {
                 '`' => Self::InsideTickLiteral { out: input },
                 '"' => Self::InsideQuoteLiteral { out: input },
-                '_' | _ => Self::Regular { out: input },
+                _ => Self::Regular { out: input },
             },
             Self::StartTickLiteral {} | Self::InsideTickLiteral { .. } => match input_char {
                 '\\' => Self::Escaped { inside: '`' },

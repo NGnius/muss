@@ -40,12 +40,10 @@ impl ItemOp for VariableDeclareItemOp {
             if !context.variables.exists(&self.variable_name) {
                 context.variables.declare(&self.variable_name, mps_type)?;
             }
-        } else {
-            if !context.variables.exists(&self.variable_name) {
-                context
-                    .variables
-                    .declare(&self.variable_name, Type::empty())?;
-            }
+        } else if !context.variables.exists(&self.variable_name) {
+            context
+                .variables
+                .declare(&self.variable_name, Type::empty())?;
         }
         Ok(Type::empty())
     }
@@ -74,13 +72,12 @@ impl ItemOpFactory<VariableDeclareItemOp> for VariableDeclareItemOpFactory {
             Token::Name("variable_name".into()),
             tokens,
         )?;
-        let inner_op: Option<Box<dyn ItemOp>>;
-        if !tokens.is_empty() {
+        let inner_op: Option<Box<dyn ItemOp>> = if !tokens.is_empty() {
             assert_token_raw(Token::Equals, tokens)?;
-            inner_op = Some(factory.try_build_item_statement(tokens, dict)?);
+            Some(factory.try_build_item_statement(tokens, dict)?)
         } else {
-            inner_op = None;
-        }
+            None
+        };
         Ok(VariableDeclareItemOp {
             variable_name: var_name,
             inner: inner_op,

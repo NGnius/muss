@@ -86,20 +86,19 @@ impl ItemOpFactory<VariableRetrieveItemOp> for VariableRetrieveItemOpFactory {
             Token::Name("variable_name".into()),
             tokens,
         )?;
-        let field_opt;
-        if tokens.is_empty() {
-            field_opt = None;
+        let field_opt = if tokens.is_empty() {
+            None
         } else {
             assert_token_raw(Token::Dot, tokens)?;
-            field_opt = Some(assert_token(
+            Some(assert_token(
                 |t| match t {
                     Token::Name(s) => Some(s),
                     _ => None,
                 },
                 Token::Name("field_name".into()),
                 tokens,
-            )?);
-        }
+            )?)
+        };
         Ok(VariableRetrieveItemOp {
             variable_name: var_name,
             field_name: field_opt,

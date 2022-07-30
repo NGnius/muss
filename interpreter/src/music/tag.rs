@@ -49,7 +49,7 @@ impl Tags {
             .file_name()
             .and_then(|file| file.to_str())
             .map(|file| file.replacen(&format!(".{}", extension), "", 1))
-            .unwrap_or("Unknown Title".into())
+            .unwrap_or_else(|| "Unknown Title".into())
     }
 
     #[inline]
@@ -149,7 +149,7 @@ impl Tags {
     pub fn artist(&self, id: u64, genre_id: u64) -> DbArtistItem {
         DbArtistItem {
             artist_id: id,
-            name: self.artist_name().unwrap_or("Unknown Artist".into()),
+            name: self.artist_name().unwrap_or_else(|| "Unknown Artist".into()),
             genre: genre_id,
         }
     }
@@ -171,7 +171,7 @@ impl Tags {
     pub fn album(&self, id: u64, meta_id: u64, artist_id: u64, genre_id: u64) -> DbAlbumItem {
         DbAlbumItem {
             album_id: id,
-            title: self.album_title().unwrap_or("Unknown Album".into()),
+            title: self.album_title().unwrap_or_else(|| "Unknown Album".into()),
             metadata: meta_id,
             artist: artist_id,
             genre: genre_id,
@@ -212,7 +212,7 @@ impl Tags {
     pub fn genre(&self, id: u64) -> DbGenreItem {
         DbGenreItem {
             genre_id: id,
-            title: self.genre_title().unwrap_or("Unknown Genre".into()),
+            title: self.genre_title().unwrap_or_else(|| "Unknown Genre".into()),
         }
     }
 }

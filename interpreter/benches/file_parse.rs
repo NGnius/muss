@@ -1,4 +1,4 @@
-use mps_interpreter::MpsFaye;
+use muss_interpreter::Interpreter;
 //use mps_interpreter::MpsRunner;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek};
@@ -35,12 +35,12 @@ fn faye_benchmark(c: &mut Criterion) {
     let mut buf = Vec::with_capacity(1024 * 1024);
     reader.read_to_end(&mut buf).unwrap();
     drop(buf);
-    c.bench_function("mps-faye lots_of_empty.mps", |b| {
+    c.bench_function("muss-faye lots_of_empty.mps", |b| {
         b.iter(|| {
             //let f = File::open("benches/lots_of_empty.mps").unwrap();
             //let mut reader = BufReader::new(f);
             reader.rewind().unwrap();
-            let mps = MpsFaye::with_stream(&mut reader);
+            let mps = Interpreter::with_stream(&mut reader);
             for item in mps {
                 match item {
                     Err(e) => panic!("{}", e),

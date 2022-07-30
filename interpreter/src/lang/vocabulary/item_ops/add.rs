@@ -36,7 +36,7 @@ impl ItemOp for AddItemOp {
             let rhs = self.rhs.execute(context)?;
             if let Type::Primitive(rhs) = &rhs {
                 Ok(Type::Primitive(
-                    lhs.try_add(rhs).map_err(|e| RuntimeMsg(e))?,
+                    lhs.try_add(rhs).map_err(RuntimeMsg)?,
                 ))
             } else {
                 Err(RuntimeMsg(format!(

@@ -53,10 +53,10 @@ impl Sorter for ShuffleSorter {
                 }
             }
             // end case: everything is completely empty -- end loop without a new result
-            if item_buf.len() == 0 {
+            if item_buf.is_empty() {
                 return Ok(());
             }
-            random = random % item_buf.len();
+            random %= item_buf.len();
         }
     }
 }
@@ -71,10 +71,10 @@ pub struct ShuffleSorterFactory;
 
 impl SorterFactory<ShuffleSorter> for ShuffleSorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&Token>) -> bool {
-        (!tokens.is_empty() && check_name("shuffle", &tokens[0]))
+        (!tokens.is_empty() && check_name("shuffle", tokens[0]))
             || (tokens.len() > 1
-                && check_name("random", &tokens[0])
-                && check_name("shuffle", &tokens[1]))
+                && check_name("random", tokens[0])
+                && check_name("shuffle", tokens[1]))
     }
 
     fn build_sorter(

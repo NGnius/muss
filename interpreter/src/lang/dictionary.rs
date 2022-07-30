@@ -53,6 +53,7 @@ impl LanguageDictionary {
     }
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for LanguageDictionary {
     fn default() -> Self {
         Self {

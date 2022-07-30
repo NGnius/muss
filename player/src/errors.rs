@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Display, Error, Formatter};
-use std::convert::Into;
+use std::convert::From;
 
 #[derive(Debug, Clone)]
 pub enum PlayerError {
@@ -58,9 +58,9 @@ impl Display for PlaybackError {
     }
 }
 
-impl Into<PlayerError> for PlaybackError {
-    fn into(self) -> PlayerError {
-        PlayerError::Playback(self)
+impl From<PlaybackError> for PlayerError {
+    fn from(other: PlaybackError) -> Self {
+        PlayerError::Playback(other)
     }
 }
 
@@ -86,8 +86,8 @@ impl Display for UriError {
     }
 }
 
-impl Into<PlayerError> for UriError {
-    fn into(self) -> PlayerError {
-        PlayerError::Uri(self)
+impl From<UriError> for PlayerError {
+    fn from(other: UriError) -> Self {
+        PlayerError::Uri(other)
     }
 }

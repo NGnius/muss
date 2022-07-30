@@ -78,11 +78,10 @@ impl ItemOpFactory<FieldAssignItemOp> for FieldAssignItemOpFactory {
         factory: &ItemBlockFactory,
         dict: &LanguageDictionary,
     ) -> Result<FieldAssignItemOp, SyntaxError> {
-        let var_name;
-        if tokens[0].is_dot() {
-            var_name = "item".to_string();
+        let var_name =if tokens[0].is_dot() {
+            "item".to_string()
         } else {
-            var_name = assert_token(
+            assert_token(
                 |t| match t {
                     Token::Name(s) => Some(s),
                     _ => None,
@@ -90,7 +89,7 @@ impl ItemOpFactory<FieldAssignItemOp> for FieldAssignItemOpFactory {
                 Token::Name("variable_name".into()),
                 tokens,
             )?
-        }
+        };
         assert_token_raw(Token::Dot, tokens)?;
         let f_name = assert_token(
             |t| match t {

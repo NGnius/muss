@@ -69,7 +69,7 @@ impl Iterator for RepeatStatement {
         }
         if real_op.is_resetable() {
             while self.loop_forever || !self.inner_done {
-                for item in real_op.by_ref() {
+                if let Some(item) = real_op.next() {
                     return Some(item);
                 }
                 if !self.loop_forever {
@@ -79,16 +79,14 @@ impl Iterator for RepeatStatement {
                         self.context = Some(real_op.escape());
                     } else {
                         self.repetitions -= 1;
-                        match real_op.reset() {
-                            Err(e) => return Some(Err(e)),
-                            Ok(_) => {}
+                        if let Err(e) = real_op.reset() {
+                            return Some(Err(e));
                         }
                     }
                 } else {
                     // always reset in infinite loop mode
-                    match real_op.reset() {
-                        Err(e) => return Some(Err(e)),
-                        Ok(_) => {}
+                    if let Err(e) = real_op.reset() {
+                        return Some(Err(e));
                     }
                 }
             }

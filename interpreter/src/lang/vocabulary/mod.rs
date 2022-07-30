@@ -1,3 +1,4 @@
+#![allow(clippy::while_let_on_iterator)]
 mod empties;
 pub(crate) mod empty;
 mod files;

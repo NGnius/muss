@@ -1,3 +1,4 @@
+#![allow(clippy::new_without_default)]
 use core::ops::Deref;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
@@ -67,11 +68,11 @@ pub struct ItemBlockStatement {
 impl Display for ItemBlockStatement {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(f, "{}.{{", self.iterable)?;
-        if self.statements.len() > 0 {
-            write!(f, "\n")?;
+        if !self.statements.is_empty() {
+            writeln!(f)?;
         }
         for statement in self.statements.iter() {
-            write!(f, "{}\n", statement)?;
+            writeln!(f, "{}", statement)?;
         }
         write!(f, "}}")
     }
@@ -213,7 +214,7 @@ pub struct ItemBlockFactory {
 }
 
 impl ItemBlockFactory {
-    pub fn add<
+    pub fn push<
         T: ItemOpFactory<Y> + 'static,
         Y: Deref<Target = dyn ItemOp> + ItemOp + 'static,
     >(
@@ -317,12 +318,11 @@ fn restore_item_var(
     ctx: &mut Context,
     old_var: Option<Type>,
 ) -> Result<Option<Type>, RuntimeMsg> {
-    let new_var;
-    if ctx.variables.exists(ITEM_VARIABLE_NAME) {
-        new_var = Some(ctx.variables.remove(ITEM_VARIABLE_NAME)?);
+    let new_var = if ctx.variables.exists(ITEM_VARIABLE_NAME) {
+        Some(ctx.variables.remove(ITEM_VARIABLE_NAME)?)
     } else {
-        new_var = None;
-    }
+        None
+    };
     if let Some(old_var) = old_var {
         ctx.variables.declare(ITEM_VARIABLE_NAME, old_var)?;
     }

@@ -65,7 +65,7 @@ impl Iterator for UnionStatement {
                     Err(e) => return Some(Err(e)),
                 };
                 real_op.enter(self.context.take().unwrap());
-                while let Some(item) = real_op.next() {
+                if let Some(item) = real_op.next() {
                     self.context = Some(real_op.escape());
                     return Some(item);
                 }

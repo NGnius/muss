@@ -30,7 +30,7 @@ impl Display for IterItemOp {
 
 impl ItemOp for IterItemOp {
     fn execute(&self, _context: &mut Context) -> Result<Type, RuntimeMsg> {
-        Ok(Type::Op(self.inner.dup().into()))
+        Ok(Type::Op(self.inner.dup()))
     }
 }
 

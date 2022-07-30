@@ -39,7 +39,7 @@ impl ItemOp for InterpolateStringItemOp {
             }
             Type::Item(item) => {
                 let mut result;
-                if item.len() == 0 {
+                if item.is_empty() {
                     result = self.format.clone();
                 } else {
                     let mut iter = item.iter();

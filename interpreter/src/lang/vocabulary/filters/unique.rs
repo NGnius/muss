@@ -90,7 +90,7 @@ pub struct UniqueFilterFactory;
 
 impl FilterFactory<UniqueFieldFilter> for UniqueFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
-        tokens.len() >= 2 && check_name("unique", &tokens[0])
+        tokens.len() >= 2 && check_name("unique", tokens[0])
     }
 
     fn build_filter(
@@ -128,7 +128,7 @@ impl FilterFactory<UniqueFieldFilter> for UniqueFilterFactory {
 
 impl FilterFactory<UniqueFilter> for UniqueFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
-        tokens.len() == 1 && check_name("unique", &tokens[0])
+        tokens.len() == 1 && check_name("unique", tokens[0])
     }
 
     fn build_filter(

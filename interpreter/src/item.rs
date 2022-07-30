@@ -45,6 +45,10 @@ impl Item {
     pub fn len(&self) -> usize {
         self.fields.len()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.fields.is_empty()
+    }
 }
 
 impl Display for Item {

@@ -49,7 +49,7 @@ impl Iterator for IntersectionStatement {
     type Item = IteratorItem;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.ops.len() == 0 {
+        if self.ops.is_empty() {
             return None;
         } else if self.init_needed {
             self.init_needed = false;

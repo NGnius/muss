@@ -19,7 +19,7 @@ impl Display for NonEmptyFilter {
 
 impl FilterPredicate for NonEmptyFilter {
     fn matches(&mut self, item: &Item, _ctx: &mut Context) -> Result<bool, RuntimeMsg> {
-        if item.len() != 0 {
+        if !item.is_empty() {
             if item.len() == 1 && item.field("filename").is_some() {
                 Ok(false) // ignore filename field, since that almost always exists
             } else {

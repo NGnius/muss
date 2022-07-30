@@ -29,8 +29,8 @@ where
 }
 
 #[inline]
-fn empty_callback<'a, T: TokenReader>(
-    _s: &mut Interpreter<'a, T>,
+fn empty_callback<T: TokenReader>(
+    _s: &mut Interpreter<'_, T>,
     _d: InterpreterEvent,
 ) -> Result<(), InterpreterError> {
     Ok(())

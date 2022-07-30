@@ -1,3 +1,5 @@
+#![allow(clippy::match_like_matches_macro)]
+#![allow(clippy::needless_range_loop)]
 mod db_items;
 mod dictionary;
 mod error;

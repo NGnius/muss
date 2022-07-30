@@ -190,7 +190,7 @@ impl<P: FilterPredicate + 'static> Iterator for FilterReplaceStatement<P> {
                     Ok(x) => {
                         return Some(Err(RuntimeError {
                             line: 0,
-                            op: fake.clone(),
+                            op: fake,
                             msg: format!(
                                 "Expected operation/iterable type in variable {}, got {}",
                                 &variable_name, x
@@ -203,15 +203,14 @@ impl<P: FilterPredicate + 'static> Iterator for FilterReplaceStatement<P> {
                 variable.enter(ctx);
                 let item = variable.next();
                 self.context = Some(variable.escape());
-                match self
+                if let Err(e) = self
                     .context
                     .as_mut()
                     .unwrap()
                     .variables
                     .declare(variable_name, Type::Op(variable))
                 {
-                    Err(e) => return Some(Err(e.with(RuntimeOp(fake)))),
-                    Ok(_) => {}
+                    return Some(Err(e.with(RuntimeOp(fake))));
                 }
                 item
             }
@@ -242,9 +241,8 @@ impl<P: FilterPredicate + 'static> Iterator for FilterReplaceStatement<P> {
                                     // invoke inner op
                                     real_op.enter(self.context.take().unwrap());
                                     if real_op.is_resetable() {
-                                        match real_op.reset() {
-                                            Err(e) => return Some(Err(e)),
-                                            Ok(_) => {}
+                                        if let Err(e) = real_op.reset() {
+                                            return Some(Err(e));
                                         }
                                     }
                                     for item in real_op.by_ref() {
@@ -287,9 +285,8 @@ impl<P: FilterPredicate + 'static> Iterator for FilterReplaceStatement<P> {
                                     // invoke inner operation
                                     real_op.enter(self.context.take().unwrap());
                                     if real_op.is_resetable() {
-                                        match real_op.reset() {
-                                            Err(e) => return Some(Err(e)),
-                                            Ok(_) => {}
+                                        if let Err(e) = real_op.reset() {
+                                            return Some(Err(e));
                                         }
                                     }
                                     for item in real_op.by_ref() {
@@ -319,7 +316,7 @@ impl<P: FilterPredicate + 'static> Iterator for FilterReplaceStatement<P> {
                             Some(Ok(item))
                         }
                     }
-                    Err(e) => Some(Err(e.with(RuntimeOp(fake.clone())))),
+                    Err(e) => Some(Err(e.with(RuntimeOp(fake)))),
                 }
             }
             Some(Err(e)) => Some(Err(e)),
@@ -347,12 +344,11 @@ fn declare_or_replace_item(
     single: SingleItem,
     ctx: &mut Context,
 ) -> Result<Option<Type>, RuntimeMsg> {
-    let old_item: Option<Type>;
-    if ctx.variables.exists(ITEM_VARIABLE_NAME) {
-        old_item = Some(ctx.variables.remove(ITEM_VARIABLE_NAME)?);
+    let old_item: Option<Type> = if ctx.variables.exists(ITEM_VARIABLE_NAME) {
+        Some(ctx.variables.remove(ITEM_VARIABLE_NAME)?)
     } else {
-        old_item = None;
-    }
+        None
+    };
     ctx.variables
         .declare(ITEM_VARIABLE_NAME, Type::Op(Box::new(single)))?;
     Ok(old_item)

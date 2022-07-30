@@ -35,7 +35,7 @@ impl Display for ConstructorItemOp {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(f, "Item(")?;
         if self.fields.len() > 1 {
-            write!(f, "\n")?;
+            writeln!(f)?;
             for i in 0..self.fields.len() - 1 {
                 let field = &self.fields[i];
                 write!(f, "{}: {}, ", field.name, field.value)?;

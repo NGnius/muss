@@ -15,9 +15,9 @@ impl<'a> Uri<&'a str> {
         match self.0.find("//") {
             Some(end) => {
                 // proper URI
-                if let Some(query_start) = self.0.find("?") {
+                if let Some(query_start) = self.0.find('?') {
                     self.0.get(end+2..query_start).unwrap()
-                } else if let Some(frag_start) = self.0.find("#") {
+                } else if let Some(frag_start) = self.0.find('#') {
                     self.0.get(end+2..frag_start).unwrap()
                 } else {
                     self.0.get(end+2..).unwrap()

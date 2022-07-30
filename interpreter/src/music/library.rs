@@ -36,6 +36,10 @@ impl Library {
         self.songs.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.songs.is_empty()
+    }
+
     pub fn clear_modified(&mut self) {
         self.dirty = false;
     }
@@ -54,7 +58,7 @@ impl Library {
         self.files.contains(&path.as_ref().to_path_buf())
     }
 
-    pub fn all_songs<'a>(&'a self) -> Vec<&'a DbMusicItem> {
+    pub fn all_songs(&self) -> Vec<&'_ DbMusicItem> {
         self.songs.values().collect()
     }
 
@@ -67,7 +71,7 @@ impl Library {
         self.songs.insert(song.song_id, song);
     }
 
-    pub fn all_metadata<'a>(&'a self) -> Vec<&'a DbMetaItem> {
+    pub fn all_metadata(& self) -> Vec<&'_ DbMetaItem> {
         self.metadata.values().collect()
     }
 
@@ -77,7 +81,7 @@ impl Library {
         self.metadata.insert(meta.meta_id, meta);
     }
 
-    pub fn all_artists<'a>(&'a self) -> Vec<&'a DbArtistItem> {
+    pub fn all_artists(&self) -> Vec<&'_ DbArtistItem> {
         self.artists.values().collect()
     }
 
@@ -88,7 +92,7 @@ impl Library {
             .insert(Self::sanitise_key(&artist.name), artist);
     }
 
-    pub fn all_albums<'a>(&'a self) -> Vec<&'a DbAlbumItem> {
+    pub fn all_albums(&self) -> Vec<&'_ DbAlbumItem> {
         self.albums.values().collect()
     }
 
@@ -98,7 +102,7 @@ impl Library {
         self.albums.insert(Self::sanitise_key(&album.title), album);
     }
 
-    pub fn all_genres<'a>(&'a self) -> Vec<&'a DbGenreItem> {
+    pub fn all_genres(&self) -> Vec<&'_ DbGenreItem> {
         self.genres.values().collect()
     }
 
@@ -236,7 +240,7 @@ impl Library {
     }
 
     #[inline]
-    fn find_or_gen_id<'a, D: DatabaseObj>(map: &'a HashMap<String, D>, key: &str) -> u64 {
+    fn find_or_gen_id<D: DatabaseObj>(map: &HashMap<String, D>, key: &str) -> u64 {
         if let Some(obj) = Self::find_by_key(map, key) {
             obj.id()
         } else {

@@ -13,7 +13,7 @@ use crate::Context;
 const SORTER_ITEM_CACHE_SIZE: usize = 8;
 
 pub trait Sorter: Clone + Debug + Display {
-    fn sort<'a>(
+    fn sort(
         &mut self,
         iterator: &mut dyn Op,
         item_buf: &mut VecDeque<IteratorItem>,

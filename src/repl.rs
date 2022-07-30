@@ -1,4 +1,5 @@
 //! Read, Execute, Print Loop functionality
+#![allow(clippy::single_match)]
 use std::sync::{RwLock};
 use std::sync::mpsc::{self, Receiver};
 use std::io::{self, Write};
@@ -79,7 +80,7 @@ impl ReplState {
     }
 }
 
-fn interpreter_event_callback<'a, T: muss_interpreter::tokens::TokenReader>(_interpreter: &mut Interpreter<'a, T>, event: InterpreterEvent) -> Result<(), InterpreterError> {
+fn interpreter_event_callback<T: muss_interpreter::tokens::TokenReader>(_interpreter: &mut Interpreter<'_, T>, event: InterpreterEvent) -> Result<(), InterpreterError> {
     match event {
         InterpreterEvent::StatementComplete => {
             if let Ok(mut d_state) = DEBUG_STATE.write() {
@@ -165,7 +166,7 @@ pub fn repl(args: CliArgs) {
     let term = Term::stdout();
     term.set_title("muss");
     let (writer, reader) = channel_io();
-    let volume = args.volume.clone();
+    let volume = args.volume;
     let mpd = match args.mpd.clone().map(|a| muss_player::mpd_connection(a.parse().unwrap())).transpose() {
         Ok(mpd) => mpd,
         Err(e) => {
@@ -187,7 +188,7 @@ pub fn repl(args: CliArgs) {
             match flag {
                 DebugFlag::Normal => item,
                 DebugFlag::Skip => {
-                    while let Some(_) = interpretor.next() {
+                    for _ in interpretor.by_ref() {
                         // NOTE: recursion occurs here
                     }
                     None
@@ -195,7 +196,7 @@ pub fn repl(args: CliArgs) {
                 DebugFlag::List => {
                     if let Some(x) = item {
                         list_tx.send(x.map_err(|e| e.to_string())).unwrap_or(());
-                        while let Some(x) = interpretor.next() {
+                        for x in interpretor.by_ref() {
                             // NOTE: recursion occurs here
                             // in most cases this will never be a case of Some(...) because
                             // recursive calls to this function intercept it first and return None
@@ -241,10 +242,10 @@ pub fn repl(args: CliArgs) {
             match player.save_m3u8(&mut playlist_writer) {
                 Ok(_) => {}
                 Err(e) => {
-                    error_prompt(e, &args);
+                    error_prompt(e, args);
                     // consume any further errors (this shouldn't actually write anything)
                     while let Err(e) = player.save_m3u8(&mut playlist_writer) {
-                        error_prompt(e, &args);
+                        error_prompt(e, args);
                     }
                 }
             }
@@ -266,7 +267,7 @@ pub fn repl(args: CliArgs) {
             if args.wait {
                 match ctrl.wait_for_empty() {
                     Ok(_) => {}
-                    Err(e) => error_prompt(e, &args),
+                    Err(e) => error_prompt(e, args),
                 }
             } else {
                 // consume all incoming errors
@@ -274,7 +275,7 @@ pub fn repl(args: CliArgs) {
                 while had_err {
                     let mut new_had_err = false;
                     for e in ctrl.check_ack() {
-                        error_prompt(e, &args);
+                        error_prompt(e, args);
                         new_had_err = true;
                     }
                     had_err = new_had_err;
@@ -354,7 +355,7 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
                             if !statement_result.starts_with('?') {
                                 state
                                     .writer
-                                    .write(state.statement_buf.iter().collect::<String>().as_bytes())
+                                    .write_all(state.statement_buf.iter().collect::<String>().as_bytes())
                                     .expect(INTERPRETER_WRITE_ERROR);
                                 execute(state, args);
                                 state.statement_buf.clear();
@@ -427,57 +428,55 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
                             }
                         }
                     }
-                } else {
-                    if state.current_line.len() != state.cursor_rightward_position {
-                        // if not at start of line
-                        let removed_char = state
-                            .current_line
-                            .remove(state.current_line.len() - state.cursor_rightward_position - 1);
-                        state.statement_buf.remove(
-                            state.statement_buf.len() - state.cursor_rightward_position - 1,
-                        );
-                        // re-sync unclosed syntax tracking
-                        match removed_char {
-                            '"' | '`' => {
-                                if let Some(c2) = state.in_literal {
-                                    if removed_char == c2 {
-                                        state.in_literal = None;
-                                    }
-                                } else {
-                                    state.in_literal = Some(removed_char);
+                } else if state.current_line.len() != state.cursor_rightward_position {
+                    // if not at start of line
+                    let removed_char = state
+                        .current_line
+                        .remove(state.current_line.len() - state.cursor_rightward_position - 1);
+                    state.statement_buf.remove(
+                        state.statement_buf.len() - state.cursor_rightward_position - 1,
+                    );
+                    // re-sync unclosed syntax tracking
+                    match removed_char {
+                        '"' | '`' => {
+                            if let Some(c2) = state.in_literal {
+                                if removed_char == c2 {
+                                    state.in_literal = None;
                                 }
+                            } else {
+                                state.in_literal = Some(removed_char);
                             }
-                            '(' => {
-                                if state.bracket_depth != 0 {
-                                    state.bracket_depth -= 1
-                                }
-                            }
-                            ')' => state.bracket_depth += 1,
-                            '{' => {
-                                if state.curly_depth != 0 {
-                                    state.curly_depth -= 1
-                                }
-                            }
-                            '}' => state.curly_depth += 1,
-                            _ => {}
                         }
-                        // re-print end of line to remove character in middle
-                        state
-                            .terminal
-                            .move_cursor_left(1)
-                            .expect(TERMINAL_WRITE_ERROR);
-                        for i in state.current_line.len() - state.cursor_rightward_position
-                            ..state.current_line.len()
-                        {
-                            write!(state.terminal, "{}", state.current_line[i])
-                                .expect(TERMINAL_WRITE_ERROR);
+                        '(' => {
+                            if state.bracket_depth != 0 {
+                                state.bracket_depth -= 1
+                            }
                         }
-                        write!(state.terminal, " ").expect(TERMINAL_WRITE_ERROR);
-                        state
-                            .terminal
-                            .move_cursor_left(state.cursor_rightward_position + 1)
+                        ')' => state.bracket_depth += 1,
+                        '{' => {
+                            if state.curly_depth != 0 {
+                                state.curly_depth -= 1
+                            }
+                        }
+                        '}' => state.curly_depth += 1,
+                        _ => {}
+                    }
+                    // re-print end of line to remove character in middle
+                    state
+                        .terminal
+                        .move_cursor_left(1)
+                        .expect(TERMINAL_WRITE_ERROR);
+                    for i in state.current_line.len() - state.cursor_rightward_position
+                        ..state.current_line.len()
+                    {
+                        write!(state.terminal, "{}", state.current_line[i])
                             .expect(TERMINAL_WRITE_ERROR);
                     }
+                    write!(state.terminal, " ").expect(TERMINAL_WRITE_ERROR);
+                    state
+                        .terminal
+                        .move_cursor_left(state.cursor_rightward_position + 1)
+                        .expect(TERMINAL_WRITE_ERROR);
                 }
             }
             Key::Del => {
@@ -547,7 +546,7 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
                     let complete_statement = state.statement_buf.iter().collect::<String>();
                     state
                         .writer
-                        .write(complete_statement.as_bytes())
+                        .write_all(complete_statement.as_bytes())
                         .expect("Failed to write to MPS interpreter");
                     execute(state, args);
                     state.statement_buf.clear();
@@ -575,23 +574,27 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(args: &CliArgs, state: &mut Rep
                 }
             }
             Key::ArrowDown => {
-                if state.selected_history > 1 {
-                    state.selected_history -= 1;
-                    display_history_line(state, args);
-                } else if state.selected_history == 1 {
-                    state.selected_history = 0;
-                    state.line_number -= 1;
-                    state
-                        .terminal
-                        .clear_line()
-                        .expect(TERMINAL_WRITE_ERROR);
-                    prompt(state, args);
-                    // clear stale input buffer
-                    state.statement_buf.clear();
-                    state.current_line.clear();
-                    state.in_literal = None;
-                    state.bracket_depth = 0;
-                    state.curly_depth = 0;
+                match state.selected_history {
+                    1 => {
+                        state.selected_history = 0;
+                        state.line_number -= 1;
+                        state
+                            .terminal
+                            .clear_line()
+                            .expect(TERMINAL_WRITE_ERROR);
+                        prompt(state, args);
+                        // clear stale input buffer
+                        state.statement_buf.clear();
+                        state.current_line.clear();
+                        state.in_literal = None;
+                        state.bracket_depth = 0;
+                        state.curly_depth = 0;
+                    },
+                    0 => {},
+                    _ => {
+                        state.selected_history -= 1;
+                        display_history_line(state, args);
+                    },
                 }
             }
             Key::ArrowLeft => {
@@ -642,7 +645,7 @@ fn display_history_line(state: &mut ReplState, args: &CliArgs) {
     let new_statement = state.history[state.history.len() - state.selected_history].trim();
     state
         .terminal
-        .write(new_statement.as_bytes())
+        .write_all(new_statement.as_bytes())
         .expect(TERMINAL_WRITE_ERROR);
     // clear stale input buffer
     state.statement_buf.clear();

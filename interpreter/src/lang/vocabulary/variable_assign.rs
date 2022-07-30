@@ -74,22 +74,21 @@ impl Iterator for AssignStatement {
                     Ok(real) => real,
                     Err(e) => return Some(Err(e)),
                 };
-                let result;
-                if self.is_declaration {
-                    result = self
+                let result = if self.is_declaration {
+                    self
                         .context
                         .as_mut()
                         .unwrap()
                         .variables
-                        .declare(&self.variable_name, Type::Op(real));
+                        .declare(&self.variable_name, Type::Op(real))
                 } else {
-                    result = self
+                    self
                         .context
                         .as_mut()
                         .unwrap()
                         .variables
-                        .assign(&self.variable_name, Type::Op(real));
-                }
+                        .assign(&self.variable_name, Type::Op(real))
+                };
                 match result {
                     Ok(_) => None,
                     Err(e) => Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self))))),
@@ -107,22 +106,21 @@ impl Iterator for AssignStatement {
             }))*/
         } else {
             let assign_type = self.assign_type.clone().unwrap();
-            let result;
-            if self.is_declaration {
-                result = self
+            let result = if self.is_declaration {
+                self
                     .context
                     .as_mut()
                     .unwrap()
                     .variables
-                    .declare(&self.variable_name, Type::Primitive(assign_type));
+                    .declare(&self.variable_name, Type::Primitive(assign_type))
             } else {
-                result = self
+                self
                     .context
                     .as_mut()
                     .unwrap()
                     .variables
-                    .assign(&self.variable_name, Type::Primitive(assign_type));
-            }
+                    .assign(&self.variable_name, Type::Primitive(assign_type))
+            };
             match result {
                 Ok(_) => None,
                 Err(e) => Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self))))),

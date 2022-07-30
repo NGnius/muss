@@ -28,29 +28,29 @@ impl Display for BranchItemOp {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(f, "if {} {{", self.condition)?;
         if self.inner_ifs.len() > 1 {
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
         for i in 0..self.inner_ifs.len() {
             write!(f, "{}", self.inner_ifs[i])?;
             if i != self.inner_ifs.len() - 1 {
-                write!(f, ",\n")?;
+                writeln!(f, ",")?;
             }
         }
         if self.inner_ifs.len() > 1 {
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
         write!(f, "}} else {{")?;
         if self.inner_elses.len() > 1 {
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
         for i in 0..self.inner_elses.len() {
             write!(f, "{}", self.inner_elses[i])?;
             if i != self.inner_elses.len() - 1 {
-                write!(f, ",\n")?;
+                writeln!(f, ",")?;
             }
         }
         if self.inner_elses.len() > 1 {
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
         write!(f, "}}")
     }

@@ -41,10 +41,11 @@ impl Iterator for SortedReadDir {
                 }
             }
             self.dir_iter_complete = true;
-            self.cache.sort_by(
+            self.cache.sort_by_key(|b| std::cmp::Reverse(b.path().to_string_lossy().to_lowercase()));
+            /*self.cache.sort_by(
                 |a, b| b.path().to_string_lossy().to_lowercase().cmp(
                     &a.path().to_string_lossy().to_lowercase())
-            );
+            );*/
         }
         if self.cache.is_empty() {
             None
@@ -73,7 +74,7 @@ impl Display for FileIter {
             self.pattern
                 .as_ref()
                 .map(|re| re.to_string())
-                .unwrap_or("[none]".to_string()),
+                .unwrap_or_else(|| "[none]".to_string()),
             self.recursive
         )
     }
@@ -224,13 +225,11 @@ impl FileIter {
     ) {
         // populates fields from named capture groups
         if let Some(captures) = captures {
-            for name_maybe in capture_names {
-                if let Some(name) = name_maybe {
-                    if item.field(name).is_some() {
+            for name in capture_names.flatten() {
+                if item.field(name).is_some() {
                         // do nothing
-                    } else if let Some(value) = captures.name(name).map(|m| m.as_str().to_string()) {
-                        item.set_field(name, TypePrimitive::parse(value));
-                    }
+                } else if let Some(value) = captures.name(name).map(|m| m.as_str().to_string()) {
+                    item.set_field(name, TypePrimitive::parse(value));
                 }
             }
         }

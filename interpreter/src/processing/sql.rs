@@ -1,4 +1,5 @@
 use core::fmt::Debug;
+use std::fmt::Write;
 use std::collections::{HashMap, HashSet};
 
 use crate::lang::db::*;
@@ -159,9 +160,11 @@ impl DatabaseQuerier for SQLiteExecutor {
                 for key in keys.drain() {
                     if first {
                         first = false;
-                        concat_keys += key;
+                        write!(concat_keys, "{}", key).unwrap();
+                        //concat_keys += key;
                     } else {
-                        concat_keys += &format!("{}, ", key);
+                        write!(concat_keys, "{}, ", key).unwrap();
+                        //concat_keys += &format!("{}, ", key);
                     }
                 }
                 return Err(RuntimeMsg(format!(

@@ -64,12 +64,7 @@ impl Sorter for BlissSorter {
             // when buf_len_old == item_buf.len(), iterator was already complete
             // no need to sort in that case, since buffer was sorted in last call to sort or buffer never had any items to sort
             if self.first_song.is_none() {
-                for item in item_buf.iter() {
-                    if let Ok(item) = item {
-                        self.first_song = Some(item.clone());
-                        break;
-                    }
-                }
+                self.first_song = item_buf.iter().flatten().next().map(|x| x.to_owned());
             }
             if let Some(first) = &self.first_song {
                 let mut ctx = iterator.escape();
@@ -78,12 +73,9 @@ impl Sorter for BlissSorter {
                         if item == first {
                             continue;
                         }
-                        match ctx.analysis.prepare_distance(first, item) {
-                            Err(e) => {
-                                iterator.enter(ctx);
-                                return Err(e);
-                            }
-                            Ok(_) => {}
+                        if let Err(e) = ctx.analysis.prepare_distance(first, item) {
+                            iterator.enter(ctx);
+                            return Err(e);
                         }
                     }
                 }
@@ -115,8 +107,8 @@ impl Sorter for BlissSorter {
             item_buf.make_contiguous().sort_by(|a, b| {
                 if let Ok(a) = a {
                     if let Ok(b) = b {
-                        let float_a = cache.get(&a).unwrap();
-                        let float_b = cache.get(&b).unwrap();
+                        let float_a = cache.get(a).unwrap();
+                        let float_b = cache.get(b).unwrap();
                         return float_a.partial_cmp(float_b).unwrap_or(DEFAULT_ORDER);
                     }
                 }

@@ -227,7 +227,7 @@ impl<P: FilterPredicate + 'static> Iterator for FilterStatement<P> {
                                 let matches_result = self.predicate.matches(&item, &mut ctx);
                                 let matches = match matches_result {
                                     Err(e) => {
-                                        maybe_result = Some(Err(e.with(RuntimeOp(fake.clone()))));
+                                        maybe_result = Some(Err(e.with(RuntimeOp(fake))));
                                         self.context = Some(ctx);
                                         break;
                                     }
@@ -245,7 +245,7 @@ impl<P: FilterPredicate + 'static> Iterator for FilterStatement<P> {
                                         Err(e) => {
                                             //self.context = Some(op.escape());
                                             maybe_result =
-                                                Some(Err(e.with(RuntimeOp(fake.clone()))));
+                                                Some(Err(e.with(RuntimeOp(fake))));
                                             self.context = Some(ctx);
                                             break;
                                         }
@@ -269,7 +269,7 @@ impl<P: FilterPredicate + 'static> Iterator for FilterStatement<P> {
                                                 Err(e) => match maybe_result {
                                                     Some(Ok(_)) => {
                                                         maybe_result = Some(Err(
-                                                            e.with(RuntimeOp(fake.clone()))
+                                                            e.with(RuntimeOp(fake))
                                                         ))
                                                     }
                                                     Some(Err(e2)) => maybe_result = Some(Err(e2)), // already failing, do not replace error,
@@ -286,7 +286,7 @@ impl<P: FilterPredicate + 'static> Iterator for FilterStatement<P> {
                                                 Err(e) => {
                                                     //self.context = Some(op.escape());
                                                     maybe_result =
-                                                        Some(Err(e.with(RuntimeOp(fake.clone()))));
+                                                        Some(Err(e.with(RuntimeOp(fake))));
                                                     self.context = Some(ctx);
                                                     break;
                                                 }
@@ -332,7 +332,7 @@ impl<P: FilterPredicate + 'static> Iterator for FilterStatement<P> {
                     }
                     Err(e) => {
                         self.is_failing = true; // this is unrecoverable and reproducible, so it shouldn't be tried again (to prevent error spam)
-                        return Some(Err(e.with(RuntimeOp(fake.clone()))))
+                        return Some(Err(e.with(RuntimeOp(fake))))
                     },
                 };
                 let mut maybe_result = None;
@@ -434,7 +434,7 @@ impl<P: FilterPredicate + 'static> Iterator for FilterStatement<P> {
                     .variables
                     .declare(variable_name, Type::Op(variable))
                 {
-                    Err(e) => Some(Err(e.with(RuntimeOp(fake.clone())))),
+                    Err(e) => Some(Err(e.with(RuntimeOp(fake)))),
                     Ok(_) => maybe_result,
                 }
             }
@@ -479,6 +479,7 @@ impl<P: FilterPredicate + 'static, F: FilterFactory<P> + 'static>
 impl<P: FilterPredicate + 'static, F: FilterFactory<P> + 'static> BoxedOpFactory
     for FilterStatementFactory<P, F>
 {
+    #[allow(clippy::unnecessary_unwrap)]
     fn is_op_boxed(&self, tokens: &VecDeque<Token>) -> bool {
         let tokens_len = tokens.len();
         if is_correct_format(tokens) {
@@ -524,8 +525,7 @@ impl<P: FilterPredicate + 'static, F: FilterFactory<P> + 'static> BoxedOpFactory
         dict: &LanguageDictionary,
     ) -> Result<Box<dyn Op>, SyntaxError> {
         let start_of_op = last_dot_before_open_bracket(tokens);
-        let op;
-        if start_of_op == 1 && tokens[0].is_name() {
+        let op = if start_of_op == 1 && tokens[0].is_name() {
             // variable_name.(predicate)
             let variable_name = assert_token(
                 |t| match t {
@@ -535,15 +535,15 @@ impl<P: FilterPredicate + 'static, F: FilterFactory<P> + 'static> BoxedOpFactory
                 Token::Name("variable_name".into()),
                 tokens,
             )?;
-            op = VariableOrOp::Variable(variable_name);
+            VariableOrOp::Variable(variable_name)
         } else {
             // <some other op>.(predicate)
             //let mut new_tokens = tokens.range(0..start_of_op).map(|x| x.to_owned()).collect();
             let end_tokens = tokens.split_off(start_of_op); // don't parse filter in inner statement
             let inner_op = dict.try_build_statement(tokens)?;
             tokens.extend(end_tokens);
-            op = VariableOrOp::Op(inner_op.into());
-        }
+            VariableOrOp::Op(inner_op.into())
+        };
         assert_token_raw(Token::Dot, tokens)?;
         assert_token_raw(Token::OpenBracket, tokens)?;
         if !tokens.is_empty() && check_name("if", &tokens[0]) {

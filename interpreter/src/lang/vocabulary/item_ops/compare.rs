@@ -42,7 +42,7 @@ impl ItemOp for CompareItemOp {
         let rhs_val = self.rhs.execute(context)?;
         if let Type::Primitive(lhs) = lhs_val {
             if let Type::Primitive(rhs) = rhs_val {
-                let compare = lhs.compare(&rhs).map_err(|e| RuntimeMsg(e))?;
+                let compare = lhs.compare(&rhs).map_err(RuntimeMsg)?;
                 let mut is_match = false;
                 for comparator in self.comparison {
                     if comparator == compare {
