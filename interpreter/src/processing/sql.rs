@@ -4,9 +4,10 @@ use std::fmt::Write;
 
 use crate::lang::db::*;
 use crate::lang::RuntimeMsg;
+use crate::lang::{Op, VecOp};
 use crate::Item;
 
-pub type QueryResult = Result<Vec<Result<Item, RuntimeMsg>>, RuntimeMsg>;
+pub type QueryResult = Result<Box<dyn Op>, RuntimeMsg>;
 
 /// SQL querying functionality, loosely de-coupled from any specific SQL dialect (excluding raw call)
 pub trait DatabaseQuerier: Debug {
@@ -56,10 +57,10 @@ impl SQLiteExecutor {
         self.gen_db_maybe()?;
         let conn = self.sqlite_connection.as_mut().unwrap();
         match perform_single_param_query(conn, query, param) {
-            Ok(items) => Ok(items
+            Ok(items) => Ok(Box::new(VecOp::from(items
                 .into_iter()
                 .map(|item| item.map_err(|e| RuntimeMsg(format!("SQL item mapping error: {}", e))))
-                .collect()),
+                .collect::<Vec<_>>()))),
             Err(e) => Err(RuntimeMsg(e)),
         }
     }
@@ -71,10 +72,10 @@ impl DatabaseQuerier for SQLiteExecutor {
         let conn = self.sqlite_connection.as_mut().unwrap();
         // execute query
         match perform_query(conn, query) {
-            Ok(items) => Ok(items
+            Ok(items) => Ok(Box::new(VecOp::from(items
                 .into_iter()
                 .map(|item| item.map_err(|e| RuntimeMsg(format!("SQL item mapping error: {}", e))))
-                .collect()),
+                .collect::<Vec<_>>()))),
             Err(e) => Err(RuntimeMsg(e)),
         }
     }
@@ -298,4 +299,33 @@ fn rows_to_item(
         .set_field_chain("track", meta.track.into())
         .set_field_chain("year", meta.date.into());
     item
+}
+
+#[derive(Default, Debug)]
+pub struct SQLiteTranspileExecutor;
+
+impl DatabaseQuerier for SQLiteTranspileExecutor {
+    fn raw(&mut self, query: &str) -> QueryResult {
+        Err(RuntimeMsg("Unimplemented".to_owned()))
+    }
+
+    fn artist_like(&mut self, query: &str) -> QueryResult {
+        Err(RuntimeMsg("Unimplemented".to_owned()))
+    }
+
+    fn album_like(&mut self, query: &str) -> QueryResult {
+        Err(RuntimeMsg("Unimplemented".to_owned()))
+    }
+
+    fn song_like(&mut self, query: &str) -> QueryResult {
+        Err(RuntimeMsg("Unimplemented".to_owned()))
+    }
+
+    fn genre_like(&mut self, query: &str) -> QueryResult {
+        Err(RuntimeMsg("Unimplemented".to_owned()))
+    }
+
+    fn init_with_params(&mut self, _params: &HashMap<String, String>) -> Result<(), RuntimeMsg> {
+        Ok(())
+    }
 }

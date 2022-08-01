@@ -16,6 +16,7 @@ mod sorter;
 //mod statement;
 mod type_primitives;
 pub(crate) mod utility;
+mod vec_op;
 
 pub use dictionary::LanguageDictionary;
 pub(crate) use error::LanguageError;
@@ -32,6 +33,7 @@ pub use single_op::SingleItem;
 pub use sorter::{SortStatement, SortStatementFactory, Sorter, SorterFactory};
 //pub(crate) use statement::Statement;
 pub use type_primitives::TypePrimitive;
+pub use vec_op::VecOp;
 
 pub mod vocabulary;
 
