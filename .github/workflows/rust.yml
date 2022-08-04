@@ -1,0 +1,24 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Init submodules
+      run: git submodule update --init
+    - name: Build interpreter
+      run: cd interpreter && cargo build --verbose; cd ..
+    - name: Run interpreter tests
+      run: cd interpreter && cargo test --verbose; cd ..
