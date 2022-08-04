@@ -16,7 +16,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Build
+    - name: Init submodules
+      run: git submodule update --init
+    - name: Build interpreter
       run: cd interpreter && cargo build --verbose; cd ..
-    - name: Run tests
+    - name: Run interpreter tests
       run: cd interpreter && cargo test --verbose; cd ..
