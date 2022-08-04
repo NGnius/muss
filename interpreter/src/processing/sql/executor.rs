@@ -30,6 +30,7 @@ pub trait DatabaseQuerier: Debug {
     /// `"folder" = "path"` - path to root music directory
     /// `"database" = "uri"` - connection URI for database (for SQLite this is just a filepath)
     /// `"generate" = "true"|"yes"|"false"|"no"` - whether to populate the database using the music directory
+    /// it is up to the specific implementation to use/ignore these parameters
     fn init_with_params(&mut self, params: &HashMap<String, String>) -> Result<(), RuntimeMsg>;
 }
 
@@ -305,24 +306,25 @@ fn rows_to_item(
 pub struct SQLiteTranspileExecutor;
 
 impl DatabaseQuerier for SQLiteTranspileExecutor {
-    fn raw(&mut self, query: &str) -> QueryResult {
+    fn raw(&mut self, _query: &str) -> QueryResult {
+        // TODO
         Err(RuntimeMsg("Unimplemented".to_owned()))
     }
 
     fn artist_like(&mut self, query: &str) -> QueryResult {
-        Err(RuntimeMsg("Unimplemented".to_owned()))
+        Ok(Box::new(super::SimpleSqlQuery::emit("artist", query)))
     }
 
     fn album_like(&mut self, query: &str) -> QueryResult {
-        Err(RuntimeMsg("Unimplemented".to_owned()))
+        Ok(Box::new(super::SimpleSqlQuery::emit("album", query)))
     }
 
     fn song_like(&mut self, query: &str) -> QueryResult {
-        Err(RuntimeMsg("Unimplemented".to_owned()))
+        Ok(Box::new(super::SimpleSqlQuery::emit("title", query)))
     }
 
     fn genre_like(&mut self, query: &str) -> QueryResult {
-        Err(RuntimeMsg("Unimplemented".to_owned()))
+        Ok(Box::new(super::SimpleSqlQuery::emit("genre", query)))
     }
 
     fn init_with_params(&mut self, _params: &HashMap<String, String>) -> Result<(), RuntimeMsg> {

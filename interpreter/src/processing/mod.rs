@@ -11,7 +11,7 @@ mod variables;
 pub mod database {
     #[cfg(feature = "mpd")]
     pub use super::mpd::{MpdExecutor, MpdQuerier};
-    pub use super::sql::{DatabaseQuerier, QueryResult, SQLiteExecutor};
+    pub use super::sql::{DatabaseQuerier, QueryResult, SQLiteExecutor, SQLiteTranspileExecutor};
 }
 
 pub mod general {

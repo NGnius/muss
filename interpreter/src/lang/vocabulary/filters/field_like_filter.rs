@@ -22,11 +22,7 @@ pub struct FieldLikeFilter {
 
 impl FieldLikeFilter {
     fn sanitise_string(s: &str) -> String {
-        #[cfg(feature = "unidecode")]
-        let s = unidecode::unidecode(s);
-        s.replace(|c: char| c.is_whitespace() || c == '_' || c == '-', "")
-            .replace(|c: char| !(c.is_whitespace() || c.is_alphanumeric()), "")
-            .to_lowercase()
+        super::utility::sanitise_string(s)
     }
 }
 

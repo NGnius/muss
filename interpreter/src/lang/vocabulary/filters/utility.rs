@@ -4,6 +4,15 @@ use crate::lang::utility::assert_token_raw;
 use crate::lang::SyntaxError;
 use crate::tokens::Token;
 
+#[inline]
+pub fn sanitise_string(s: &str) -> String {
+    #[cfg(feature = "unidecode")]
+    let s = unidecode::unidecode(s);
+    s.replace(|c: char| c.is_whitespace() || c == '_' || c == '-', "")
+        .replace(|c: char| !(c.is_whitespace() || c.is_alphanumeric()), "")
+        .to_lowercase()
+}
+
 pub fn assert_comparison_operator(tokens: &mut VecDeque<Token>) -> Result<[i8; 2], SyntaxError> {
     let token1 = tokens.pop_front().unwrap();
     match token1 {
