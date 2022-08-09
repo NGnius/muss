@@ -682,13 +682,13 @@ fn worker_distance(
                 song: new_song2.clone().map(Box::new),
             })
             .unwrap_or(());
-        if new_song2.is_err() {
+        /*if new_song2.is_err() {
             eprintln!(
                 "Song error on `{}`: {}",
                 path2,
                 new_song2.clone().err().unwrap()
             );
-        }
+        }*/
         new_song2?
     };
     Ok(song1.distance(&song2))

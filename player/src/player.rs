@@ -1,7 +1,7 @@
 use std::fs;
 use std::io;
 
-use rodio::{decoder::Decoder, OutputStream, OutputStreamHandle, Sink};
+use rodio::{decoder::Decoder, OutputStream, OutputStreamHandle, Sink, Source};
 
 use m3u8_rs::{MediaPlaylist, MediaSegment};
 
@@ -133,6 +133,38 @@ impl<I: std::iter::Iterator<Item = Result<Item, InterpreterError>>> Player<I> {
         Ok(enqueued)
     }
 
+    pub fn enqueue_modified(&mut self, count: usize, modify: &dyn Fn(Decoder<io::BufReader<fs::File>>, Item) -> Box<dyn Source<Item=i16> + Send>) -> Result<Vec<Item>, PlayerError> {
+        let mut items_left = count;
+        let mut enqueued = Vec::with_capacity(count);
+        if items_left == 0 {
+            return Ok(enqueued);
+        }
+        while let Some(item) = self.runner.next() {
+            match item {
+                Ok(music) => {
+                    if let Some(filename) =
+                        music.field("filename").and_then(|x| x.to_owned().to_str())
+                    {
+                        enqueued.push(music.clone());
+                        self.append_source_modified(&filename, &|x| modify(x, music.clone()))?;
+                        items_left -= 1;
+                        Ok(())
+                    } else {
+                        Err(PlayerError::from_err_playback(
+                            "Field `filename` does not exist on item",
+                        ))
+                    }
+                }
+                Err(e) => Err(PlayerError::from_err_playback(e)),
+            }?;
+            if items_left == 0 {
+                break;
+            }
+        }
+        //println!("Enqueued {} items", count - items_left);
+        Ok(enqueued)
+    }
+
     pub fn resume(&self) {
         self.sink.play()
     }
@@ -218,6 +250,50 @@ impl<I: std::iter::Iterator<Item = Result<Item, InterpreterError>>> Player<I> {
                     let stream = io::BufReader::new(file);
                     let source = Decoder::new(stream).map_err(PlayerError::from_err_playback)?;
                     self.sink.append(source);
+                    Ok(())
+                }
+                #[cfg(feature = "mpd")]
+                "mpd:" => {
+                    if let Some(mpd_client) = &mut self.mpd_connection {
+                        //println!("Pushing {} into MPD queue", uri.path());
+                        let song = Song {
+                            file: uri.path().to_owned(),
+                            ..Default::default()
+                        };
+                        mpd_client
+                            .push(song)
+                            .map_err(PlayerError::from_err_playback)?;
+                        Ok(())
+                    } else {
+                        Err(PlayerError::from_err_playback(
+                            "Cannot play MPD song: no MPD client connected",
+                        ))
+                    }
+                }
+                scheme => Err(UriError::Unsupported(scheme.to_owned()).into()),
+            },
+            None => {
+                //default
+                // NOTE: Default rodio::Decoder hangs here when decoding large files, but symphonia does not
+                let file = fs::File::open(uri.path()).map_err(PlayerError::from_err_playback)?;
+                let stream = io::BufReader::new(file);
+                let source = Decoder::new(stream).map_err(PlayerError::from_err_playback)?;
+                self.sink.append(source);
+                Ok(())
+            }
+        }
+    }
+
+    fn append_source_modified(&mut self, filename: &str, modify: &dyn Fn(Decoder<io::BufReader<fs::File>>) -> Box<dyn Source<Item=i16> + Send>) -> Result<(), PlayerError> {
+        let uri = Uri::new(filename);
+        match uri.scheme() {
+            Some(s) => match &s.to_lowercase() as &str {
+                "file:" => {
+                    let file =
+                        fs::File::open(uri.path()).map_err(PlayerError::from_err_playback)?;
+                    let stream = io::BufReader::new(file);
+                    let source = Decoder::new(stream).map_err(PlayerError::from_err_playback)?;
+                    self.sink.append(modify(source));
                     Ok(())
                 }
                 #[cfg(feature = "mpd")]

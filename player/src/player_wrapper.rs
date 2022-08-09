@@ -1,6 +1,8 @@
 use std::sync::mpsc::{Receiver, Sender};
 use std::{thread, thread::JoinHandle};
 
+use rodio::Source;
+
 //use muss_interpreter::tokens::TokenReader;
 use muss_interpreter::{InterpreterError, Item};
 
@@ -36,9 +38,68 @@ impl<I: std::iter::Iterator<Item = Result<Item, InterpreterError>>> PlayerServer
         }
     }
 
+    fn modify(&self) -> impl Fn(rodio::Decoder<std::io::BufReader<std::fs::File>>, Item) -> Box<dyn Source<Item=i16> + Send> {
+        let event = std::sync::Arc::new(std::sync::Mutex::new(self.playback.clone()));
+        move |source_in, item| {
+            let event2 = event.clone();
+            if let Some(duration) = source_in.total_duration() {
+                event.lock().map(|event|
+                    event.send(
+                        PlaybackAction::Time(item.clone(), duration)
+                    ).unwrap_or(())
+                ).unwrap_or(());
+                Box::new(
+                    source_in.periodic_access(
+                        std::time::Duration::from_secs(1),
+                        move |_|
+                            {
+                                //println!("Debug tick");
+                                event2.lock()
+                                    .map(|x|
+                                        x.send(PlaybackAction::UpdateTick(item.clone())).unwrap_or(())
+                                    )
+                                    .unwrap_or(());
+                            }
+                    )
+                )
+            } else {
+                // manually calculate length
+                let source_in = source_in.buffered();
+                let source_in2 = source_in.clone();
+                let event3 = event.clone();
+                let item2 = item.clone();
+                // Iterator.count() takes a while, so calculate in a different thread
+                std::thread::spawn(move || {
+                    let sample_rate = source_in2.sample_rate();
+                    let channels = source_in2.channels() as u32;
+                    let sample_count = source_in2.clone().count() as f64;
+                    let duration = std::time::Duration::from_secs_f64(sample_count / ((sample_rate * channels) as f64));
+                    event3.lock().map(|event|
+                        event.send(
+                            PlaybackAction::Time(item2.clone(), duration)
+                        ).unwrap_or(())
+                    ).unwrap_or(());
+                });
+                Box::new(
+                    source_in.periodic_access(
+                        std::time::Duration::from_secs(1),
+                        move |_|
+                            {
+                                event2.lock()
+                                    .map(|x|
+                                        x.send(PlaybackAction::UpdateTick(item.clone())).unwrap_or(())
+                                    )
+                                    .unwrap_or(());
+                            }
+                    )
+                )
+            }
+        }
+    }
+
     fn enqeue_some(&mut self, count: usize) {
         //println!("Enqueuing up to {} items", count);
-        match self.player.enqueue(count) {
+        match self.player.enqueue_modified(count, &self.modify()) {
             Err(e) => {
                 self.event.send(PlayerAction::Exception(e)).unwrap();
             }
@@ -221,6 +282,8 @@ pub enum PlayerAction {
 pub enum PlaybackAction {
     Empty,
     Enqueued(Item),
+    Time(Item, std::time::Duration),
+    UpdateTick(Item), // tick sent once every second
     Exit,
 }
 
