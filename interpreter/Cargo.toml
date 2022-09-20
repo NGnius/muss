@@ -7,7 +7,8 @@ readme = "README.md"
 rust-version = "1.59"
 
 [dependencies]
-rusqlite = { version = "0.26", features = ["bundled"] }
+rusqlite = { version = "0.26", features = ["bundled"], optional = true }
+sqlparser = { version = "0.23", optional = true }
 symphonia = { version = "0.5", optional = true, features = [
     "aac", "alac", "flac", "mp3", "pcm", "vorbis", "isomp4", "ogg", "wav"
 ] }
@@ -27,7 +28,10 @@ name = "file_parse"
 harness = false
 
 [features]
-default = [ "music_library", "ergonomics", "advanced" ]
+default = [ "music_library", "ergonomics", "advanced", "advanced-bliss", "fakesql" ]
 music_library = [ "symphonia", "mpd" ] # song metadata parsing and database auto-population
 ergonomics = ["shellexpand", "unidecode"] # niceties like ~ in paths and unicode string sanitisation
-advanced = ["bliss-audio-symphonia"] # advanced language features like bliss playlist generation
+advanced = [] # advanced language features like music analysis
+advanced-bliss = ["bliss-audio-symphonia"] # bliss audio analysis
+sql = [ "rusqlite" ]
+fakesql = [ "sqlparser" ]

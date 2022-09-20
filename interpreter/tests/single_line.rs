@@ -110,7 +110,8 @@ fn execute_single_line(
 
 #[test]
 fn execute_sql_line() -> Result<(), InterpreterError> {
-    execute_single_line("sql(`SELECT * FROM songs ORDER BY artist;`)", false, true)
+    execute_single_line("sql(`SELECT * FROM songs WHERE artist IS NOT NULL ORDER BY artist;`)", false, true)?;
+    execute_single_line("sql(`SELECT * FROM songs WHERE artist IS NOT NULL AND format = 'flac' ORDER BY title DESC;`)", false, true)
 }
 
 #[test]

@@ -1,5 +1,6 @@
 #![allow(clippy::match_like_matches_macro)]
 #![allow(clippy::needless_range_loop)]
+
 mod db_items;
 mod dictionary;
 mod error;
@@ -39,13 +40,17 @@ pub mod vocabulary;
 
 pub mod db {
     pub use super::db_items::{
-        generate_db, generate_default_db, DatabaseObj, DbAlbumItem, DbArtistItem, DbGenreItem,
-        DbMetaItem, DbMusicItem, DEFAULT_SQLITE_FILEPATH,
+        DbAlbumItem, DbArtistItem, DbGenreItem, DbMetaItem, DbMusicItem, DatabaseObj
+    };
+    #[cfg(feature = "sql")]
+    pub use super::db_items::{
+        generate_db, generate_default_db, DEFAULT_SQLITE_FILEPATH
     };
 }
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "sql")]
     #[test]
     fn db_build_test() -> rusqlite::Result<()> {
         super::db::generate_default_db()?;

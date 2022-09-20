@@ -1266,6 +1266,7 @@ dependencies = [
  "regex 1.6.0",
  "rusqlite",
  "shellexpand",
+ "sqlparser",
  "symphonia 0.5.0",
  "unidecode",
 ]
@@ -2104,6 +2105,15 @@ name = "smallvec"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2fd0db749597d91ff862fd1d55ea87f7855a744a8425a64695b6fca237d1dad1"
+
+[[package]]
+name = "sqlparser"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0beb13adabbdda01b63d595f38c8bfd19a361e697fd94ce0098a634077bc5b25"
+dependencies = [
+ "log",
+]
 
 [[package]]
 name = "stdweb"

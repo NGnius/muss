@@ -1,6 +1,8 @@
 #[cfg(feature = "advanced")]
 use super::processing::advanced::{DefaultAnalyzer, MusicAnalyzer};
-use super::processing::database::{DatabaseQuerier, SQLiteTranspileExecutor};
+use super::processing::database::DatabaseQuerier;
+#[cfg(feature = "fakesql")]
+use super::processing::database::SQLiteTranspileExecutor;
 #[cfg(feature = "mpd")]
 use super::processing::database::{MpdExecutor, MpdQuerier};
 use super::processing::general::{
@@ -22,7 +24,12 @@ pub struct Context {
 impl Default for Context {
     fn default() -> Self {
         Self {
+            #[cfg(feature = "fakesql")]
             database: Box::new(SQLiteTranspileExecutor::default()),
+            #[cfg(all(feature = "sql", not(feature = "fakesql")))]
+            database: Box::new(super::processing::database::SQLiteExecutor::default()),
+            #[cfg(all(not(feature = "sql"), not(feature = "fakesql")))]
+            database: Box::new(super::processing::database::SQLErrExecutor::default()),
             variables: Box::new(OpStorage::default()),
             filesystem: Box::new(FilesystemExecutor::default()),
             #[cfg(feature = "advanced")]

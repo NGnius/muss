@@ -11,7 +11,13 @@ mod variables;
 pub mod database {
     #[cfg(feature = "mpd")]
     pub use super::mpd::{MpdExecutor, MpdQuerier};
-    pub use super::sql::{DatabaseQuerier, QueryResult, SQLiteExecutor, SQLiteTranspileExecutor};
+    pub use super::sql::{DatabaseQuerier, QueryResult};
+    #[cfg(feature = "sql")]
+    pub use super::sql::{SQLiteExecutor};
+    #[cfg(feature = "fakesql")]
+    pub use super::sql::{SQLiteTranspileExecutor};
+    #[cfg(all(not(feature = "fakesql"), not(feature = "sql")))]
+    pub use super::sql::{SQLErrExecutor};
 }
 
 pub mod general {

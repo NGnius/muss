@@ -511,14 +511,15 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(
             }
             Key::Del => {
                 if state.cursor_rightward_position != 0 {
-                    let removed_char = state
+                    let _removed_char = state
                         .current_line
                         .remove(state.current_line.len() - state.cursor_rightward_position);
                     state
                         .statement_buf
                         .remove(state.statement_buf.len() - state.cursor_rightward_position);
-                    // re-sync unclosed syntax tracking
-                    match removed_char {
+                    // don't re-sync unclosed syntax tracking
+                    // (removing char in front of cursor, not under cursor)
+                    /*match removed_char {
                         '"' | '`' => {
                             if let Some(c2) = state.in_literal {
                                 if removed_char == c2 {
@@ -541,7 +542,7 @@ fn read_loop<F: FnMut(&mut ReplState, &CliArgs)>(
                         }
                         '}' => state.curly_depth += 1,
                         _ => {}
-                    }
+                    }*/
                     // re-print end of line to remove character in middle
                     for i in state.current_line.len() + 1 - state.cursor_rightward_position
                         ..state.current_line.len()

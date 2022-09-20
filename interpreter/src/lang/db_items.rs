@@ -1,15 +1,20 @@
+#[cfg(feature = "sql")]
 use std::path::Path;
 
+#[cfg(feature = "sql")]
 pub const DEFAULT_SQLITE_FILEPATH: &str = "metadata.muss.sqlite";
 
 pub trait DatabaseObj: Sized {
+    #[cfg(feature = "sql")]
     fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Self>;
 
+    #[cfg(feature = "sql")]
     fn to_params(&self) -> Vec<&'_ dyn rusqlite::ToSql>;
 
     fn id(&self) -> u64;
 }
 
+#[cfg(feature = "sql")]
 pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
     generate_db(
         super::utility::music_folder(),
@@ -18,6 +23,7 @@ pub fn generate_default_db() -> rusqlite::Result<rusqlite::Connection> {
     )
 }
 
+#[cfg(feature = "sql")]
 pub fn generate_db<P1: AsRef<Path>, P2: AsRef<Path>>(
     music_path: P1,
     sqlite_path: P2,
@@ -172,6 +178,7 @@ pub struct DbMusicItem {
 }
 
 impl DatabaseObj for DbMusicItem {
+    #[cfg(feature = "sql")]
     fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Self> {
         Ok(Self {
             song_id: row.get(0)?,
@@ -184,6 +191,7 @@ impl DatabaseObj for DbMusicItem {
         })
     }
 
+    #[cfg(feature = "sql")]
     fn to_params(&self) -> Vec<&dyn rusqlite::ToSql> {
         vec![
             &self.song_id,
@@ -212,6 +220,7 @@ pub struct DbMetaItem {
 }
 
 impl DatabaseObj for DbMetaItem {
+    #[cfg(feature = "sql")]
     fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Self> {
         Ok(Self {
             meta_id: row.get(0)?,
@@ -223,6 +232,7 @@ impl DatabaseObj for DbMetaItem {
         })
     }
 
+    #[cfg(feature = "sql")]
     fn to_params(&self) -> Vec<&dyn rusqlite::ToSql> {
         vec![
             &self.meta_id,
@@ -247,6 +257,7 @@ pub struct DbArtistItem {
 }
 
 impl DatabaseObj for DbArtistItem {
+    #[cfg(feature = "sql")]
     fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Self> {
         Ok(Self {
             artist_id: row.get(0)?,
@@ -255,6 +266,7 @@ impl DatabaseObj for DbArtistItem {
         })
     }
 
+    #[cfg(feature = "sql")]
     fn to_params(&self) -> Vec<&dyn rusqlite::ToSql> {
         vec![&self.artist_id, &self.name, &self.genre]
     }
@@ -274,6 +286,7 @@ pub struct DbAlbumItem {
 }
 
 impl DatabaseObj for DbAlbumItem {
+    #[cfg(feature = "sql")]
     fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Self> {
         Ok(Self {
             album_id: row.get(0)?,
@@ -284,6 +297,7 @@ impl DatabaseObj for DbAlbumItem {
         })
     }
 
+    #[cfg(feature = "sql")]
     fn to_params(&self) -> Vec<&dyn rusqlite::ToSql> {
         vec![
             &self.album_id,
@@ -306,6 +320,7 @@ pub struct DbGenreItem {
 }
 
 impl DatabaseObj for DbGenreItem {
+    #[cfg(feature = "sql")]
     fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Self> {
         Ok(Self {
             genre_id: row.get(0)?,
@@ -313,6 +328,7 @@ impl DatabaseObj for DbGenreItem {
         })
     }
 
+    #[cfg(feature = "sql")]
     fn to_params(&self) -> Vec<&dyn rusqlite::ToSql> {
         vec![&self.genre_id, &self.title]
     }

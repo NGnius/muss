@@ -1,17 +1,30 @@
+#[cfg(feature = "mpd")]
 use std::collections::VecDeque;
+#[cfg(feature = "mpd")]
 use std::fmt::{Debug, Display, Error, Formatter};
+#[cfg(feature = "mpd")]
 use std::iter::Iterator;
+#[cfg(feature = "mpd")]
 use std::net::SocketAddr;
 
+#[cfg(feature = "mpd")]
 use crate::tokens::Token;
+#[cfg(feature = "mpd")]
 use crate::Context;
 
+#[cfg(feature = "mpd")]
 use crate::lang::utility::{assert_token, assert_token_raw};
+#[cfg(feature = "mpd")]
 use crate::lang::TypePrimitive;
+#[cfg(feature = "mpd")]
 use crate::lang::{repeated_tokens, LanguageDictionary, Lookup};
+#[cfg(feature = "mpd")]
 use crate::lang::{FunctionFactory, FunctionStatementFactory, IteratorItem, Op, PseudoOp};
+#[cfg(feature = "mpd")]
 use crate::lang::{RuntimeError, RuntimeOp, SyntaxError};
+#[cfg(feature = "mpd")]
 use crate::processing::general::Type;
+#[cfg(feature = "mpd")]
 use crate::Item;
 
 #[cfg(feature = "mpd")]

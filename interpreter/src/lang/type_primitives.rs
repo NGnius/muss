@@ -26,6 +26,14 @@ impl TypePrimitive {
         }
     }
 
+    #[inline]
+    pub fn for_compare(&self) -> Self {
+        match self {
+            Self::String(s) => Self::String(s.to_lowercase()),
+            x => x.clone(),
+        }
+    }
+
     pub fn to_str(self) -> Option<String> {
         match self {
             Self::String(s) => Some(s),

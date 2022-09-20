@@ -1,6 +1,8 @@
 use std::path::Path;
 
 use super::Library;
+
+#[cfg(feature = "sql")]
 use crate::lang::db::*;
 
 pub fn build_library_from_files<P: AsRef<Path>>(path: P, lib: &mut Library) -> std::io::Result<()> {
@@ -9,6 +11,7 @@ pub fn build_library_from_files<P: AsRef<Path>>(path: P, lib: &mut Library) -> s
     Ok(())
 }
 
+#[cfg(feature = "sql")]
 pub fn build_library_from_sqlite(
     conn: &rusqlite::Connection,
     lib: &mut Library,

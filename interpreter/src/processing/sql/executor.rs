@@ -1,10 +1,18 @@
 use core::fmt::Debug;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
+#[cfg(feature = "sql")]
+use std::collections::HashSet;
+
+#[cfg(feature = "sql")]
 use std::fmt::Write;
 
+#[cfg(feature = "sql")]
 use crate::lang::db::*;
 use crate::lang::RuntimeMsg;
-use crate::lang::{Op, VecOp};
+use crate::lang::Op;
+#[cfg(feature = "sql")]
+use crate::lang::VecOp;
+#[cfg(feature = "sql")]
 use crate::Item;
 
 pub type QueryResult = Result<Box<dyn Op>, RuntimeMsg>;
@@ -34,11 +42,13 @@ pub trait DatabaseQuerier: Debug {
     fn init_with_params(&mut self, params: &HashMap<String, String>) -> Result<(), RuntimeMsg>;
 }
 
+#[cfg(feature = "sql")]
 #[derive(Default, Debug)]
 pub struct SQLiteExecutor {
     sqlite_connection: Option<rusqlite::Connection>, // initialized by first SQL statement
 }
 
+#[cfg(feature = "sql")]
 impl SQLiteExecutor {
     #[inline]
     fn gen_db_maybe(&mut self) -> Result<(), RuntimeMsg> {
@@ -67,6 +77,7 @@ impl SQLiteExecutor {
     }
 }
 
+#[cfg(feature = "sql")]
 impl DatabaseQuerier for SQLiteExecutor {
     fn raw(&mut self, query: &str) -> QueryResult {
         self.gen_db_maybe()?;
@@ -184,12 +195,14 @@ impl DatabaseQuerier for SQLiteExecutor {
     }
 }
 
+#[cfg(feature = "sql")]
 struct SqliteSettings {
     music_path: Option<String>,
     db_path: Option<String>,
     auto_generate: bool,
 }
 
+#[cfg(feature = "sql")]
 impl std::default::Default for SqliteSettings {
     fn default() -> Self {
         SqliteSettings {
@@ -200,6 +213,7 @@ impl std::default::Default for SqliteSettings {
     }
 }
 
+#[cfg(feature = "sql")]
 impl std::convert::TryInto<rusqlite::Connection> for SqliteSettings {
     type Error = rusqlite::Error;
 
@@ -215,6 +229,7 @@ impl std::convert::TryInto<rusqlite::Connection> for SqliteSettings {
     }
 }
 
+#[cfg(feature = "sql")]
 #[inline(always)]
 fn build_mps_item(conn: &mut rusqlite::Connection, item: DbMusicItem) -> rusqlite::Result<Item> {
     // query artist
@@ -233,6 +248,7 @@ fn build_mps_item(conn: &mut rusqlite::Connection, item: DbMusicItem) -> rusqlit
     Ok(rows_to_item(item, artist, album, meta, genre))
 }
 
+#[cfg(feature = "sql")]
 #[inline]
 fn perform_query(
     conn: &mut rusqlite::Connection,
@@ -255,6 +271,7 @@ fn perform_query(
     Ok(iter2.collect())
 }
 
+#[cfg(feature = "sql")]
 #[inline]
 fn perform_single_param_query(
     conn: &mut rusqlite::Connection,
@@ -278,6 +295,7 @@ fn perform_single_param_query(
     Ok(iter2.collect())
 }
 
+#[cfg(feature = "sql")]
 fn rows_to_item(
     music: DbMusicItem,
     artist: DbArtistItem,
@@ -302,13 +320,45 @@ fn rows_to_item(
     item
 }
 
+#[cfg(all(not(feature = "fakesql"), not(feature = "sql")))]
+#[derive(Default, Debug)]
+pub struct SQLErrExecutor;
+
+#[cfg(all(not(feature = "fakesql"), not(feature = "sql")))]
+impl DatabaseQuerier for SQLErrExecutor {
+    fn raw(&mut self, _query: &str) -> QueryResult {
+        Err(RuntimeMsg("No SQL executor available".to_owned()))
+    }
+
+    fn artist_like(&mut self, _query: &str) -> QueryResult {
+        Err(RuntimeMsg("No SQL executor available".to_owned()))
+    }
+
+    fn album_like(&mut self, _query: &str) -> QueryResult {
+        Err(RuntimeMsg("No SQL executor available".to_owned()))
+    }
+
+    fn song_like(&mut self, _query: &str) -> QueryResult {
+        Err(RuntimeMsg("No SQL executor available".to_owned()))
+    }
+
+    fn genre_like(&mut self, _query: &str) -> QueryResult {
+        Err(RuntimeMsg("No SQL executor available".to_owned()))
+    }
+
+    fn init_with_params(&mut self, _params: &HashMap<String, String>) -> Result<(), RuntimeMsg> {
+        Err(RuntimeMsg("No SQL executor available".to_owned()))
+    }
+}
+
+#[cfg(feature = "fakesql")]
 #[derive(Default, Debug)]
 pub struct SQLiteTranspileExecutor;
 
+#[cfg(feature = "fakesql")]
 impl DatabaseQuerier for SQLiteTranspileExecutor {
-    fn raw(&mut self, _query: &str) -> QueryResult {
-        // TODO
-        Err(RuntimeMsg("Unimplemented".to_owned()))
+    fn raw(&mut self, query: &str) -> QueryResult {
+        Ok(Box::new(super::RawSqlQuery::emit(query)?))
     }
 
     fn artist_like(&mut self, query: &str) -> QueryResult {
