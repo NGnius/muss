@@ -19,6 +19,8 @@ shellexpand = { version = "2", optional = true }
 bliss-audio-symphonia = { version = "0.5", optional = true, path = "../bliss-rs" }
 mpd = { version = "0.0.12", optional = true }
 unidecode = { version = "0.3.0", optional = true }
+base64 = { version = "0.13", optional = true }
+m3u8-rs = { version = "3.0.0", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
@@ -28,10 +30,11 @@ name = "file_parse"
 harness = false
 
 [features]
-default = [ "music_library", "ergonomics", "advanced", "advanced-bliss", "fakesql" ]
-music_library = [ "symphonia", "mpd" ] # song metadata parsing and database auto-population
+default = [ "music_library", "ergonomics", "advanced", "advanced-bliss", "fakesql", "collections" ]
+music_library = [ "symphonia", "mpd", "base64" ] # song metadata parsing and database auto-population
+collections = [ "m3u8-rs" ] # read from m3u8 playlists (and other song collections, eventually)
 ergonomics = ["shellexpand", "unidecode"] # niceties like ~ in paths and unicode string sanitisation
 advanced = [] # advanced language features like music analysis
 advanced-bliss = ["bliss-audio-symphonia"] # bliss audio analysis
-sql = [ "rusqlite" ]
-fakesql = [ "sqlparser" ]
+sql = [ "rusqlite" ] # sqlite database for music
+fakesql = [ "sqlparser" ] # transpiled sqlite interpreter

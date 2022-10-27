@@ -842,3 +842,18 @@ fn execute_mpdfunction_line() -> Result<(), InterpreterError> {
     execute_single_line("mpd(`default`)", false, true)?;
     execute_single_line("mpd(`127.0.0.1:6600`)", false, true)
 }
+
+#[test]
+fn execute_playlist_line() -> Result<(), InterpreterError> {
+    execute_single_line(
+        r"playlist(`~/Music/Playlists/cabello.m3u8`)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        r"playlist(`/home/ngnius/Music/Playlists/powers.m3u8`)",
+        false,
+        true,
+    )?;
+    execute_single_line(r"playlist(`~/Music/Playlists/empty.m3u8`)", true, true)
+}

@@ -54,6 +54,7 @@ pub(crate) fn standard_vocab(vocabulary: &mut LanguageDictionary) {
         .add(crate::lang::vocabulary::AssignStatementFactory)
         .add(crate::lang::vocabulary::sql_init_function_factory())
         .add(crate::lang::vocabulary::files_function_factory())
+        .add(crate::lang::vocabulary::playlist_function_factory())
         .add(crate::lang::vocabulary::empty_function_factory())
         .add(crate::lang::vocabulary::empties_function_factory())
         .add(crate::lang::vocabulary::reset_function_factory())

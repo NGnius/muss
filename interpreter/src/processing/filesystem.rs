@@ -2,10 +2,11 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use std::fs::{DirEntry, ReadDir};
 use std::iter::Iterator;
 use std::path::{Path, PathBuf};
+use std::io::Read;
 
 use regex::Regex;
 
-use crate::lang::{RuntimeMsg, TypePrimitive};
+use crate::lang::{RuntimeMsg, TypePrimitive, GeneratorOp};
 use crate::Item;
 
 const DEFAULT_REGEX: &str = r"/(?P<artist>[^/]+)/(?P<album>[^/]+)/(?:(?:(?P<disc>\d+)\s+)?(?P<track>\d+)\.?\s+)?(?P<title>[^/]+)\.(?P<format>(?:mp3)|(?:wav)|(?:ogg)|(?:flac)|(?:mp4)|(?:aac))$";
@@ -165,7 +166,8 @@ impl FileIter {
         match crate::music::Library::read_media_tags(path) {
             Ok(tags) => {
                 let mut item = Item::new();
-                item.set_field("title", tags.track_title().into());
+                tags.export_to_item(&mut item, true);
+                /*item.set_field("title", tags.track_title().into());
                 if let Some(artist) = tags.artist_name() {
                     item.set_field("artist", artist.into());
                 }
@@ -192,6 +194,9 @@ impl FileIter {
                 if let Some(year) = tags.track_date() {
                     item.set_field("year", year.into());
                 }
+                if let Some(cover) = tags.cover_art() {
+                    item.set_field("cover", cover.into());
+                }*/
                 self.populate_item_impl_simple(&mut item, path_str, captures, capture_names);
                 Some(item)
             }
@@ -334,6 +339,8 @@ pub trait FilesystemQuerier: Debug {
 
     fn single(&mut self, path: &str, pattern: Option<&str>) -> Result<Item, RuntimeMsg>;
 
+    fn read_file(&mut self, path: &str) -> Result<GeneratorOp, RuntimeMsg>;
+
     fn expand(&self, folder: Option<&str>) -> Result<Option<String>, RuntimeMsg> {
         #[cfg(feature = "shellexpand")]
         match folder {
@@ -360,6 +367,50 @@ pub trait FilesystemQuerier: Debug {
 #[derive(Default, Debug)]
 pub struct FilesystemExecutor {}
 
+impl FilesystemExecutor {
+    #[cfg(feature = "collections")]
+    fn read_m3u8<P: AsRef<Path> + 'static>(&self, path: P) -> Result<GeneratorOp, RuntimeMsg> {
+        let mut file = std::fs::File::open(&path).map_err(|e| RuntimeMsg(format!("Path read error: {}", e)))?;
+        let mut file_bytes = Vec::new();
+        file.read_to_end(&mut file_bytes).map_err(|e| RuntimeMsg(format!("File read error: {}", e)))?;
+        let (_, playlist) = m3u8_rs::parse_playlist(&file_bytes).map_err(|e| RuntimeMsg(format!("Playlist read error: {}", e)))?;
+        let playlist = match playlist {
+            m3u8_rs::Playlist::MasterPlaylist(_) => return Err(RuntimeMsg(format!("Playlist not supported: `{}` is a master (not media) playlist", path.as_ref().display()))),
+            m3u8_rs::Playlist::MediaPlaylist(l) => l,
+        };
+        let mut index = 0;
+        Ok(GeneratorOp::new(move |ctx| {
+            if let Some(segment) = playlist.segments.get(index) {
+                let path = path.as_ref();
+                index += 1;
+                let item_path = if let Some(parent) = path.parent() {
+                    let joined_path = parent.join(&segment.uri);
+                    if let Some(s) = joined_path.to_str() {
+                        s.to_owned()
+                    } else {
+                        return Some(Err(RuntimeMsg(format!("Failed to convert path to string for `{}`", joined_path.display()))));
+                    }
+                } else {
+                    segment.uri.clone()
+                };
+                let item = match ctx.filesystem.single(&item_path, None) {
+                    Err(e) => Err(e),
+                    Ok(mut item) => {
+                        item.set_field("duration", (segment.duration as f64).into());
+                        if let Some(title) = &segment.title {
+                            item.set_field("title", title.to_owned().into());
+                        }
+                        Ok(item)
+                    }
+                };
+                Some(item)
+            } else {
+                None
+            }
+        }))
+    }
+}
+
 impl FilesystemQuerier for FilesystemExecutor {
     fn raw(
         &mut self,
@@ -375,5 +426,18 @@ impl FilesystemQuerier for FilesystemExecutor {
         let path = self.expand(Some(path))?;
         let mut file_iter = FileIter::new(path, pattern, false).map_err(RuntimeMsg)?;
         file_iter.only_once().map_err(RuntimeMsg)
+    }
+
+    fn read_file(&mut self, path: &str) -> Result<GeneratorOp, RuntimeMsg> {
+        let path: PathBuf = self.expand(Some(path))?.unwrap().into();
+        if let Some(ext) = path.extension().and_then(|ext| ext.to_str()) {
+            match &ext.to_lowercase() as &str {
+                #[cfg(feature = "collections")]
+                "m3u8" => self.read_m3u8(path),
+                ext => Err(RuntimeMsg(format!("Unrecognised extension `{}` in path `{}`", ext, path.display())))
+            }
+        } else {
+            Err(RuntimeMsg(format!("Unrecognised path `{}`", path.display())))
+        }
     }
 }

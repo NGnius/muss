@@ -145,14 +145,22 @@ impl Library {
                 if let Some(rev) = metadata.current() {
                     for tag in rev.tags() {
                         //println!("(pre) metadata tag ({},{})", tag.key, tag.value);
-                        tags.add(tag.key.clone(), &tag.value);
+                        tags.add(tag);
+                    }
+                    for vis in rev.visuals() {
+                        //println!("Got visual for song `{}`", path.display());
+                        tags.add_visual(vis);
                     }
                 }
             }
             if let Some(rev) = probed.format.metadata().current() {
                 for tag in rev.tags() {
                     //println!("(post) metadata tag ({},{})", tag.key, tag.value);
-                    tags.add(tag.key.clone(), &tag.value);
+                    tags.add(tag);
+                }
+                for vis in rev.visuals() {
+                    //println!("Got visual for song `{}`", path.display());
+                    tags.add_visual(vis);
                 }
             }
         }
@@ -178,14 +186,22 @@ impl Library {
                 if let Some(rev) = metadata.current() {
                     for tag in rev.tags() {
                         //println!("(pre) metadata tag ({},{})", tag.key, tag.value);
-                        tags.add(tag.key.clone(), &tag.value);
+                        tags.add(tag);
+                    }
+                    for vis in rev.visuals() {
+                        //println!("Got visual for song `{}`", path.display());
+                        tags.add_visual(vis);
                     }
                 }
             }
             if let Some(rev) = probed.format.metadata().current() {
                 for tag in rev.tags() {
                     //println!("(post) metadata tag ({},{})", tag.key, tag.value);
-                    tags.add(tag.key.clone(), &tag.value);
+                    tags.add(tag);
+                }
+                for vis in rev.visuals() {
+                    //println!("Got visual for song `{}`", path.display());
+                    tags.add_visual(vis);
                 }
             }
             self.generate_entries(&tags);

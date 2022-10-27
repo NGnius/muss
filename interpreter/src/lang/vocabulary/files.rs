@@ -87,7 +87,7 @@ impl Iterator for FilesStatement {
             Some(Ok(item)) => Some(Ok(item)),
             Some(Err(e)) => Some(Err(RuntimeError {
                 line: 0,
-                op: (Box::new(self.clone()) as Box<dyn Op>).into(),
+                op: PseudoOp::from_printable(self),
                 msg: e,
             })),
             None => None,
