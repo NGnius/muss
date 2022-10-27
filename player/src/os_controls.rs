@@ -203,22 +203,26 @@ impl SystemControlWrapper {
     fn build_metadata(item: Item) -> Metadata {
         let file_uri = item.field("filename").and_then(|x| x.to_owned().to_str());
         Metadata {
-            length: None,
-            art_url: None, //file_uri.clone() TODO do this without having to rip the art image from the file like Elisa
+            length: None, // populated separately
+            art_url: item.field("cover")
+                .and_then(|x| x.to_owned().to_str()),
             album: item.field("album").and_then(|x| x.to_owned().to_str()),
             album_artist: item
                 .field("albumartist")
-                .map(
-                    |x| x.to_owned()
-                        .to_str()
-                        .map(|x2| vec![x2])
-                ).flatten(),
+                .and_then(|x| x.to_owned().to_str())
+                .map(|x| x.split(",").map(|s| s.trim().to_owned()).collect()),
             artist: item
                 .field("artist")
                 .and_then(|x| x.to_owned().to_str())
                 .map(|x| x.split(",").map(|s| s.trim().to_owned()).collect()),
-            composer: None,
-            disc_number: None,
+            composer: item
+                .field("composer")
+                .and_then(|x| x.to_owned().to_str())
+                .map(|x| x.split(",").map(|s| s.trim().to_owned()).collect()),
+            disc_number: item
+                .field("disc")
+                .and_then(|x| x.to_owned().to_i64())
+                .map(|track| track as i32),
             genre: item
                 .field("genre")
                 .and_then(|x| x.to_owned().to_str())
