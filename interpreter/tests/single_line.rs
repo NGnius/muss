@@ -175,22 +175,22 @@ fn execute_emptyfilter_line() -> Result<(), InterpreterError> {
 #[test]
 fn execute_fieldfilter_line() -> Result<(), InterpreterError> {
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year >= 2000)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date >= 2000)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year <= 2020)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date <= 2020)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year == 2016)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date == 2016)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year != 2048)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date != 2048)",
         false,
         true,
     )
@@ -199,22 +199,22 @@ fn execute_fieldfilter_line() -> Result<(), InterpreterError> {
 #[test]
 fn execute_fieldfiltermaybe_line() -> Result<(), InterpreterError> {
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year? >= 2000)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date? >= 2000)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year? <= 2020)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date? <= 2020)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year! == 2016)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date! == 2016)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year! != `test`)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date! != `test`)",
         false,
         true,
     )
@@ -232,7 +232,7 @@ fn execute_files_line() -> Result<(), InterpreterError> {
         false,
         true,
     )?;
-    execute_single_line(r"files()", false, true)
+    execute_single_line(r"files().(??)", false, true)
 }
 
 #[test]
@@ -291,12 +291,12 @@ fn execute_orfilter_line() -> Result<(), InterpreterError> {
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year != 2020 || 5)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date != 2020 || 5)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(year != 2020 || 5 || 4 || 12)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date != 2020 || 5 || 4 || 12)",
         false,
         true,
     )

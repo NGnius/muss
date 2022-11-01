@@ -77,7 +77,7 @@ impl FilterPredicate for FieldFilter {
         } else {
             match self.field_errors {
                 FieldFilterErrorHandling::Error => Err(RuntimeMsg(format!(
-                    "Field {} does not exist",
+                    "Field {} does not exist on item",
                     &self.field_name
                 ))),
                 FieldFilterErrorHandling::Ignore => Ok(false),

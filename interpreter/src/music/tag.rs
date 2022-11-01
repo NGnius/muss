@@ -421,7 +421,7 @@ impl TagType {
             Self::Flag => None,
             Self::I64(i) => Some(crate::lang::TypePrimitive::Int(i)),
             Self::U64(u) => Some(crate::lang::TypePrimitive::UInt(u)),
-            Self::Str(s) => Some(crate::lang::TypePrimitive::String(s.clone())),
+            Self::Str(s) => Some(crate::lang::TypePrimitive::parse(s.clone())),
             Self::Unknown => None,
         }
     }
