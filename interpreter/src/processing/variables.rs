@@ -56,6 +56,8 @@ pub trait VariableStorer: Debug {
 
     fn remove(&mut self, name: &str) -> Result<Type, RuntimeMsg>;
 
+    fn swap(&mut self, name: &str, value: Option<Type>) -> Option<Type>;
+
     fn exists(&self, name: &str) -> bool {
         self.get_opt(name).is_some()
     }
@@ -96,6 +98,14 @@ impl VariableStorer for OpStorage {
         } else {
             self.storage.insert(key.to_string(), item);
             Ok(())
+        }
+    }
+
+    fn swap(&mut self, key: &str, item: Option<Type>) -> Option<Type> {
+        if let Some(item) = item {
+            self.storage.insert(key.to_string(), item)
+        } else {
+            None
         }
     }
 

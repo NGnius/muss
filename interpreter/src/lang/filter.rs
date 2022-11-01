@@ -197,119 +197,21 @@ impl<P: FilterPredicate + 'static> Op for FilterStatement<P> {
     }
 }
 
-impl<P: FilterPredicate + 'static> Iterator for FilterStatement<P> {
-    type Item = IteratorItem;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if (self.predicate.is_complete() && self.other_filters.is_none()) || self.is_failing {
-            return None;
-        }
-        //let self_clone = self.clone();
-        //let self_clone2 = self_clone.clone();
-        let fake = PseudoOp::Fake(format!("{}", self));
-        //let ctx = self.context.as_mut().unwrap();
+impl <P: FilterPredicate + 'static> FilterStatement<P> {
+    fn next_item(&mut self) -> Option<IteratorItem> {
+        let fake_op = PseudoOp::from_printable(self);
         match &mut self.iterable {
-            VariableOrOp::Op(op) => match op.try_real() {
+             VariableOrOp::Op(op) => match op.try_real() {
                 Ok(real_op) => {
                     let ctx = self.context.take().unwrap();
                     real_op.enter(ctx);
-                    let mut maybe_result = None;
-                    while let Some(item) = real_op.next() {
-                        let mut ctx = real_op.escape();
-                        match item {
-                            Err(e) => {
-                                //self.context = Some(op.escape());
-                                maybe_result = Some(Err(e));
-                                self.context = Some(ctx);
-                                break;
-                            }
-                            Ok(item) => {
-                                let matches_result = self.predicate.matches(&item, &mut ctx);
-                                let matches = match matches_result {
-                                    Err(e) => {
-                                        maybe_result = Some(Err(e.with(RuntimeOp(fake))));
-                                        self.context = Some(ctx);
-                                        break;
-                                    }
-                                    Ok(b) => b,
-                                };
-                                if let Some(inner) = &mut self.other_filters {
-                                    // handle other filters
-                                    // make fake inner item
-                                    let single_op = SingleItem::new_ok(item.clone());
-                                    match ctx
-                                        .variables
-                                        .declare(INNER_VARIABLE_NAME, Type::Op(Box::new(single_op)))
-                                    {
-                                        Ok(x) => x,
-                                        Err(e) => {
-                                            //self.context = Some(op.escape());
-                                            maybe_result = Some(Err(e.with(RuntimeOp(fake))));
-                                            self.context = Some(ctx);
-                                            break;
-                                        }
-                                    };
-                                    let inner_real = match inner.try_real() {
-                                        Ok(x) => x,
-                                        Err(e) => {
-                                            //self.context = Some(op.escape());
-                                            maybe_result = Some(Err(e));
-                                            self.context = Some(ctx);
-                                            break;
-                                        }
-                                    };
-                                    inner_real.enter(ctx);
-                                    match inner_real.next() {
-                                        Some(item) => {
-                                            maybe_result = Some(item);
-                                            ctx = inner_real.escape();
-                                            match ctx.variables.remove(INNER_VARIABLE_NAME) {
-                                                Ok(_) => {}
-                                                Err(e) => match maybe_result {
-                                                    Some(Ok(_)) => {
-                                                        maybe_result =
-                                                            Some(Err(e.with(RuntimeOp(fake))))
-                                                    }
-                                                    Some(Err(e2)) => maybe_result = Some(Err(e2)), // already failing, do not replace error,
-                                                    None => {} // impossible
-                                                },
-                                            }
-                                            self.context = Some(ctx);
-                                            break;
-                                        }
-                                        None => {
-                                            ctx = inner_real.escape(); // move ctx back to expected spot
-                                            match ctx.variables.remove(INNER_VARIABLE_NAME) {
-                                                Ok(_) => {}
-                                                Err(e) => {
-                                                    //self.context = Some(op.escape());
-                                                    maybe_result =
-                                                        Some(Err(e.with(RuntimeOp(fake))));
-                                                    self.context = Some(ctx);
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                if matches {
-                                    //self.context = Some(op.escape());
-                                    maybe_result = Some(Ok(item));
-                                    self.context = Some(ctx);
-                                    break;
-                                }
-                            }
-                        }
-                        real_op.enter(ctx);
-                    }
-                    if self.context.is_none() {
-                        self.context = Some(real_op.escape());
-                    }
-                    maybe_result
+                    let item = real_op.next();
+                    self.context = Some(real_op.escape());
+                    item
                 }
-                Err(e) => Some(Err(e)),
-            },
-            VariableOrOp::Variable(variable_name) => {
+                Err(e) => return Some(Err(e)),
+             },
+             VariableOrOp::Variable(variable_name) => {
                 let mut variable = match self
                     .context
                     .as_mut()
@@ -321,7 +223,7 @@ impl<P: FilterPredicate + 'static> Iterator for FilterStatement<P> {
                     Ok(x) => {
                         return Some(Err(RuntimeError {
                             line: 0,
-                            op: fake,
+                            op: fake_op,
                             msg: format!(
                                 "Expected operation/iterable type in variable {}, got {}",
                                 &variable_name, x
@@ -329,114 +231,82 @@ impl<P: FilterPredicate + 'static> Iterator for FilterStatement<P> {
                         }))
                     }
                     Err(e) => {
-                        self.is_failing = true; // this is unrecoverable and reproducible, so it shouldn't be tried again (to prevent error spam)
-                        return Some(Err(e.with(RuntimeOp(fake))));
-                    }
+                        self.is_failing = true;
+                        return Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self)))));
+                    },
                 };
-                let mut maybe_result = None;
-                let ctx = self.context.take().unwrap();
-                variable.enter(ctx);
-                while let Some(item) = variable.next() {
-                    let mut ctx = variable.escape();
-                    match item {
-                        Err(e) => {
-                            maybe_result = Some(Err(e));
-                            self.context = Some(ctx);
-                            break;
-                        }
-                        Ok(item) => {
-                            let matches_result = self.predicate.matches(&item, &mut ctx);
-                            let matches = match matches_result {
-                                Err(e) => {
-                                    maybe_result = Some(Err(e.with(RuntimeOp(fake.clone()))));
-                                    self.context = Some(ctx);
-                                    break;
-                                }
-                                Ok(b) => b,
-                            };
-                            if let Some(inner) = &mut self.other_filters {
-                                // handle other filters
-                                // make fake inner item
-                                let single_op = SingleItem::new_ok(item.clone());
-                                match ctx
-                                    .variables
-                                    .declare(INNER_VARIABLE_NAME, Type::Op(Box::new(single_op)))
-                                {
-                                    Ok(x) => x,
-                                    Err(e) => {
-                                        //self.context = Some(op.escape());
-                                        maybe_result = Some(Err(e.with(RuntimeOp(fake.clone()))));
-                                        self.context = Some(ctx);
-                                        break;
-                                    }
-                                };
-                                let inner_real = match inner.try_real() {
-                                    Ok(x) => x,
-                                    Err(e) => {
-                                        //self.context = Some(op.escape());
-                                        maybe_result = Some(Err(e));
-                                        self.context = Some(ctx);
-                                        break;
-                                    }
-                                };
-                                inner_real.enter(ctx);
-                                match inner_real.next() {
-                                    Some(item) => {
-                                        maybe_result = Some(item);
-                                        ctx = inner_real.escape();
-                                        match ctx.variables.remove(INNER_VARIABLE_NAME) {
-                                            Ok(_) => {}
-                                            Err(e) => match maybe_result {
-                                                Some(Ok(_)) => {
-                                                    maybe_result =
-                                                        Some(Err(e.with(RuntimeOp(fake.clone()))))
-                                                }
-                                                Some(Err(e2)) => maybe_result = Some(Err(e2)), // already failing, do not replace error,
-                                                None => {} // impossible
-                                            },
-                                        }
-                                        self.context = Some(ctx);
-                                        break;
-                                    }
-                                    None => {
-                                        ctx = inner_real.escape(); // move ctx back to expected spot
-                                        match ctx.variables.remove(INNER_VARIABLE_NAME) {
-                                            Ok(_) => {}
-                                            Err(e) => {
-                                                //self.context = Some(op.escape());
-                                                maybe_result =
-                                                    Some(Err(e.with(RuntimeOp(fake.clone()))));
-                                                self.context = Some(ctx);
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            if matches {
-                                maybe_result = Some(Ok(item));
-                                self.context = Some(ctx);
-                                break;
-                            }
-                        }
-                    }
-                    variable.enter(ctx);
-                }
-                if self.context.is_none() {
-                    self.context = Some(variable.escape());
-                }
-                match self
+
+                variable.enter(self.context.take().unwrap());
+                let item = variable.next();
+                self.context = Some(variable.escape());
+                if let Err(e) = self
                     .context
                     .as_mut()
                     .unwrap()
                     .variables
                     .declare(variable_name, Type::Op(variable))
                 {
-                    Err(e) => Some(Err(e.with(RuntimeOp(fake)))),
-                    Ok(_) => maybe_result,
+                    return Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self)))));
                 }
+                item
             }
         }
+    }
+}
+
+impl<P: FilterPredicate + 'static> Iterator for FilterStatement<P> {
+    type Item = IteratorItem;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if (self.predicate.is_complete() && self.other_filters.is_none()) || self.is_failing {
+            return None;
+        }
+        //let ctx = self.context.as_mut().unwrap();
+        while let Some(next_item) = self.next_item() {
+            match next_item {
+                Ok(item) => {
+                    //let ctx = self.context.as_mut().unwrap();
+                    let matches_result = self.predicate.matches(&item, self.context.as_mut().unwrap());
+                    let matches = match matches_result {
+                        Err(e) => {
+                            //maybe_result = Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self)))));
+                            //self.context = Some(ctx);
+                            return Some(Err(e.with(RuntimeOp(PseudoOp::from_printable(self)))));
+                        }
+                        Ok(b) => b,
+                    };
+                    if let Some(inner) = &mut self.other_filters {
+                        // handle other filters
+                        // make fake inner item
+                        let single_op = SingleItem::new_ok(item.clone());
+                        let preexisting_var = self.context.as_mut().unwrap()
+                            .variables
+                            .swap(INNER_VARIABLE_NAME, Some(Type::Op(Box::new(single_op))));
+                        let inner_real = match inner.try_real() {
+                            Ok(x) => x,
+                            Err(e) => return Some(Err(e))
+                        };
+                        inner_real.enter(self.context.take().unwrap());
+                        match inner_real.next() {
+                            Some(item) => {
+                                self.context = Some(inner_real.escape());
+                                self.context.as_mut().unwrap().variables.swap(INNER_VARIABLE_NAME, preexisting_var);
+                                return Some(item);
+                            }
+                            None => {
+                                self.context = Some(inner_real.escape()); // move ctx back to expected spot
+                                self.context.as_mut().unwrap().variables.swap(INNER_VARIABLE_NAME, preexisting_var);
+                            }
+                        }
+                    }
+                    if matches {
+                        return Some(Ok(item));
+                    }
+                },
+                Err(e) => return Some(Err(e)),
+            };
+        }
+        None
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
