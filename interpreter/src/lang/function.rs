@@ -8,7 +8,7 @@ use crate::lang::SyntaxError;
 use crate::lang::{BoxedOpFactory, Op};
 use crate::tokens::Token;
 
-pub trait FunctionFactory<O: Op + 'static> {
+pub trait FunctionFactory<O: Op + 'static>: Send + Sync {
     fn is_function(&self, name: &str) -> bool;
 
     fn build_function_params(

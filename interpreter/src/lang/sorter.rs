@@ -12,7 +12,7 @@ use crate::Context;
 
 const SORTER_ITEM_CACHE_SIZE: usize = 8;
 
-pub trait Sorter: Clone + Debug + Display {
+pub trait Sorter: Clone + Debug + Display + Send + Sync {
     fn sort(
         &mut self,
         iterator: &mut dyn Op,
@@ -22,7 +22,7 @@ pub trait Sorter: Clone + Debug + Display {
     fn reset(&mut self) {}
 }
 
-pub trait SorterFactory<S: Sorter + 'static> {
+pub trait SorterFactory<S: Sorter + 'static>: Send + Sync {
     fn is_sorter(&self, tokens: &VecDeque<&Token>) -> bool;
 
     fn build_sorter(

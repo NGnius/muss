@@ -23,7 +23,7 @@ use crate::Item;
 
 const PATH_FIELD: &str = "filename";
 
-pub trait MusicAnalyzer: Debug {
+pub trait MusicAnalyzer: Debug + Send {
     fn prepare_distance(&mut self, from: &Item, to: &Item) -> Result<(), RuntimeMsg>;
 
     fn prepare_item(&mut self, item: &Item) -> Result<(), RuntimeMsg>;

@@ -31,7 +31,7 @@ impl Type {
     }
 }
 
-pub trait VariableStorer: Debug {
+pub trait VariableStorer: Debug + Send {
     fn get(&self, name: &str) -> Result<&'_ Type, RuntimeMsg> {
         match self.get_opt(name) {
             Some(item) => Ok(item),

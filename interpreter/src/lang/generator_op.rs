@@ -8,11 +8,11 @@ use crate::Item;
 
 pub struct GeneratorOp {
     context: Option<Context>,
-    generator: Box<dyn FnMut(&mut Context) -> Option<Result<Item, RuntimeMsg>>>,
+    generator: Box<dyn (FnMut(&mut Context) -> Option<Result<Item, RuntimeMsg>>) + Send>,
 }
 
 impl GeneratorOp {
-    pub fn new<F: FnMut(&mut Context) -> Option<Result<Item, RuntimeMsg>> + 'static>(generator_fn: F) -> Self {
+    pub fn new<F: (FnMut(&mut Context) -> Option<Result<Item, RuntimeMsg>>) + Send + 'static>(generator_fn: F) -> Self {
         Self {
             context: None,
             generator: Box::new(generator_fn),

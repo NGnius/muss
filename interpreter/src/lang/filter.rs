@@ -16,7 +16,7 @@ use crate::Item;
 
 const INNER_VARIABLE_NAME: &str = "[inner variable]";
 
-pub trait FilterPredicate: Clone + Debug + Display {
+pub trait FilterPredicate: Clone + Debug + Display + Send {
     fn matches(&mut self, item: &Item, ctx: &mut Context) -> Result<bool, RuntimeMsg>;
 
     fn is_complete(&self) -> bool;
@@ -24,7 +24,7 @@ pub trait FilterPredicate: Clone + Debug + Display {
     fn reset(&mut self) -> Result<(), RuntimeMsg>;
 }
 
-pub trait FilterFactory<P: FilterPredicate + 'static> {
+pub trait FilterFactory<P: FilterPredicate + 'static>: Send + Sync {
     fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool;
 
     fn build_filter(

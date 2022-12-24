@@ -1,6 +1,7 @@
 use core::ops::Deref;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
+use std::sync::Mutex;
 
 use crate::lang::utility::{assert_name, check_name};
 use crate::lang::LanguageDictionary;
@@ -12,7 +13,7 @@ use crate::Context;
 
 #[derive(Debug)]
 pub struct IterItemOp {
-    inner: Box<dyn Op>,
+    inner: Mutex<Box<dyn Op>>,
 }
 
 impl Deref for IterItemOp {
@@ -24,13 +25,19 @@ impl Deref for IterItemOp {
 
 impl Display for IterItemOp {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "iter {}", self.inner)
+        match self.inner.lock() {
+            Ok(inner) => write!(f, "iter {}", inner),
+            Err(e) => write!(f, "iter !?!? (e:{})", e)
+        }
     }
 }
 
 impl ItemOp for IterItemOp {
     fn execute(&self, _context: &mut Context) -> Result<Type, RuntimeMsg> {
-        Ok(Type::Op(self.inner.dup()))
+        match self.inner.lock() {
+            Ok(inner) => Ok(Type::Op(inner.dup())),
+            Err(e) => Err(RuntimeMsg(format!("IterItemOp lock failed: {}", e)))
+        }
     }
 }
 
@@ -49,6 +56,6 @@ impl ItemOpFactory<IterItemOp> for IterItemOpFactory {
     ) -> Result<IterItemOp, SyntaxError> {
         assert_name("iter", tokens)?;
         let inner_op = dict.try_build_statement(tokens)?;
-        Ok(IterItemOp { inner: inner_op })
+        Ok(IterItemOp { inner: Mutex::new(inner_op) })
     }
 }

@@ -48,7 +48,7 @@ pub trait OpFactory<T: Op + 'static> {
     }
 }
 
-pub trait BoxedOpFactory {
+pub trait BoxedOpFactory: Send {
     fn build_op_boxed(
         &self,
         tokens: &mut VecDeque<Token>,
@@ -60,7 +60,7 @@ pub trait BoxedOpFactory {
 
 pub type IteratorItem = Result<Item, RuntimeError>;
 
-pub trait Op: Iterator<Item = IteratorItem> + Debug + Display {
+pub trait Op: Iterator<Item = IteratorItem> + Debug + Display + Send {
     fn enter(&mut self, ctx: Context);
 
     fn escape(&mut self) -> Context;

@@ -11,7 +11,7 @@ use crate::lang::TypePrimitive;
 use crate::Item;
 
 /// Music Player Daemon interface for interacting with it's database
-pub trait MpdQuerier: Debug {
+pub trait MpdQuerier: Debug + Send {
     fn connect(&mut self, addr: SocketAddr) -> Result<(), RuntimeMsg>;
 
     fn search(&mut self, params: Vec<(&str, String)>) -> Result<VecDeque<Item>, RuntimeMsg>;

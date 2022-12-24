@@ -18,7 +18,7 @@ use crate::Item;
 pub type QueryResult = Result<Box<dyn Op>, RuntimeMsg>;
 
 /// SQL querying functionality, loosely de-coupled from any specific SQL dialect (excluding raw call)
-pub trait DatabaseQuerier: Debug {
+pub trait DatabaseQuerier: Debug + Send {
     /// raw SQL call, assumed (but not guaranteed) to retrieved music items
     fn raw(&mut self, query: &str) -> QueryResult;
 

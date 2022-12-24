@@ -329,7 +329,7 @@ impl Iterator for FileIter {
     }
 }
 
-pub trait FilesystemQuerier: Debug {
+pub trait FilesystemQuerier: Debug + Send {
     fn raw(
         &mut self,
         folder: Option<&str>,
@@ -369,7 +369,7 @@ pub struct FilesystemExecutor {}
 
 impl FilesystemExecutor {
     #[cfg(feature = "collections")]
-    fn read_m3u8<P: AsRef<Path> + 'static>(&self, path: P) -> Result<GeneratorOp, RuntimeMsg> {
+    fn read_m3u8<P: AsRef<Path> + Send + 'static>(&self, path: P) -> Result<GeneratorOp, RuntimeMsg> {
         let mut file = std::fs::File::open(&path).map_err(|e| RuntimeMsg(format!("Path read error: {}", e)))?;
         let mut file_bytes = Vec::new();
         file.read_to_end(&mut file_bytes).map_err(|e| RuntimeMsg(format!("File read error: {}", e)))?;

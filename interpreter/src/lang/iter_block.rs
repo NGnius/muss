@@ -17,11 +17,11 @@ use crate::Context;
 
 const ITEM_VARIABLE_NAME: &str = "item";
 
-pub trait ItemOp: Debug + Display {
+pub trait ItemOp: Debug + Display + Send + Sync {
     fn execute(&self, context: &mut Context) -> Result<Type, RuntimeMsg>;
 }
 
-pub trait ItemOpFactory<T: Deref<Target = dyn ItemOp> + 'static> {
+pub trait ItemOpFactory<T: Deref<Target = dyn ItemOp> + 'static>: Send + Sync {
     fn is_item_op(&self, tokens: &VecDeque<Token>) -> bool;
 
     fn build_item_op(

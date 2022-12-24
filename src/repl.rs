@@ -113,13 +113,25 @@ fn pretty_print_item(item: &Item, terminal: &mut Term, args: &CliArgs, verbose: 
         fields.sort();
         for field in fields {
             if field != "title" {
-                writeln!(
-                    terminal,
-                    "  {}: `{}`",
-                    field,
-                    item.field(field).unwrap_or(&TypePrimitive::Empty).as_str()
-                )
-                .expect(TERMINAL_WRITE_ERROR);
+                let field_str = item.field(field).unwrap_or(&TypePrimitive::Empty).as_str();
+                let max_len = terminal.size().1 as usize - (args.prompt.len() + field.len() + 8);
+                if field_str.len() >= max_len {
+                    writeln!(
+                        terminal,
+                        "  {}: `{}[...]`",
+                        field,
+                        &field_str[..max_len-5]
+                    )
+                    .expect(TERMINAL_WRITE_ERROR);
+                } else {
+                    writeln!(
+                        terminal,
+                        "  {}: `{}`",
+                        field,
+                        field_str
+                    )
+                    .expect(TERMINAL_WRITE_ERROR);
+                }
             }
         }
     } else {
