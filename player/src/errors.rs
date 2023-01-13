@@ -14,6 +14,10 @@ impl PlayerError {
         Self::Playback(PlaybackError::from_err(err))
     }
 
+    pub(crate) fn from_file_err_playback<E: Display, P: AsRef<std::path::Path>>(err: E, path: P) -> Self {
+        Self::Playback(PlaybackError { msg: format!("{}: `{}`", err, path.as_ref().display()) })
+    }
+
     /*pub(crate) fn from_err_uri<E: Display>(err: E) -> Self {
         Self::Uri(UriError::from_err(err))
     }*/

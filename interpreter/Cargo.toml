@@ -7,7 +7,7 @@ readme = "README.md"
 rust-version = "1.59"
 
 [dependencies]
-rusqlite = { version = "0.26", features = ["bundled"], optional = true }
+rusqlite = { version = "0.27", features = ["bundled"], optional = true }
 sqlparser = { version = "0.23", optional = true }
 symphonia = { version = "0.5", optional = true, features = [
     "aac", "alac", "flac", "mp3", "pcm", "vorbis", "isomp4", "ogg", "wav"
@@ -16,7 +16,7 @@ dirs = { version = "4" }
 regex = { version = "1" }
 rand = { version = "0.8" }
 shellexpand = { version = "2", optional = true }
-bliss-audio-symphonia = { version = "0.5", optional = true, path = "../bliss-rs" }
+bliss-audio-symphonia = { version = "0.6", optional = true, path = "../bliss-rs" }
 mpd = { version = "0.0.12", optional = true }
 unidecode = { version = "0.3.0", optional = true }
 base64 = { version = "0.13", optional = true }

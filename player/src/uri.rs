@@ -27,6 +27,13 @@ impl<'a> Uri<&'a str> {
         }
     }
 
+    pub fn without_scheme(&self) -> &'a str {
+        match self.0.find("//") {
+            Some(end) => self.0.get(end + 2..).unwrap(),
+            None => self.0,
+        }
+    }
+
     #[allow(dead_code)]
     pub fn uri(&self) -> &'a str {
         self.0

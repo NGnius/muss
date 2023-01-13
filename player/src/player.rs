@@ -246,7 +246,7 @@ impl<I: std::iter::Iterator<Item = Result<Item, InterpreterError>>> Player<I> {
             Some(s) => match &s.to_lowercase() as &str {
                 "file:" => {
                     let file =
-                        fs::File::open(uri.path()).map_err(PlayerError::from_err_playback)?;
+                        fs::File::open(uri.without_scheme()).map_err(|e| PlayerError::from_file_err_playback(e, uri.path()))?;
                     let stream = io::BufReader::new(file);
                     let source = Decoder::new(stream).map_err(PlayerError::from_err_playback)?;
                     self.sink.append(source);
@@ -290,7 +290,7 @@ impl<I: std::iter::Iterator<Item = Result<Item, InterpreterError>>> Player<I> {
             Some(s) => match &s.to_lowercase() as &str {
                 "file:" => {
                     let file =
-                        fs::File::open(uri.path()).map_err(PlayerError::from_err_playback)?;
+                        fs::File::open(uri.without_scheme()).map_err(|e| PlayerError::from_file_err_playback(e, uri.path()))?;
                     let stream = io::BufReader::new(file);
                     let source = Decoder::new(stream).map_err(PlayerError::from_err_playback)?;
                     self.sink.append(modify(source));
