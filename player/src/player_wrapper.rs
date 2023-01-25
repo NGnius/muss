@@ -72,7 +72,7 @@ impl<I: std::iter::Iterator<Item = Result<Item, InterpreterError>>> PlayerServer
                 std::thread::spawn(move || {
                     let sample_rate = source_in2.sample_rate();
                     let channels = source_in2.channels() as u32;
-                    let sample_count = source_in2.clone().count() as f64;
+                    let sample_count = source_in2.count() as f64;
                     let duration = std::time::Duration::from_secs_f64(sample_count / ((sample_rate * channels) as f64));
                     event3.lock().map(|event|
                         event.send(

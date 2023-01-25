@@ -379,6 +379,11 @@ fn execute_blissfirstsort_line() -> Result<(), InterpreterError> {
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(advanced bliss_first)",
         false,
         true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(~bliss_first)",
+        false,
+        true,
     )
 }
 
@@ -386,6 +391,20 @@ fn execute_blissfirstsort_line() -> Result<(), InterpreterError> {
 fn execute_blissnextsort_line() -> Result<(), InterpreterError> {
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(advanced bliss_next)",
+        false,
+        true,
+    )?;
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(~bliss_next)",
+        false,
+        true,
+    )
+}
+
+#[test]
+fn execute_radiosort_line() -> Result<(), InterpreterError> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(~radio)",
         false,
         true,
     )

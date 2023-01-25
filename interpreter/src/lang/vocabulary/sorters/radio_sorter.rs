@@ -2,7 +2,9 @@ use std::collections::VecDeque;
 #[cfg(feature = "advanced")]
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::utility::{assert_name, check_name, assert_token_raw};
+use rand::{thread_rng, Rng};
+
+use crate::lang::utility::{assert_name, check_name, assert_token_raw, assert_token};
 use crate::lang::SyntaxError;
 #[cfg(feature = "advanced")]
 use crate::lang::{IteratorItem, Op, RuntimeMsg, Sorter};
@@ -10,42 +12,47 @@ use crate::lang::{LanguageDictionary, SortStatementFactory, SorterFactory};
 use crate::tokens::Token;
 #[cfg(feature = "advanced")]
 use crate::Item;
+#[cfg(feature = "advanced")]
+use crate::processing::advanced::MusicAnalyzerDistance;
 
 #[cfg(feature = "advanced")]
 #[derive(Debug)]
-pub struct BlissNextSorter {
+pub struct RadioSorter {
     up_to: usize,
     algorithm_done: bool,
     init_done: bool,
     item_buf: VecDeque<Item>,
+    comparison: Option<MusicAnalyzerDistance>,
 }
 
 #[cfg(feature = "advanced")]
-impl std::clone::Clone for BlissNextSorter {
+impl std::clone::Clone for RadioSorter {
     fn clone(&self) -> Self {
         Self {
             up_to: self.up_to,
             algorithm_done: self.algorithm_done,
             init_done: self.init_done,
             item_buf: self.item_buf.clone(),
+            comparison: None,
         }
     }
 }
 
 #[cfg(feature = "advanced")]
-impl Default for BlissNextSorter {
+impl Default for RadioSorter {
     fn default() -> Self {
         Self {
             up_to: usize::MAX,
             algorithm_done: false,
             init_done: false,
             item_buf: VecDeque::new(),
+            comparison: None,
         }
     }
 }
 
 #[cfg(feature = "advanced")]
-impl Sorter for BlissNextSorter {
+impl Sorter for RadioSorter {
     fn sort(
         &mut self,
         iterator: &mut dyn Op,
@@ -64,6 +71,11 @@ impl Sorter for BlissNextSorter {
                 }
             }
             if !self.item_buf.is_empty() {
+                // choose (new) random first element
+                let random_num: usize = thread_rng().gen();
+                let random_i = random_num % self.item_buf.len();
+                self.item_buf.swap(random_i, 0);
+                // compare everything to new first element
                 let first = &self.item_buf[0];
                 let mut ctx = iterator.escape();
                 for i in 1..self.item_buf.len() {
@@ -85,18 +97,34 @@ impl Sorter for BlissNextSorter {
                 let mut ctx = iterator.escape();
                 for i in 0..self.item_buf.len() {
                     let current_item = &self.item_buf[i];
-                    match ctx.analysis.get_distance(&last, current_item) {
-                        Err(e) => {
-                            iterator.enter(ctx);
-                            return Err(e);
+                    if let Some(comp) = self.comparison.clone() {
+                        match ctx.analysis.get_custom_distance(&last, current_item, comp) {
+                            Err(e) => {
+                                iterator.enter(ctx);
+                                return Err(e);
+                            }
+                            Ok(distance) => {
+                                if distance < best_distance {
+                                    best_index = i;
+                                    best_distance = distance;
+                                }
+                            }
                         }
-                        Ok(distance) => {
-                            if distance < best_distance {
-                                best_index = i;
-                                best_distance = distance;
+                    } else {
+                        match ctx.analysis.get_distance(&last, current_item) {
+                            Err(e) => {
+                                iterator.enter(ctx);
+                                return Err(e);
+                            }
+                            Ok(distance) => {
+                                if distance < best_distance {
+                                    best_index = i;
+                                    best_distance = distance;
+                                }
                             }
                         }
                     }
+
                 }
                 if best_index != 0 {
                     self.item_buf.swap(0, best_index);
@@ -129,43 +157,60 @@ impl Sorter for BlissNextSorter {
 }
 
 #[cfg(not(feature = "advanced"))]
-pub type BlissNextSorter = crate::lang::vocabulary::sorters::EmptySorter;
+pub type RadioSorter = crate::lang::vocabulary::sorters::EmptySorter;
 
 #[cfg(feature = "advanced")]
-impl Display for BlissNextSorter {
+impl Display for RadioSorter {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "advanced bliss_next")
+        write!(f, "~ radio")
     }
 }
 
-pub struct BlissNextSorterFactory;
+pub struct RadioSorterFactory;
 
-impl SorterFactory<BlissNextSorter> for BlissNextSorterFactory {
+impl SorterFactory<RadioSorter> for RadioSorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&Token>) -> bool {
         tokens.len() > 1
-            && (tokens[0].is_tilde() || check_name("advanced", tokens[0]))
-            && check_name("bliss_next", tokens[1])
+            && tokens[0].is_tilde()
+            && check_name("radio", tokens[1])
     }
 
     fn build_sorter(
         &self,
         tokens: &mut VecDeque<Token>,
         _dict: &LanguageDictionary,
-    ) -> Result<BlissNextSorter, SyntaxError> {
-        if tokens[0].is_tilde() {
-            assert_token_raw(Token::Tilde, tokens)?;
+    ) -> Result<RadioSorter, SyntaxError> {
+        assert_token_raw(Token::Tilde, tokens)?;
+        assert_name("radio", tokens)?;
+        #[allow(dead_code)]
+        let mode = if !tokens.is_empty() {
+            Some(assert_token(|t| match t {
+                Token::Name(n) => match &n as &str {
+                    "tempo" | "beat" => Some(MusicAnalyzerDistance::Tempo),
+                    "spectrum" | "s" => Some(MusicAnalyzerDistance::Spectrum),
+                    "loudness" | "volume" => Some(MusicAnalyzerDistance::Loudness),
+                    "chroma" | "c" => Some(MusicAnalyzerDistance::Chroma),
+                    _ => None
+                },
+                _ => None,
+            }, Token::Name("".into()), tokens)?)
         } else {
-            assert_name("advanced", tokens)?;
-        }
-        assert_name("bliss_next", tokens)?;
-        Ok(BlissNextSorter::default())
+            None
+        };
+        #[cfg(not(feature = "advanced"))]
+        {Ok(RadioSorter::default())}
+        #[cfg(feature = "advanced")]
+        {Ok(RadioSorter {
+            comparison: mode,
+            ..Default::default()
+        })}
     }
 }
 
-pub type BlissNextSorterStatementFactory =
-    SortStatementFactory<BlissNextSorter, BlissNextSorterFactory>;
+pub type RadioSorterStatementFactory =
+    SortStatementFactory<RadioSorter, RadioSorterFactory>;
 
 #[inline(always)]
-pub fn bliss_next_sort() -> BlissNextSorterStatementFactory {
-    BlissNextSorterStatementFactory::new(BlissNextSorterFactory)
+pub fn radio_sort() -> RadioSorterStatementFactory {
+    RadioSorterStatementFactory::new(RadioSorterFactory)
 }

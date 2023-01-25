@@ -6,9 +6,8 @@ license = "LGPL-2.1-only OR GPL-3.0-only"
 readme = "README.md"
 
 [dependencies]
-rodio = { version = "^0.16", features = ["symphonia-all"]}
+rodio = { version = "^0.16", features = ["symphonia-all"], default-features = false}
 m3u8-rs = { version = "^3.0" }
-fluent-uri = { version = "^0.1" }
 mpd = { version = "0.0.12", optional = true }
 
 # local

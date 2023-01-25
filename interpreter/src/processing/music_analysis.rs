@@ -7,7 +7,7 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 #[cfg(feature = "bliss-audio-symphonia")]
 use crate::lang::TypePrimitive;
 #[cfg(feature = "bliss-audio-symphonia")]
-use bliss_audio_symphonia::{BlissError, Song};
+use bliss_audio_symphonia::{BlissError, Song, AnalysisIndex};
 
 // assumed processor threads
 const DEFAULT_PARALLELISM: usize = 2;
@@ -23,12 +23,22 @@ use crate::Item;
 
 const PATH_FIELD: &str = "filename";
 
+#[derive(Debug, Clone)]
+pub enum MusicAnalyzerDistance {
+    Tempo,
+    Spectrum,
+    Loudness,
+    Chroma,
+}
+
 pub trait MusicAnalyzer: Debug + Send {
     fn prepare_distance(&mut self, from: &Item, to: &Item) -> Result<(), RuntimeMsg>;
 
     fn prepare_item(&mut self, item: &Item) -> Result<(), RuntimeMsg>;
 
     fn get_distance(&mut self, from: &Item, to: &Item) -> Result<f64, RuntimeMsg>;
+
+    fn get_custom_distance(&mut self, from: &Item, to: &Item, compare: MusicAnalyzerDistance) -> Result<f64, RuntimeMsg>;
 
     fn clear_cache(&mut self) -> Result<(), RuntimeMsg>;
 }
@@ -104,6 +114,32 @@ impl DefaultAnalyzer {
             })
             .map_err(|e| RuntimeMsg(format!("Channel send error: {}", e)))
     }
+
+    fn bliss_song_to_array(song: &Song) -> [f64; bliss_audio_symphonia::NUMBER_FEATURES] {
+        let analysis = &song.analysis;
+        [
+            analysis[AnalysisIndex::Tempo] as _,
+            analysis[AnalysisIndex::Zcr] as _,
+            analysis[AnalysisIndex::MeanSpectralCentroid] as _,
+            analysis[AnalysisIndex::StdDeviationSpectralCentroid] as _,
+            analysis[AnalysisIndex::MeanSpectralRolloff] as _,
+            analysis[AnalysisIndex::StdDeviationSpectralRolloff] as _,
+            analysis[AnalysisIndex::MeanSpectralFlatness] as _,
+            analysis[AnalysisIndex::StdDeviationSpectralFlatness] as _,
+            analysis[AnalysisIndex::MeanLoudness] as _,
+            analysis[AnalysisIndex::StdDeviationLoudness] as _,
+            analysis[AnalysisIndex::Chroma1] as _,
+            analysis[AnalysisIndex::Chroma2] as _,
+            analysis[AnalysisIndex::Chroma3] as _,
+            analysis[AnalysisIndex::Chroma4] as _,
+            analysis[AnalysisIndex::Chroma5] as _,
+            analysis[AnalysisIndex::Chroma6] as _,
+            analysis[AnalysisIndex::Chroma7] as _,
+            analysis[AnalysisIndex::Chroma8] as _,
+            analysis[AnalysisIndex::Chroma9] as _,
+            analysis[AnalysisIndex::Chroma10] as _,
+        ]
+    }
 }
 
 #[cfg(feature = "bliss-audio-symphonia")]
@@ -148,6 +184,78 @@ impl MusicAnalyzer for DefaultAnalyzer {
         ))
     }
 
+    fn get_custom_distance(&mut self, from: &Item, to: &Item, compare: MusicAnalyzerDistance) -> Result<f64, RuntimeMsg> {
+        self.request_song(from, true)?;
+        self.request_song(to, true)?;
+        let path_from = Self::get_path(from)?;
+        let path_to = Self::get_path(to)?;
+        let mut from_song = None;
+        let mut to_song = None;
+        for response in self.responses.iter() {
+            match response {
+                ResponseType::Distance { .. } => {},
+                ResponseType::Song {
+                    path,
+                    song
+                } => {
+                    if path_from == path {
+                        from_song = Some(song.map_err(|e| RuntimeMsg(format!("Bliss error: {}", e)))?);
+                    } else if path_to == path {
+                        to_song = Some(song.map_err(|e| RuntimeMsg(format!("Bliss error: {}", e)))?);
+                    }
+                    if to_song.is_some() && from_song.is_some() {
+                        break;
+                    }
+                },
+                ResponseType::UnsupportedSong { path, msg } => {
+                    if path == path_to || path == path_from {
+                        return Err(RuntimeMsg(format!("Bliss error: {}", msg)));
+                    }
+                }
+            }
+        }
+        if to_song.is_some() && from_song.is_some() {
+            let to_arr = Self::bliss_song_to_array(&to_song.unwrap());
+            let from_arr = Self::bliss_song_to_array(&from_song.unwrap());
+            Ok(match compare {
+                MusicAnalyzerDistance::Tempo => (
+                    (to_arr[AnalysisIndex::Tempo as usize] - from_arr[AnalysisIndex::Tempo as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::Zcr as usize] - from_arr[AnalysisIndex::Zcr as usize]).powi(2)
+                ).sqrt(),
+                MusicAnalyzerDistance::Spectrum => (
+                    (to_arr[AnalysisIndex::MeanSpectralCentroid as usize] - from_arr[AnalysisIndex::MeanSpectralCentroid as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::StdDeviationSpectralCentroid as usize] - from_arr[AnalysisIndex::StdDeviationSpectralCentroid as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::MeanSpectralRolloff as usize] - from_arr[AnalysisIndex::MeanSpectralRolloff as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::StdDeviationSpectralRolloff as usize] - from_arr[AnalysisIndex::StdDeviationSpectralRolloff as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::MeanSpectralFlatness as usize] - from_arr[AnalysisIndex::MeanSpectralFlatness as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::StdDeviationSpectralFlatness as usize] - from_arr[AnalysisIndex::StdDeviationSpectralFlatness as usize]).powi(2)
+                ).sqrt(),
+                MusicAnalyzerDistance::Loudness => {
+                    let mean_delta = to_arr[AnalysisIndex::MeanLoudness as usize] - from_arr[AnalysisIndex::MeanLoudness as usize];
+                    let deviation_delta = to_arr[AnalysisIndex::StdDeviationLoudness as usize] - from_arr[AnalysisIndex::StdDeviationLoudness as usize];
+
+                    (mean_delta.powi(2) + deviation_delta.powi(2)).sqrt()
+                },
+                MusicAnalyzerDistance::Chroma => (
+                    (to_arr[AnalysisIndex::Chroma1 as usize] - from_arr[AnalysisIndex::Chroma1 as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::Chroma2 as usize] - from_arr[AnalysisIndex::Chroma2 as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::Chroma3 as usize] - from_arr[AnalysisIndex::Chroma3 as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::Chroma4 as usize] - from_arr[AnalysisIndex::Chroma4 as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::Chroma5 as usize] - from_arr[AnalysisIndex::Chroma5 as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::Chroma6 as usize] - from_arr[AnalysisIndex::Chroma6 as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::Chroma7 as usize] - from_arr[AnalysisIndex::Chroma7 as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::Chroma8 as usize] - from_arr[AnalysisIndex::Chroma8 as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::Chroma9 as usize] - from_arr[AnalysisIndex::Chroma9 as usize]).powi(2)
+                    + (to_arr[AnalysisIndex::Chroma10 as usize] - from_arr[AnalysisIndex::Chroma10 as usize]).powi(2)
+                ).sqrt(),
+            })
+        } else {
+            Err(RuntimeMsg(
+                "Channel closed without complete response: internal error".to_owned(),
+            ))
+        }
+    }
+
     fn clear_cache(&mut self) -> Result<(), RuntimeMsg> {
         self.requests
             .send(RequestType::Clear {})
@@ -161,15 +269,19 @@ pub struct DefaultAnalyzer {}
 
 #[cfg(not(feature = "bliss-audio-symphonia"))]
 impl MusicAnalyzer for DefaultAnalyzer {
-    fn prepare_distance(&mut self, from: &Item, to: &Item) -> Result<(), RuntimeMsg> {
+    fn prepare_distance(&mut self, _from: &Item, _to: &Item) -> Result<(), RuntimeMsg> {
         Ok(())
     }
 
-    fn prepare_item(&mut self, item: &Item) -> Result<(), RuntimeMsg> {
+    fn prepare_item(&mut self, _item: &Item) -> Result<(), RuntimeMsg> {
         Ok(())
     }
 
-    fn get_distance(&mut self, item: &Item) -> Result<f64, RuntimeMsg> {
+    fn get_distance(&mut self, _from: &Item, _to: &Item) -> Result<f64, RuntimeMsg> {
+        Ok(f64::MAX)
+    }
+
+    fn get_custom_distance(&mut self, _from: &Item, _to: &Item, _compare: MusicAnalyzerDistance) -> Result<f64, RuntimeMsg> {
         Ok(f64::MAX)
     }
 

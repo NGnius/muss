@@ -9,6 +9,9 @@ use crate::tokens::Token;
 use crate::Context;
 use crate::Item;
 
+// TODO change API to allow for accumulating modifiers
+// e.g. build_op(&self, Option<Box<dyn Op>>, tokens) -> ...
+
 pub trait SimpleOpFactory<T: Op + 'static> {
     fn is_op_simple(&self, tokens: &VecDeque<Token>) -> bool;
 

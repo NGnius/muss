@@ -5,7 +5,7 @@ use std::fmt::{Debug, Display, Error, Formatter};
 #[cfg(feature = "advanced")]
 use std::collections::HashMap;
 
-use crate::lang::utility::{assert_name, check_name};
+use crate::lang::utility::{assert_name, check_name, assert_token_raw};
 use crate::lang::SyntaxError;
 #[cfg(feature = "advanced")]
 use crate::lang::{IteratorItem, Op, RuntimeMsg, Sorter};
@@ -134,7 +134,7 @@ pub struct BlissSorterFactory;
 impl SorterFactory<BlissSorter> for BlissSorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&Token>) -> bool {
         tokens.len() > 1
-            && check_name("advanced", tokens[0])
+            && (tokens[0].is_tilde() || check_name("advanced", tokens[0]))
             && check_name("bliss_first", tokens[1])
     }
 
@@ -143,7 +143,11 @@ impl SorterFactory<BlissSorter> for BlissSorterFactory {
         tokens: &mut VecDeque<Token>,
         _dict: &LanguageDictionary,
     ) -> Result<BlissSorter, SyntaxError> {
-        assert_name("advanced", tokens)?;
+        if tokens[0].is_tilde() {
+            assert_token_raw(Token::Tilde, tokens)?;
+        } else {
+            assert_name("advanced", tokens)?;
+        }
         assert_name("bliss_first", tokens)?;
         Ok(BlissSorter::default())
     }

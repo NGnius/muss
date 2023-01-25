@@ -19,7 +19,8 @@ pub(crate) fn standard_vocab(vocabulary: &mut LanguageDictionary) {
         .add(crate::lang::vocabulary::sorters::shuffle_sort()) // accepts ~(shuffle)
         .add(crate::lang::vocabulary::sorters::bliss_sort())
         .add(crate::lang::vocabulary::sorters::bliss_next_sort())
-        .add(crate::lang::vocabulary::sorters::field_sort()) // accepts any ~(something)
+        .add(crate::lang::vocabulary::sorters::radio_sort())
+        .add(crate::lang::vocabulary::sorters::field_sort()) // accepts any ~(name)
         // iter blocks
         .add(
             crate::lang::ItemBlockFactory::new()
