@@ -9,6 +9,9 @@ use mpris_player::{Metadata, MprisPlayer, PlaybackStatus};
 #[cfg(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))]
 use muss_interpreter::Item;
 
+#[cfg(all(target_os = "linux", feature = "os-controls", feature = "mpris-player"))]
+use std::io::Write;
+
 //use super::Controller;
 use super::player_wrapper::{ControlAction, PlaybackAction};
 
@@ -202,10 +205,28 @@ impl SystemControlWrapper {
 
     fn build_metadata(item: Item) -> Metadata {
         let file_uri = item.field("filename").and_then(|x| x.to_owned().to_str());
+        let cover_art = item.field("cover")
+                .and_then(|x| x.to_owned().to_str());
+        let cover_url = if let Some(art) = &cover_art {
+            const DATA_START: usize = 23;
+            let path = format!("{}/muss-cover-{}.jpg",
+                               std::env::var("HOME").map(|home| home + "/.cache").unwrap_or_else(|_| "/tmp".to_owned()),
+                               &art[DATA_START..DATA_START+16].replace("/", ""));
+            let pathbuf = std::path::PathBuf::from(&path);
+            if !pathbuf.exists() {
+                base64::decode(&art[DATA_START..]).ok()
+                    .and_then(|decoded| std::fs::File::create(&path).ok().map(|file| (decoded, file)))
+                    .and_then(|(decoded, mut file)| file.write(&decoded).ok())
+                    .map(|_| path)
+            } else {
+                Some(path)
+            }
+        } else {
+            None
+        };
         Metadata {
             length: None, // populated separately
-            art_url: item.field("cover")
-                .and_then(|x| x.to_owned().to_str()),
+            art_url: cover_url,
             album: item.field("album").and_then(|x| x.to_owned().to_str()),
             album_artist: item
                 .field("albumartist")

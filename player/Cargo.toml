@@ -16,10 +16,11 @@ muss-interpreter = { path = "../interpreter", version = "0.9.0" }
 [target.'cfg(target_os = "linux")'.dependencies]
 #dbus = { version = "^0.9" }
 mpris-player = { version = "^0.6", path = "../mpris-player", optional = true }
+base64 = { version = "0.13", optional = true }
 
 [features]
 default = ["os-controls", "mpd"]
-os-controls = []
+os-controls = ["base64"]
 
 # I wish this worked...
 #[target.'cfg(not(target_os = "linux"))'.features]
