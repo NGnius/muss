@@ -13,15 +13,17 @@ pub struct FieldFilterMaybeFactory;
 impl FilterFactory<FieldFilter> for FieldFilterMaybeFactory {
     fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
         let tokens_len = tokens.len();
-        (tokens_len >= 3 // field > variable OR field < variable
-            && tokens[0].is_name()
-            && (tokens[1].is_interrogation() || tokens[1].is_exclamation())
-            && (tokens[2].is_open_angle_bracket() || tokens[2].is_close_angle_bracket()))
-            || (tokens_len >= 4 // field >= variable OR field <= variable OR field != variable
-            && tokens[0].is_name()
-            && (tokens[1].is_interrogation() || tokens[1].is_exclamation())
-            && (tokens[2].is_open_angle_bracket() || tokens[2].is_close_angle_bracket() || tokens[2].is_equals() || tokens[2].is_exclamation())
-            && tokens[3].is_equals())
+        (tokens_len >= 4 // .field > variable OR .field < variable
+            && tokens[0].is_dot()
+            && tokens[1].is_name()
+            && (tokens[2].is_interrogation() || tokens[2].is_exclamation())
+            && (tokens[3].is_open_angle_bracket() || tokens[3].is_close_angle_bracket()))
+            || (tokens_len >= 5 // .field >= variable OR .field <= variable OR .field != variable OR .field == variable
+            && tokens[0].is_dot()
+            && tokens[1].is_name()
+            && (tokens[2].is_interrogation() || tokens[2].is_exclamation())
+            && (tokens[3].is_open_angle_bracket() || tokens[3].is_close_angle_bracket() || tokens[3].is_equals() || tokens[3].is_exclamation())
+            && tokens[4].is_equals())
     }
 
     fn build_filter(
@@ -29,6 +31,7 @@ impl FilterFactory<FieldFilter> for FieldFilterMaybeFactory {
         tokens: &mut VecDeque<Token>,
         _dict: &LanguageDictionary,
     ) -> Result<FieldFilter, SyntaxError> {
+        assert_token_raw(Token::Dot, tokens)?;
         let field = assert_token(
             |t| match t {
                 Token::Name(n) => Some(n),
@@ -65,7 +68,7 @@ impl FilterFactory<FieldFilter> for FieldFilterMaybeFactory {
                     Token::Name(n) => Some(n),
                     _ => None,
                 },
-                Token::Name("variable_name".into()),
+                Token::Name("variable|literal".into()),
                 tokens,
             )?);
             //assert_empty(tokens)?;

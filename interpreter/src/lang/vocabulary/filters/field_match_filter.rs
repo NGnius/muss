@@ -26,8 +26,8 @@ pub struct FieldRegexFilter {
 impl Display for FieldRegexFilter {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match &self.val {
-            VariableOrValue::Variable(name) => write!(f, "{} matches {}", self.field_name, name),
-            VariableOrValue::Value(t) => write!(f, "{} matches {}", self.field_name, t),
+            VariableOrValue::Variable(name) => write!(f, ".{} matches {}", self.field_name, name),
+            VariableOrValue::Value(t) => write!(f, ".{} matches {}", self.field_name, t),
         }
     }
 }
@@ -90,13 +90,15 @@ pub struct FieldRegexFilterFactory;
 impl FilterFactory<FieldRegexFilter> for FieldRegexFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
         let tokens_len = tokens.len();
-        (tokens_len >= 2 // field like variable
-            && tokens[0].is_name()
-            && check_name("matches", tokens[1]))
-            || (tokens_len >= 3 // field? like variable OR field! like variable
-            && tokens[0].is_name()
-            && (tokens[1].is_interrogation() || tokens[1].is_exclamation())
+        (tokens_len >= 3 // .field like variable
+            && tokens[0].is_dot()
+            && tokens[1].is_name()
             && check_name("matches", tokens[2]))
+            || (tokens_len >= 4 // .field? like variable OR .field! like variable
+            && tokens[0].is_dot()
+            && tokens[1].is_name()
+            && (tokens[2].is_interrogation() || tokens[2].is_exclamation())
+            && check_name("matches", tokens[3]))
     }
 
     fn build_filter(
@@ -104,6 +106,7 @@ impl FilterFactory<FieldRegexFilter> for FieldRegexFilterFactory {
         tokens: &mut VecDeque<Token>,
         _dict: &LanguageDictionary,
     ) -> Result<FieldRegexFilter, SyntaxError> {
+        assert_token_raw(Token::Dot, tokens)?;
         let field = assert_token(
             |t| match t {
                 Token::Name(n) => Some(n),

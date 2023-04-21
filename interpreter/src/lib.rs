@@ -41,23 +41,23 @@
 //! Filters are statements of the format `something.(predicate)`, where "something" is a variable name or another valid statement, and "predicate" is a valid filter predicate (see below).
 //! E.g. `files(folder="~/Music/", recursive=true).(title == "Romantic Traffic");` is valid filter syntax to filter all songs in the Music folder for songs named "Romantic Traffic" (probably just one song).
 //!
-//! ### field == something
+//! ### .field == something
 //!
-//! ### field like something
+//! ### .field like something
 //!
-//! ### field unlike something
+//! ### .field unlike something
 //!
-//! ### field matches some_regex
+//! ### .field matches some_regex
 //!
-//! ### field != something
+//! ### .field != something
 //!
-//! ### field >= something
+//! ### .field >= something
 //!
-//! ### field > something
+//! ### .field > something
 //!
-//! ### field <= something
+//! ### .field <= something
 //!
-//! ### field < something -- e.g. `iterable.(title == "Romantic Traffic");`
+//! ### .field < something -- e.g. `iterable.(.title == "Romantic Traffic");`
 //!
 //! Compare all items, keeping only those that match the condition. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Optionally, a ? or ! can be added to the end of the field name to skip items whose field is missing/incomparable, or keep all items whose field is missing/incomparable (respectively).
 //!
@@ -87,7 +87,7 @@
 //! Replace items matching the filter with operation1 and replace items not matching the filter with operation2. The `else operation2` part may be omitted to preserve items not matching the filter. To perform operations with the current item, use the special variable `item`. The replacement filter may not contain || -- instead, use multiple filters chained together.
 //!
 //! ### unique
-//! ### unique field -- e.g. `iterable.(unique title);`
+//! ### unique field -- e.g. `iterable.(unique .title);`
 //!
 //! Keep only items which are do not duplicate another item, or keep only items whoes specified field does not duplicate another item's same field. The first non-duplicated instance of an item is always the one that is kept.
 //!
@@ -166,14 +166,18 @@
 //! ## Sorters
 //! Operations to sort the items in an iterable: `iterable~(sorter)` OR `iterable.sort(sorter)`.
 //!
-//! ### field -- e.g. `iterable~(filename);`
+//! ### .field -- e.g. `iterable~(.filename);`
 //!
 //! Sort by an Item field. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
 //!
-//! ### shuffle
-//! ### random shuffle -- e.g. `iterable~(shuffle);`
+//! ### ~shuffle
+//! ### random shuffle -- e.g. `iterable~(~shuffle);`
 //!
 //! Shuffle the songs in the iterator. This is random for up to 2^16 items, and then the randomness degrades (but at that point you won't notice). The more verbose syntax is allowed in preparation for future randomisation strategies.
+//!
+//! ### ~radio
+//! ### ~radio qualifier -- e.g. `iterable~(~radio)`
+//! Sort by musical similarity, starting with a random first song from the iterator. The optional qualifier may be `chroma`, `loudness`, `spectrum`, or `tempo`. When the qualifier is omitted, they are all considered for comparing audio similarity.
 //!
 //! ### advanced bliss_first -- e.g. `iterable~(advanced bliss_first);`
 //!

@@ -209,18 +209,23 @@ impl SystemControlWrapper {
                 .and_then(|x| x.to_owned().to_str());
         let cover_url = if let Some(art) = &cover_art {
             const DATA_START: usize = 23;
+            const DATA_PREVIEW: usize = 32;
+            const DATA_PREVIEW_OFFSET: usize = 128;
+            let preview_slice_start = (DATA_START+DATA_PREVIEW_OFFSET).clamp(0, art.len()-2);
+            let preview_slide_end = (DATA_START+DATA_PREVIEW+DATA_PREVIEW_OFFSET).clamp(preview_slice_start, art.len());
             let path = format!("{}/muss-cover-{}.jpg",
                                std::env::var("HOME").map(|home| home + "/.cache").unwrap_or_else(|_| "/tmp".to_owned()),
-                               &art[DATA_START..DATA_START+16].replace("/", ""));
-            let pathbuf = std::path::PathBuf::from(&path);
-            if !pathbuf.exists() {
-                base64::decode(&art[DATA_START..]).ok()
-                    .and_then(|decoded| std::fs::File::create(&path).ok().map(|file| (decoded, file)))
-                    .and_then(|(decoded, mut file)| file.write(&decoded).ok())
-                    .map(|_| path)
+                               &art[preview_slice_start..preview_slide_end].replace("/", ""));
+            //let pathbuf = std::path::PathBuf::from(&path);
+            /*if !pathbuf.exists() {
+
             } else {
                 Some(path)
-            }
+            }*/
+            base64::decode(&art[DATA_START..]).ok()
+                .and_then(|decoded| std::fs::File::create(&path).ok().map(|file| (decoded, file)))
+                .and_then(|(decoded, mut file)| file.write(&decoded).ok())
+                .map(|_| path)
         } else {
             None
         };

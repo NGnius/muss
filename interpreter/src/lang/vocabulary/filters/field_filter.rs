@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
 use super::utility::{assert_comparison_operator, comparison_op};
-use crate::lang::utility::{assert_token, assert_type, check_is_type};
+use crate::lang::utility::{assert_token, assert_type, check_is_type, assert_token_raw};
 use crate::lang::LanguageDictionary;
 use crate::lang::TypePrimitive;
 use crate::lang::{FilterFactory, FilterPredicate, FilterStatementFactory};
@@ -39,7 +39,7 @@ impl Display for FieldFilter {
         let comp_op = comparison_op(&self.comparison);
         match &self.val {
             VariableOrValue::Variable(name) => {
-                write!(f, "{} {} {}", self.field_name, comp_op, name)
+                write!(f, ".{} {} {}", self.field_name, comp_op, name)
             }
             VariableOrValue::Value(t) => write!(f, "{} {} {}", self.field_name, comp_op, t),
         }
@@ -100,15 +100,18 @@ pub struct FieldFilterFactory;
 impl FilterFactory<FieldFilter> for FieldFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
         let tokens_len = tokens.len();
-        (tokens_len >= 2
-            // field > variable OR field < variable
-            && tokens[0].is_name()
-            && (tokens[1].is_open_angle_bracket() || tokens[1].is_close_angle_bracket()))
-            || (tokens_len >= 3 // field >= variable OR field <= variable OR field != variable
-            && tokens[0].is_name()
-            && (tokens[1].is_open_angle_bracket() || tokens[1].is_close_angle_bracket() || tokens[1].is_equals() || tokens[1].is_exclamation())
-            && tokens[2].is_equals()
-            && !(tokens_len > 3 && tokens[3].is_equals()))
+        (tokens_len >= 3
+            // .field > variable OR .field < variable
+            && tokens[0].is_dot()
+            && tokens[1].is_name()
+            && (tokens[2].is_open_angle_bracket() || tokens[2].is_close_angle_bracket()))
+            || (tokens_len >= 4 // .field >= variable OR .field <= variable OR .field != variable OR .field == variable
+            && tokens[0].is_dot()
+            && tokens[1].is_name()
+            && (tokens[2].is_open_angle_bracket() || tokens[2].is_close_angle_bracket() || tokens[2].is_equals() || tokens[2].is_exclamation())
+            && tokens[3].is_equals()
+            && !(tokens_len > 4 && tokens[4].is_equals())
+            )
     }
 
     fn build_filter(
@@ -116,6 +119,7 @@ impl FilterFactory<FieldFilter> for FieldFilterFactory {
         tokens: &mut VecDeque<Token>,
         _dict: &LanguageDictionary,
     ) -> Result<FieldFilter, SyntaxError> {
+        assert_token_raw(Token::Dot, tokens)?;
         let field = assert_token(
             |t| match t {
                 Token::Name(n) => Some(n),

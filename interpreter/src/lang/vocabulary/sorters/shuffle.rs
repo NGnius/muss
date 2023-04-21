@@ -3,7 +3,7 @@ use std::fmt::{Debug, Display, Error, Formatter};
 
 use rand::{thread_rng, Rng};
 
-use crate::lang::utility::{assert_name, check_name};
+use crate::lang::utility::{assert_name, check_name, assert_token_raw};
 use crate::lang::{IteratorItem, LanguageDictionary, Op};
 use crate::lang::{RuntimeMsg, SyntaxError};
 use crate::lang::{SortStatementFactory, Sorter, SorterFactory};
@@ -71,10 +71,11 @@ pub struct ShuffleSorterFactory;
 
 impl SorterFactory<ShuffleSorter> for ShuffleSorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&Token>) -> bool {
-        (!tokens.is_empty() && check_name("shuffle", tokens[0]))
-            || (tokens.len() > 1
-                && check_name("random", tokens[0])
-                && check_name("shuffle", tokens[1]))
+        (!tokens.len() > 1 && tokens[0].is_tilde() && check_name("shuffle", tokens[1]))
+            || (tokens.len() > 2
+                && tokens[0].is_tilde()
+                && check_name("random", tokens[1])
+                && check_name("shuffle", tokens[2]))
     }
 
     fn build_sorter(
@@ -82,6 +83,7 @@ impl SorterFactory<ShuffleSorter> for ShuffleSorterFactory {
         tokens: &mut VecDeque<Token>,
         _dict: &LanguageDictionary,
     ) -> Result<ShuffleSorter, SyntaxError> {
+        assert_token_raw(Token::Tilde, tokens)?;
         if check_name("random", &tokens[0]) {
             assert_name("random", tokens)?;
         }

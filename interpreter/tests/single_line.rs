@@ -175,22 +175,22 @@ fn execute_emptyfilter_line() -> Result<(), InterpreterError> {
 #[test]
 fn execute_fieldfilter_line() -> Result<(), InterpreterError> {
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date >= 2000)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.date >= 2000)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date <= 2020)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.date <= 2020)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date == 2016)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.date == 2016)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date != 2048)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.date != 2048)",
         false,
         true,
     )
@@ -199,22 +199,22 @@ fn execute_fieldfilter_line() -> Result<(), InterpreterError> {
 #[test]
 fn execute_fieldfiltermaybe_line() -> Result<(), InterpreterError> {
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date? >= 2000)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.date? >= 2000)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date? <= 2020)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.date? <= 2020)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date! == 2016)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.date! == 2016)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date! != `test`)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.date! != `test`)",
         false,
         true,
     )
@@ -291,12 +291,12 @@ fn execute_orfilter_line() -> Result<(), InterpreterError> {
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date != 2020 || 5)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.date != 2020 || 5)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(date != 2020 || 5 || 4 || 12)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.date != 2020 || 5 || 4 || 12)",
         false,
         true,
     )
@@ -338,22 +338,22 @@ fn execute_emptysort_line() -> Result<(), InterpreterError> {
 #[test]
 fn execute_likefilter_line() -> Result<(), InterpreterError> {
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(not_a_field? like `24K Magic`)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.not_a_field? like `24K Magic`)",
         true,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(not_a_field! like `24K Magic`)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.not_a_field! like `24K Magic`)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(album like `24K Magic`)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.album like `24K Magic`)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(album unlike `24K Magic`)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.album unlike `24K Magic`)",
         true,
         true,
     )
@@ -362,12 +362,12 @@ fn execute_likefilter_line() -> Result<(), InterpreterError> {
 #[test]
 fn execute_fieldsort_line() -> Result<(), InterpreterError> {
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(title)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(.title)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).sort(not_a_field)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).sort(.not_a_field)",
         false,
         true,
     )
@@ -423,16 +423,16 @@ fn execute_resetfn_line() -> Result<(), InterpreterError> {
 #[test]
 fn execute_shufflesort_line() -> Result<(), InterpreterError> {
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(random shuffle)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(~random shuffle)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(shuffle)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(~shuffle)",
         false,
         true,
     )?;
-    execute_single_line("empty()~(shuffle)", true, true)
+    execute_single_line("empty()~(~shuffle)", true, true)
 }
 
 #[test]
@@ -462,18 +462,18 @@ fn execute_unionfn_line() -> Result<(), InterpreterError> {
 #[test]
 fn execute_regexfilter_line() -> Result<(), InterpreterError> {
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(title matches `24K\\\\s+Magic`)", // note: quad-escape not required in scripts
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.title matches `24K\\\\s+Magic`)", // note: quad-escape not required in scripts
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(artist? matches `Bruno Mars`)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.artist? matches `Bruno Mars`)",
         false,
         true,
     )?;
     // regex options
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(artist? matches `bruno mars`, `i`)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(.artist? matches `bruno mars`, `i`)",
         false,
         true,
     )
@@ -789,17 +789,17 @@ fn execute_commentitemop_line() -> Result<(), InterpreterError> {
 #[test]
 fn execute_uniquefieldfilter_line() -> Result<(), InterpreterError> {
     execute_single_line(
-        "repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), 3).(unique title?)",
+        "repeat(files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`), 3).(unique .title?)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(unique album!)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(unique .album!)",
         false,
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(unique album)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(unique .album)",
         false,
         true,
     )

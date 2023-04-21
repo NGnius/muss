@@ -29,8 +29,8 @@ impl FieldLikeFilter {
 impl Display for FieldLikeFilter {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match &self.val {
-            VariableOrValue::Variable(name) => write!(f, "{} like {}", self.field_name, name),
-            VariableOrValue::Value(t) => write!(f, "{} like {}", self.field_name, t),
+            VariableOrValue::Variable(name) => write!(f, ".{} like {}", self.field_name, name),
+            VariableOrValue::Value(t) => write!(f, ".{} like {}", self.field_name, t),
         }
     }
 }
@@ -81,13 +81,15 @@ pub struct FieldLikeFilterFactory;
 impl FilterFactory<FieldLikeFilter> for FieldLikeFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
         let tokens_len = tokens.len();
-        (tokens_len >= 2 // field like variable
-            && tokens[0].is_name()
-            && (check_name("like", tokens[1]) || check_name("unlike", tokens[1])))
-            || (tokens_len >= 3 // field? like variable OR field! like variable
-            && tokens[0].is_name()
-            && (tokens[1].is_interrogation() || tokens[1].is_exclamation())
+        (tokens_len >= 3 // field like variable
+            && tokens[0].is_dot()
+            && tokens[1].is_name()
             && (check_name("like", tokens[2]) || check_name("unlike", tokens[2])))
+            || (tokens_len >= 4 // field? like variable OR field! like variable
+            && tokens[0].is_dot()
+            && tokens[1].is_name()
+            && (tokens[2].is_interrogation() || tokens[2].is_exclamation())
+            && (check_name("like", tokens[3]) || check_name("unlike", tokens[3])))
     }
 
     fn build_filter(
@@ -95,6 +97,7 @@ impl FilterFactory<FieldLikeFilter> for FieldLikeFilterFactory {
         tokens: &mut VecDeque<Token>,
         _dict: &LanguageDictionary,
     ) -> Result<FieldLikeFilter, SyntaxError> {
+        assert_token_raw(Token::Dot, tokens)?;
         let field = assert_token(
             |t| match t {
                 Token::Name(n) => Some(n),

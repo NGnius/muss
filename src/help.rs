@@ -60,15 +60,15 @@ pub const FILTERS: &str =
 "FILTERS (?filters)
 Operations to reduce the items in an iterable: iterable.(filter)
 
- field == something
- field like something
- field unlike something
- field matches some_regex
- field != something
- field >= something
- field > something
- field <= something
- field < something -- e.g. iterable.(title == `Romantic Traffic`)
+ .field == something
+ .field like something
+ .field unlike something
+ .field matches some_regex
+ .field != something
+ .field >= something
+ .field > something
+ .field <= something
+ .field < something -- e.g. iterable.(.title == `Romantic Traffic`)
     Compare all items, keeping only those that match the condition. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Optionally, a ? or ! can be added to the end of the field name to skip items whose field is missing/incomparable, or keep all items whose field is missing/incomparable (respectively).
 
  start..end -- e.g. iterable.(0..42)
@@ -100,12 +100,16 @@ pub const SORTERS: &str =
 "SORTERS (?sorters)
 Operations to sort the items in an iterable: iterable~(sorter) OR iterable.sort(sorter)
 
- field -- e.g. iterable~(filename)
+ .field -- e.g. iterable~(.filename)
     Sort by an Item field. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.
 
  shuffle
  random shuffle -- e.g. iterable~(shuffle)
     Shuffle the songs in the iterator. This is random for up to 2^16 items, and then the randomness degrades (but at that point you won't notice).
+
+ ~radio
+ ~radio qualifier -- e.g. iterable~(~radio)
+    Sort by musical similarity, starting with a random first song from the iterator. The optional qualifier may be chroma, loudness, spectrum, or tempo. When the qualifier is omitted, they are all considered for comparing audio similarity.
 
  advanced bliss_first -- e.g. iterable~(advanced bliss_first)
     Sort by the distance (similarity) from the first song in the iterator. Songs which are more similar (lower distance) to the first song in the iterator will be placed closer to the first song, while less similar songs will be sorted to the end. This uses the bliss music analyser, which is a very slow operation and can cause music playback interruptions for large iterators. Requires `advanced` interpreter feature.

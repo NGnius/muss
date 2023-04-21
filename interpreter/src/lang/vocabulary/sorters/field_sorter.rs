@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::utility::assert_token;
+use crate::lang::utility::{assert_token, assert_token_raw};
 use crate::lang::{IteratorItem, LanguageDictionary, Op};
 use crate::lang::{RuntimeMsg, SyntaxError};
 use crate::lang::{SortStatementFactory, Sorter, SorterFactory};
@@ -52,7 +52,7 @@ impl Sorter for FieldSorter {
 
 impl Display for FieldSorter {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "{}", self.field_name)
+        write!(f, ".{}", self.field_name)
     }
 }
 
@@ -60,7 +60,7 @@ pub struct FieldSorterFactory;
 
 impl SorterFactory<FieldSorter> for FieldSorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&Token>) -> bool {
-        !tokens.is_empty() && tokens[0].is_name()
+        !tokens.is_empty() && tokens[0].is_dot()
     }
 
     fn build_sorter(
@@ -68,6 +68,7 @@ impl SorterFactory<FieldSorter> for FieldSorterFactory {
         tokens: &mut VecDeque<Token>,
         _dict: &LanguageDictionary,
     ) -> Result<FieldSorter, SyntaxError> {
+        assert_token_raw(Token::Dot, tokens)?;
         let name = assert_token(
             |t| match t {
                 Token::Name(s) => Some(s),

@@ -20,7 +20,7 @@ pub struct UniqueFieldFilter {
 
 impl Display for UniqueFieldFilter {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "unique {}", &self.field)
+        write!(f, "unique .{}", &self.field)
     }
 }
 
@@ -90,7 +90,7 @@ pub struct UniqueFilterFactory;
 
 impl FilterFactory<UniqueFieldFilter> for UniqueFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
-        tokens.len() >= 2 && check_name("unique", tokens[0])
+        tokens.len() >= 2 && check_name("unique", tokens[0]) && tokens[1].is_dot()
     }
 
     fn build_filter(
@@ -99,6 +99,7 @@ impl FilterFactory<UniqueFieldFilter> for UniqueFilterFactory {
         _dict: &LanguageDictionary,
     ) -> Result<UniqueFieldFilter, SyntaxError> {
         assert_name("unique", tokens)?;
+        assert_token_raw(Token::Dot, tokens)?;
         let field_name = assert_token(
             |t| match t {
                 Token::Name(s) => Some(s),
