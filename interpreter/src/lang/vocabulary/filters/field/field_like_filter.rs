@@ -5,7 +5,7 @@ use super::field_filter::{FieldFilterErrorHandling, VariableOrValue};
 use crate::lang::utility::{assert_token, assert_token_raw, check_name};
 use crate::lang::LanguageDictionary;
 use crate::lang::TypePrimitive;
-use crate::lang::{FilterFactory, FilterPredicate, FilterStatementFactory};
+use super::{FieldFilterFactory, FieldFilterPredicate};
 use crate::lang::{RuntimeMsg, SyntaxError};
 use crate::processing::general::Type;
 use crate::tokens::Token;
@@ -22,7 +22,7 @@ pub struct FieldLikeFilter {
 
 impl FieldLikeFilter {
     fn sanitise_string(s: &str) -> String {
-        super::utility::sanitise_string(s)
+        super::super::utility::sanitise_string(s)
     }
 }
 
@@ -35,7 +35,7 @@ impl Display for FieldLikeFilter {
     }
 }
 
-impl FilterPredicate for FieldLikeFilter {
+impl FieldFilterPredicate for FieldLikeFilter {
     fn matches(&mut self, music_item_lut: &Item, ctx: &mut Context) -> Result<bool, RuntimeMsg> {
         let variable = match &self.val {
             VariableOrValue::Variable(name) => match ctx.variables.get(name)? {
@@ -74,38 +74,30 @@ impl FilterPredicate for FieldLikeFilter {
     fn reset(&mut self) -> Result<(), RuntimeMsg> {
         Ok(())
     }
+
+    fn box_clone(&self) -> Box<dyn FieldFilterPredicate + 'static> {
+        Box::new(self.clone())
+    }
 }
 
 pub struct FieldLikeFilterFactory;
 
-impl FilterFactory<FieldLikeFilter> for FieldLikeFilterFactory {
-    fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
+impl FieldFilterFactory<FieldLikeFilter> for FieldLikeFilterFactory {
+    fn is_filter(&self, tokens: &[Token]) -> bool {
         let tokens_len = tokens.len();
-        (tokens_len >= 3 // field like variable
-            && tokens[0].is_dot()
-            && tokens[1].is_name()
-            && (check_name("like", tokens[2]) || check_name("unlike", tokens[2])))
-            || (tokens_len >= 4 // field? like variable OR field! like variable
-            && tokens[0].is_dot()
-            && tokens[1].is_name()
-            && (tokens[2].is_interrogation() || tokens[2].is_exclamation())
-            && (check_name("like", tokens[3]) || check_name("unlike", tokens[3])))
+        (tokens_len >= 1 // field like variable
+            && (check_name("like", &tokens[0]) || check_name("unlike", &tokens[0])))
+            || (tokens_len >= 2 // field? like variable OR field! like variable
+            && (tokens[0].is_interrogation() || tokens[0].is_exclamation())
+            && (check_name("like", &tokens[1]) || check_name("unlike", &tokens[1])))
     }
 
     fn build_filter(
         &self,
         tokens: &mut VecDeque<Token>,
+        field: String,
         _dict: &LanguageDictionary,
     ) -> Result<FieldLikeFilter, SyntaxError> {
-        assert_token_raw(Token::Dot, tokens)?;
-        let field = assert_token(
-            |t| match t {
-                Token::Name(n) => Some(n),
-                _ => None,
-            },
-            Token::Name("field_name".into()),
-            tokens,
-        )?;
         let error_handling = if tokens[0].is_interrogation() {
             assert_token_raw(Token::Interrogation, tokens)?;
             FieldFilterErrorHandling::Ignore
@@ -163,12 +155,4 @@ impl FilterFactory<FieldLikeFilter> for FieldLikeFilterFactory {
             })
         }
     }
-}
-
-pub type FieldLikeFilterStatementFactory =
-    FilterStatementFactory<FieldLikeFilter, FieldLikeFilterFactory>;
-
-#[inline(always)]
-pub fn field_like_filter() -> FieldLikeFilterStatementFactory {
-    FieldLikeFilterStatementFactory::new(FieldLikeFilterFactory)
 }

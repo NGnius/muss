@@ -1,45 +1,34 @@
 use std::collections::VecDeque;
 
-use super::utility::assert_comparison_operator;
+use super::super::utility::assert_comparison_operator;
 use super::{field_filter::VariableOrValue, FieldFilter, FieldFilterErrorHandling};
 use crate::lang::utility::{assert_token, assert_token_raw, assert_type, check_is_type};
 use crate::lang::LanguageDictionary;
 use crate::lang::SyntaxError;
-use crate::lang::{FilterFactory, FilterStatementFactory};
+//use crate::lang::{FilterFactory, FilterStatementFactory};
+use super::FieldFilterFactory;
 use crate::tokens::Token;
 
 pub struct FieldFilterMaybeFactory;
 
-impl FilterFactory<FieldFilter> for FieldFilterMaybeFactory {
-    fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
+impl FieldFilterFactory<FieldFilter> for FieldFilterMaybeFactory {
+    fn is_filter(&self, tokens: &[Token]) -> bool {
         let tokens_len = tokens.len();
-        (tokens_len >= 4 // .field > variable OR .field < variable
-            && tokens[0].is_dot()
-            && tokens[1].is_name()
-            && (tokens[2].is_interrogation() || tokens[2].is_exclamation())
-            && (tokens[3].is_open_angle_bracket() || tokens[3].is_close_angle_bracket()))
-            || (tokens_len >= 5 // .field >= variable OR .field <= variable OR .field != variable OR .field == variable
-            && tokens[0].is_dot()
-            && tokens[1].is_name()
-            && (tokens[2].is_interrogation() || tokens[2].is_exclamation())
-            && (tokens[3].is_open_angle_bracket() || tokens[3].is_close_angle_bracket() || tokens[3].is_equals() || tokens[3].is_exclamation())
-            && tokens[4].is_equals())
+        (tokens_len >= 2 // .field > variable OR .field < variable
+            && (tokens[0].is_interrogation() || tokens[0].is_exclamation())
+            && (tokens[1].is_open_angle_bracket() || tokens[1].is_close_angle_bracket()))
+            || (tokens_len >= 3 // .field >= variable OR .field <= variable OR .field != variable OR .field == variable
+            && (tokens[0].is_interrogation() || tokens[0].is_exclamation())
+            && (tokens[1].is_open_angle_bracket() || tokens[1].is_close_angle_bracket() || tokens[1].is_equals() || tokens[1].is_exclamation())
+            && tokens[2].is_equals())
     }
 
     fn build_filter(
         &self,
         tokens: &mut VecDeque<Token>,
+        field: String,
         _dict: &LanguageDictionary,
     ) -> Result<FieldFilter, SyntaxError> {
-        assert_token_raw(Token::Dot, tokens)?;
-        let field = assert_token(
-            |t| match t {
-                Token::Name(n) => Some(n),
-                _ => None,
-            },
-            Token::Name("field_name".into()),
-            tokens,
-        )?;
         let error_f;
         let error_c;
         if tokens[0].is_interrogation() {
@@ -81,12 +70,4 @@ impl FilterFactory<FieldFilter> for FieldFilterMaybeFactory {
             })
         }
     }
-}
-
-pub type FieldFilterMaybeStatementFactory =
-    FilterStatementFactory<FieldFilter, FieldFilterMaybeFactory>;
-
-#[inline(always)]
-pub fn field_filter_maybe() -> FieldFilterMaybeStatementFactory {
-    FieldFilterMaybeStatementFactory::new(FieldFilterMaybeFactory)
 }

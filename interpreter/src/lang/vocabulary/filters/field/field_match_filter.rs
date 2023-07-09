@@ -7,7 +7,7 @@ use super::field_filter::{FieldFilterErrorHandling, VariableOrValue};
 use crate::lang::utility::{assert_name, assert_token, assert_token_raw, check_name};
 use crate::lang::LanguageDictionary;
 use crate::lang::TypePrimitive;
-use crate::lang::{FilterFactory, FilterPredicate, FilterStatementFactory};
+use super::{FieldFilterFactory, FieldFilterPredicate};
 use crate::lang::{RuntimeMsg, SyntaxError};
 use crate::processing::general::Type;
 use crate::tokens::Token;
@@ -32,7 +32,7 @@ impl Display for FieldRegexFilter {
     }
 }
 
-impl FilterPredicate for FieldRegexFilter {
+impl FieldFilterPredicate for FieldRegexFilter {
     fn matches(&mut self, music_item_lut: &Item, ctx: &mut Context) -> Result<bool, RuntimeMsg> {
         let variable = match &self.val {
             VariableOrValue::Variable(name) => match ctx.variables.get(name)? {
@@ -83,38 +83,30 @@ impl FilterPredicate for FieldRegexFilter {
         //self.regex_cache = None;
         Ok(())
     }
+
+    fn box_clone(&self) -> Box<dyn FieldFilterPredicate + 'static> {
+        Box::new(self.clone())
+    }
 }
 
 pub struct FieldRegexFilterFactory;
 
-impl FilterFactory<FieldRegexFilter> for FieldRegexFilterFactory {
-    fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
+impl FieldFilterFactory<FieldRegexFilter> for FieldRegexFilterFactory {
+    fn is_filter(&self, tokens: &[Token]) -> bool {
         let tokens_len = tokens.len();
-        (tokens_len >= 3 // .field like variable
-            && tokens[0].is_dot()
-            && tokens[1].is_name()
-            && check_name("matches", tokens[2]))
-            || (tokens_len >= 4 // .field? like variable OR .field! like variable
-            && tokens[0].is_dot()
-            && tokens[1].is_name()
-            && (tokens[2].is_interrogation() || tokens[2].is_exclamation())
-            && check_name("matches", tokens[3]))
+        (tokens_len >= 1 // .field like variable
+            && check_name("matches", &tokens[0]))
+            || (tokens_len >= 2 // .field? like variable OR .field! like variable
+            && (tokens[0].is_interrogation() || tokens[0].is_exclamation())
+            && check_name("matches", &tokens[1]))
     }
 
     fn build_filter(
         &self,
         tokens: &mut VecDeque<Token>,
+        field: String,
         _dict: &LanguageDictionary,
     ) -> Result<FieldRegexFilter, SyntaxError> {
-        assert_token_raw(Token::Dot, tokens)?;
-        let field = assert_token(
-            |t| match t {
-                Token::Name(n) => Some(n),
-                _ => None,
-            },
-            Token::Name("field_name".into()),
-            tokens,
-        )?;
         let error_handling = if tokens[0].is_interrogation() {
             assert_token_raw(Token::Interrogation, tokens)?;
             FieldFilterErrorHandling::Ignore
@@ -219,12 +211,4 @@ fn build_regex(pattern: &str, flags: u8) -> Result<Regex, regex::Error> {
         .unicode((flags & (1 << 4)) != 0)
         .ignore_whitespace((flags & (1 << 5)) != 0)
         .build()
-}
-
-pub type FieldRegexFilterStatementFactory =
-    FilterStatementFactory<FieldRegexFilter, FieldRegexFilterFactory>;
-
-#[inline(always)]
-pub fn field_re_filter() -> FieldRegexFilterStatementFactory {
-    FieldRegexFilterStatementFactory::new(FieldRegexFilterFactory)
 }

@@ -1,7 +1,7 @@
 use std::collections::{HashSet, VecDeque};
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use super::field_filter::FieldFilterErrorHandling;
+use super::field::FieldFilterErrorHandling;
 use crate::lang::utility::{assert_name, assert_token, assert_token_raw, check_name};
 use crate::lang::{FilterFactory, FilterPredicate, FilterStatementFactory};
 use crate::lang::{LanguageDictionary, TypePrimitive};
