@@ -98,7 +98,7 @@ Operations to reduce the items in an iterable: iterable.(filter)
 
 pub const SORTERS: &str =
 "SORTERS (?sorters)
-Operations to sort the items in an iterable: iterable~(sorter) OR iterable.sort(sorter)
+Operations to sort the items in an iterable: iterable~(sorter)
 
  .field -- e.g. iterable~(.filename)
     Sort by an Item field. Valid field names change depending on what information is available when the Item is populated, but usually title, artist, album, genre, track, filename are valid fields. Items with a missing/incomparable fields will be sorted to the end.

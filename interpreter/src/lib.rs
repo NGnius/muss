@@ -164,7 +164,7 @@
 //! Iterate over count empty items. The items in this iterator have no fields (i.e. are empty).
 //!
 //! ## Sorters
-//! Operations to sort the items in an iterable: `iterable~(sorter)` OR `iterable.sort(sorter)`.
+//! Operations to sort the items in an iterable: `iterable~(sorter)`.
 //!
 //! ### .field -- e.g. `iterable~(.filename);`
 //!
