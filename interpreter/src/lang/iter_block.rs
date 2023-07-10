@@ -6,9 +6,9 @@ use std::iter::Iterator;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use crate::lang::utility::{assert_token_raw, assert_token_raw_back};
+use crate::lang::utility::assert_token_raw;
 use crate::lang::LanguageDictionary;
-use crate::lang::{BoxedOpFactory, IteratorItem, Op, PseudoOp};
+use crate::lang::{BoxedTransformOpFactory, IteratorItem, Op, PseudoOp};
 use crate::lang::{RuntimeError, RuntimeMsg, RuntimeOp, SyntaxError};
 use crate::processing::general::Type;
 use crate::tokens::Token;
@@ -72,7 +72,7 @@ impl Display for ItemBlockStatement {
             writeln!(f)?;
         }
         for statement in self.statements.iter() {
-            writeln!(f, "{}", statement)?;
+            writeln!(f, "{},", statement)?;
         }
         write!(f, "}}")
     }
@@ -227,7 +227,7 @@ impl ItemBlockFactory {
         tokens: &mut VecDeque<Token>,
         dict: &LanguageDictionary,
     ) -> Result<Box<dyn ItemOp>, SyntaxError> {
-        for factory in &self.vocabulary {
+        for (i, factory) in self.vocabulary.iter().enumerate() {
             if factory.is_item_op(tokens) {
                 return factory.build_item_op(tokens, self, dict);
             }
@@ -253,47 +253,43 @@ impl ItemBlockFactory {
     }
 }
 
-impl BoxedOpFactory for ItemBlockFactory {
-    fn is_op_boxed(&self, tokens: &VecDeque<Token>) -> bool {
-        find_last_open_curly(tokens).is_some()
-    }
-
-    fn build_op_boxed(
+impl BoxedTransformOpFactory for ItemBlockFactory {
+    fn build_transform_op(
         &self,
         tokens: &mut VecDeque<Token>,
         dict: &LanguageDictionary,
+        op: Box<dyn Op>,
     ) -> Result<Box<dyn Op>, SyntaxError> {
-        let open_curly_pos = if let Some(pos) = find_last_open_curly(tokens) {
-            Ok(pos)
-        } else {
-            Err(SyntaxError {
-                line: 0,
-                token: Token::OpenCurly,
-                got: tokens.pop_front(),
-            })
-        }?;
-        let block_tokens = tokens.split_off(open_curly_pos - 1); // . always before {
-        let inner_op = dict.try_build_statement(tokens)?;
-        tokens.extend(block_tokens);
         assert_token_raw(Token::Dot, tokens)?;
         assert_token_raw(Token::OpenCurly, tokens)?;
-        assert_token_raw_back(Token::CloseCurly, tokens)?;
         let mut item_ops = Vec::with_capacity(tokens.len() / 8);
         while !tokens.is_empty() {
-            if let Some(next_comma) = find_next_comma(tokens) {
-                let end_tokens = tokens.split_off(next_comma);
-                item_ops.push(Arc::new(self.try_build_item_statement(tokens, dict)?));
-                tokens.extend(end_tokens);
-                assert_token_raw(Token::Comma, tokens)?;
+            if tokens[0].is_close_curly() {
+                break;
+            }
+            item_ops.push(Arc::new(self.try_build_item_statement(tokens, dict)?));
+            if !tokens.is_empty() {
+                if tokens[0].is_comma() {
+                    assert_token_raw(Token::Comma, tokens)?;
+                }
             } else {
-                item_ops.push(Arc::new(self.try_build_item_statement(tokens, dict)?));
+                return Err(SyntaxError {
+                    got: tokens.pop_front(),
+                    token: Token::Literal(", or }".into()),
+                    line: 0,
+                })
             }
         }
+        assert_token_raw(Token::CloseCurly, tokens)?;
         Ok(Box::new(ItemBlockStatement {
             statements: item_ops,
-            iterable: inner_op.into(),
+            iterable: op.into(),
             last_item: None,
         }))
+    }
+
+    fn is_transform_op(&self, tokens: &VecDeque<Token>) -> bool {
+        tokens.len() > 1 && tokens[0].is_dot() && tokens[1].is_open_curly()
     }
 }
 
@@ -320,42 +316,7 @@ fn restore_item_var(ctx: &mut Context, old_var: Option<Type>) -> Result<Option<T
     Ok(new_var)
 }
 
-fn find_last_open_curly(tokens: &VecDeque<Token>) -> Option<usize> {
-    let mut bracket_depth = 0;
-    let mut curly_found = false;
-    for i in (0..tokens.len()).rev() {
-        let token = &tokens[i];
-        match token {
-            Token::OpenCurly => {
-                if bracket_depth != 0 {
-                    bracket_depth -= 1;
-                }
-            }
-            Token::CloseCurly => {
-                bracket_depth += 1;
-            }
-            Token::Dot => {
-                if bracket_depth == 0 && curly_found {
-                    return Some(i + 1);
-                }
-            }
-            Token::OpenBracket | Token::CloseBracket => {
-                if bracket_depth == 0 {
-                    return None;
-                }
-            }
-            _ => {}
-        }
-        if token.is_open_curly() {
-            curly_found = true;
-        } else {
-            curly_found = false;
-        }
-    }
-    None
-}
-
-fn find_next_comma(tokens: &VecDeque<Token>) -> Option<usize> {
+/*fn find_next_comma(tokens: &VecDeque<Token>) -> Option<usize> {
     let mut bracket_depth = 0;
     let mut curly_depth = 0;
     for i in 0..tokens.len() {
@@ -373,4 +334,4 @@ fn find_next_comma(tokens: &VecDeque<Token>) -> Option<usize> {
         }
     }
     None
-}
+}*/

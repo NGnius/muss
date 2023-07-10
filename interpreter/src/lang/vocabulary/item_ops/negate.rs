@@ -46,7 +46,7 @@ pub struct NegateItemOpFactory;
 
 impl ItemOpFactory<NegateItemOp> for NegateItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<Token>) -> bool {
-        tokens.len() >= 2 && tokens[0].is_minus()
+        !tokens.is_empty() && tokens[0].is_minus()
     }
 
     fn build_item_op(

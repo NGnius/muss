@@ -141,11 +141,11 @@ impl FunctionFactory<FilesStatement> for FilesFunctionFactory {
         tokens: &mut VecDeque<Token>,
         _dict: &LanguageDictionary,
     ) -> Result<FilesStatement, SyntaxError> {
-        // files([folder|dir=]"path", [regex|re = "pattern"], [recursive = true|false])
+        // files([folder|dir=]"path", [regex|re = "pattern",] [recursive = true|false,])
         let mut root_path = None;
         let mut pattern = None;
         let mut recursive = None;
-        if !tokens.is_empty() {
+        if !tokens.is_empty() && !tokens[0].is_close_bracket() {
             if tokens[0].is_literal() {
                 // folder is specified without keyword
                 root_path = Some(assert_token(
@@ -162,7 +162,7 @@ impl FunctionFactory<FilesStatement> for FilesFunctionFactory {
             }
             // parse keyword function parameters
             let ingest = |tokens2: &mut VecDeque<Token>| {
-                if tokens2.len() < 3 {
+                if tokens2[0].is_close_bracket() {
                     return Ok(None);
                 } // nothing wrong, nothing left to ingest
                 let param_name = assert_token(

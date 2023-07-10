@@ -57,7 +57,7 @@ pub struct RemoveItemOpFactory;
 
 impl ItemOpFactory<RemoveItemOp> for RemoveItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<Token>) -> bool {
-        (tokens.len() == 2 || tokens.len() == 4) && check_name("remove", &tokens[0])
+        !tokens.is_empty() && check_name("remove", &tokens[0])
     }
 
     fn build_item_op(
@@ -75,7 +75,7 @@ impl ItemOpFactory<RemoveItemOp> for RemoveItemOpFactory {
             Token::Name("variable_name".into()),
             tokens,
         )?;
-        let field_opt = if tokens.is_empty() {
+        let field_opt = if tokens.is_empty() || !tokens[0].is_dot() {
             None
         } else {
             assert_token_raw(Token::Dot, tokens)?;

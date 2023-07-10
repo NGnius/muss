@@ -64,8 +64,8 @@ pub struct IndexFilterFactory;
 
 impl FilterFactory<IndexFilter> for IndexFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
-        (tokens.len() == 1 && Lookup::check_is(tokens[0]))
-            || (tokens.len() == 2 && tokens[0].is_exclamation() && Lookup::check_is(tokens[1]))
+        (tokens.len() >= 1 && Lookup::check_is(tokens[0]))
+            || (tokens.len() >= 2 && tokens[0].is_exclamation() && Lookup::check_is(tokens[1]))
     }
 
     fn build_filter(

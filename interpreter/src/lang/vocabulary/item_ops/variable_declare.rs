@@ -72,7 +72,7 @@ impl ItemOpFactory<VariableDeclareItemOp> for VariableDeclareItemOpFactory {
             Token::Name("variable_name".into()),
             tokens,
         )?;
-        let inner_op: Option<Box<dyn ItemOp>> = if !tokens.is_empty() {
+        let inner_op: Option<Box<dyn ItemOp>> = if !tokens.is_empty() && tokens[0].is_equals() {
             assert_token_raw(Token::Equals, tokens)?;
             Some(factory.try_build_item_statement(tokens, dict)?)
         } else {

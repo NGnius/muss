@@ -12,20 +12,22 @@ use crate::Item;
 // TODO change API to allow for accumulating modifiers
 // e.g. build_op(&self, Option<Box<dyn Op>>, tokens) -> ...
 
-pub trait SimpleOpFactory<T: Op + 'static> {
-    fn is_op_simple(&self, tokens: &VecDeque<Token>) -> bool;
+type TokenList = VecDeque<Token>;
 
-    fn build_op_simple(&self, tokens: &mut VecDeque<Token>) -> Result<T, SyntaxError>;
+pub trait SimpleOpFactory<T: Op + 'static> {
+    fn is_op_simple(&self, tokens: &TokenList) -> bool;
+
+    fn build_op_simple(&self, tokens: &mut TokenList) -> Result<T, SyntaxError>;
 }
 
 impl<T: Op + 'static, X: SimpleOpFactory<T> + 'static> OpFactory<T> for X {
-    fn is_op(&self, tokens: &VecDeque<Token>) -> bool {
+    fn is_op(&self, tokens: &TokenList) -> bool {
         self.is_op_simple(tokens)
     }
 
     fn build_op(
         &self,
-        tokens: &mut VecDeque<Token>,
+        tokens: &mut TokenList,
         _dict: &LanguageDictionary,
     ) -> Result<T, SyntaxError> {
         self.build_op_simple(tokens)
@@ -33,18 +35,18 @@ impl<T: Op + 'static, X: SimpleOpFactory<T> + 'static> OpFactory<T> for X {
 }
 
 pub trait OpFactory<T: Op + 'static> {
-    fn is_op(&self, tokens: &VecDeque<Token>) -> bool;
+    fn is_op(&self, tokens: &TokenList) -> bool;
 
     fn build_op(
         &self,
-        tokens: &mut VecDeque<Token>,
+        tokens: &mut TokenList,
         dict: &LanguageDictionary,
     ) -> Result<T, SyntaxError>;
 
     #[inline]
     fn build_box(
         &self,
-        tokens: &mut VecDeque<Token>,
+        tokens: &mut TokenList,
         dict: &LanguageDictionary,
     ) -> Result<Box<dyn Op>, SyntaxError> {
         Ok(Box::new(self.build_op(tokens, dict)?))
@@ -54,11 +56,22 @@ pub trait OpFactory<T: Op + 'static> {
 pub trait BoxedOpFactory: Send {
     fn build_op_boxed(
         &self,
-        tokens: &mut VecDeque<Token>,
+        tokens: &mut TokenList,
         dict: &LanguageDictionary,
     ) -> Result<Box<dyn Op>, SyntaxError>;
 
-    fn is_op_boxed(&self, tokens: &VecDeque<Token>) -> bool;
+    fn is_op_boxed(&self, tokens: &TokenList) -> bool;
+}
+
+pub trait BoxedTransformOpFactory: Send {
+    fn build_transform_op(
+        &self,
+        tokens: &mut TokenList,
+        dict: &LanguageDictionary,
+        op: Box<dyn Op>,
+    ) -> Result<Box<dyn Op>, SyntaxError>;
+
+    fn is_transform_op(&self, tokens: &TokenList) -> bool;
 }
 
 pub type IteratorItem = Result<Item, RuntimeError>;

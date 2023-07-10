@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
 use crate::lang::utility::{
-    assert_name, assert_token, assert_token_raw, assert_token_raw_back, check_name,
+    assert_name, assert_token, assert_token_raw, check_name,
 };
 use crate::lang::LanguageDictionary;
 use crate::lang::{ItemBlockFactory, ItemOp, ItemOpFactory};
@@ -83,9 +83,11 @@ impl ItemOpFactory<ConstructorItemOp> for ConstructorItemOpFactory {
     ) -> Result<ConstructorItemOp, SyntaxError> {
         assert_name("Item", tokens)?;
         assert_token_raw(Token::OpenBracket, tokens)?;
-        assert_token_raw_back(Token::CloseBracket, tokens)?;
         let mut field_descriptors = Vec::new();
         while !tokens.is_empty() {
+            if tokens[0].is_close_bracket() {
+                break;
+            }
             let field_name = assert_token(
                 |t| match t {
                     Token::Name(n) => Some(n),
@@ -96,10 +98,8 @@ impl ItemOpFactory<ConstructorItemOp> for ConstructorItemOpFactory {
             )?;
             assert_token_raw(Token::Equals, tokens)?;
             let field_val;
-            if let Some(comma_pos) = find_next_comma(tokens) {
-                let end_tokens = tokens.split_off(comma_pos);
+            if find_next_comma(tokens).is_some() {
                 field_val = factory.try_build_item_statement(tokens, dict)?;
-                tokens.extend(end_tokens);
                 assert_token_raw(Token::Comma, tokens)?;
             } else {
                 field_val = factory.try_build_item_statement(tokens, dict)?;
@@ -109,6 +109,7 @@ impl ItemOpFactory<ConstructorItemOp> for ConstructorItemOpFactory {
                 value: field_val,
             });
         }
+        assert_token_raw(Token::CloseBracket, tokens)?;
         Ok(ConstructorItemOp {
             fields: field_descriptors,
         })

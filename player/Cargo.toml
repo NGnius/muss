@@ -15,6 +15,7 @@ muss-interpreter = { path = "../interpreter", version = "0.9.0" }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 #dbus = { version = "^0.9" }
+# TODO replace mpris-player, maybe with mpris2-zbus https://github.com/pop-os/dbus-settings-bindings/tree/main/mpris2
 mpris-player = { version = "^0.6", path = "../mpris-player", optional = true }
 base64 = { version = "0.13", optional = true }
 

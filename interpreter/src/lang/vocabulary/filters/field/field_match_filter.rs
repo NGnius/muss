@@ -167,7 +167,7 @@ impl FieldFilterFactory<FieldRegexFilter> for FieldRegexFilterFactory {
 fn regex_flags(tokens: &mut VecDeque<Token>) -> Result<u8, SyntaxError> {
     // syntax: , "flags"
     let mut result = 0_u8;
-    if tokens.is_empty() {
+    if tokens.is_empty() || !tokens[0].is_comma() {
         Ok(result)
     } else {
         assert_token_raw(Token::Comma, tokens)?;

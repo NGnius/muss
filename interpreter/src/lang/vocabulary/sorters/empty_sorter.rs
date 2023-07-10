@@ -32,7 +32,7 @@ pub struct EmptySorterFactory;
 
 impl SorterFactory<EmptySorter> for EmptySorterFactory {
     fn is_sorter(&self, tokens: &VecDeque<&Token>) -> bool {
-        tokens.is_empty()
+        !tokens.is_empty() && tokens[0].is_close_bracket()
     }
 
     fn build_sorter(

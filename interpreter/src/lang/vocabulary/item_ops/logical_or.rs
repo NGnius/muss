@@ -73,11 +73,12 @@ impl ItemOpFactory<OrItemOp> for OrItemOpFactory {
         dict: &LanguageDictionary,
     ) -> Result<OrItemOp, SyntaxError> {
         let or_location = first_or(tokens).unwrap();
-        let mut end_tokens = tokens.split_off(or_location);
+        let end_tokens = tokens.split_off(or_location);
         let lhs_op = factory.try_build_item_statement(tokens, dict)?;
-        assert_token_raw(Token::Pipe, &mut end_tokens)?;
-        assert_token_raw(Token::Pipe, &mut end_tokens)?;
-        let rhs_op = factory.try_build_item_statement(&mut end_tokens, dict)?;
+        tokens.extend(end_tokens);
+        assert_token_raw(Token::Pipe, tokens)?;
+        assert_token_raw(Token::Pipe, tokens)?;
+        let rhs_op = factory.try_build_item_statement(tokens, dict)?;
         Ok(OrItemOp {
             lhs: lhs_op,
             rhs: rhs_op,
@@ -95,6 +96,8 @@ fn first_or(tokens: &VecDeque<Token>) -> Option<usize> {
             bracket_depth += 1;
         } else if token.is_close_bracket() && bracket_depth != 0 {
             bracket_depth -= 1;
+        } else if token.is_comma() && bracket_depth == 0 {
+            return None;
         }
     }
     None

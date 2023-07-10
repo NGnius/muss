@@ -29,7 +29,7 @@ pub use function::{FunctionFactory, FunctionStatementFactory};
 pub use generator_op::GeneratorOp;
 pub use iter_block::{ItemBlockFactory, ItemOp, ItemOpFactory};
 pub use lookup::Lookup;
-pub use operation::{BoxedOpFactory, IteratorItem, Op, OpFactory, SimpleOpFactory};
+pub use operation::{BoxedOpFactory, IteratorItem, Op, OpFactory, SimpleOpFactory, BoxedTransformOpFactory};
 pub use pseudo_op::PseudoOp;
 pub use repeated_meme::{repeated_tokens, RepeatedTokens};
 pub use single_op::SingleItem;

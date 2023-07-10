@@ -101,9 +101,9 @@ pub struct RangeFilterFactory;
 
 impl FilterFactory<RangeFilter> for RangeFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
-        tokens.len() >= 2
-            && ((tokens.len() >= 2 && tokens[0].is_dot() && tokens[1].is_dot())
-                || (tokens.len() >= 3
+        tokens.len() > 1
+            && ((tokens[0].is_dot() && tokens[1].is_dot())
+                || (tokens.len() > 2
                     && Lookup::check_is(tokens[0])
                     && tokens[1].is_dot()
                     && tokens[2].is_dot()))
@@ -132,7 +132,7 @@ impl FilterFactory<RangeFilter> for RangeFilterFactory {
             false
         };
         // end index
-        let end = if !tokens.is_empty() {
+        let end = if !tokens.is_empty() && Lookup::check_is(&tokens[0]) {
             Some(Lookup::parse(tokens)?)
         } else {
             None

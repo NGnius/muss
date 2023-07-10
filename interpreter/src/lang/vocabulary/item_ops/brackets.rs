@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::convert::AsRef;
 
-use crate::lang::utility::{assert_token_raw, assert_token_raw_back};
+use crate::lang::utility::assert_token_raw;
 use crate::lang::LanguageDictionary;
 use crate::lang::{ItemBlockFactory, ItemOp, ItemOpFactory};
 use crate::lang::{RuntimeMsg, SyntaxError};
@@ -13,9 +13,8 @@ pub struct BracketsItemOpFactory;
 
 impl ItemOpFactory<Box<dyn ItemOp>> for BracketsItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<Token>) -> bool {
-        tokens.len() >= 2
+        !tokens.is_empty()
             && tokens[0].is_open_bracket()
-            && tokens[tokens.len() - 1].is_close_bracket()
     }
 
     fn build_item_op(
@@ -25,8 +24,9 @@ impl ItemOpFactory<Box<dyn ItemOp>> for BracketsItemOpFactory {
         dict: &LanguageDictionary,
     ) -> Result<Box<dyn ItemOp>, SyntaxError> {
         assert_token_raw(Token::OpenBracket, tokens)?;
-        assert_token_raw_back(Token::CloseBracket, tokens)?;
-        factory.try_build_item_statement(tokens, dict)
+        let inner = factory.try_build_item_statement(tokens, dict)?;
+        assert_token_raw(Token::CloseBracket, tokens)?;
+        Ok(inner)
     }
 }
 

@@ -163,15 +163,10 @@ impl FunctionFactory<UnionStatement> for UnionFunctionFactory {
     ) -> Result<UnionStatement, SyntaxError> {
         // union(op1, op2, ...)
         let operations = repeated_tokens(
-            |tokens| {
-                if let Some(comma_pos) = next_comma(tokens) {
-                    let end_tokens = tokens.split_off(comma_pos);
-                    let op = dict.try_build_statement(tokens);
-                    tokens.extend(end_tokens);
-                    Ok(Some(PseudoOp::from(op?)))
-                } else {
-                    Ok(Some(PseudoOp::from(dict.try_build_statement(tokens)?)))
-                }
+            |tokens| if tokens[0].is_close_bracket() {
+                Ok(None)
+            } else {
+                Ok(Some(PseudoOp::from(dict.try_build_statement(tokens)?)))
             },
             Token::Comma,
         )

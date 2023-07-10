@@ -69,10 +69,11 @@ impl ItemOpFactory<SubtractItemOp> for SubtractItemOpFactory {
         dict: &LanguageDictionary,
     ) -> Result<SubtractItemOp, SyntaxError> {
         let minus_location = first_minus(tokens).unwrap();
-        let mut end_tokens = tokens.split_off(minus_location);
+        let end_tokens = tokens.split_off(minus_location);
         let lhs_op = factory.try_build_item_statement(tokens, dict)?;
-        assert_token_raw(Token::Minus, &mut end_tokens)?;
-        let rhs_op = factory.try_build_item_statement(&mut end_tokens, dict)?;
+        tokens.extend(end_tokens);
+        assert_token_raw(Token::Minus, tokens)?;
+        let rhs_op = factory.try_build_item_statement(tokens, dict)?;
         Ok(SubtractItemOp {
             lhs: lhs_op,
             rhs: rhs_op,
@@ -90,6 +91,8 @@ fn first_minus(tokens: &VecDeque<Token>) -> Option<usize> {
             bracket_depth += 1;
         } else if token.is_close_bracket() && bracket_depth != 0 {
             bracket_depth -= 1;
+        } else if token.is_comma() && bracket_depth == 0 {
+            return None;
         }
     }
     None

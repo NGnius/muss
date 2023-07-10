@@ -134,6 +134,7 @@ where
             Ok(stmt) => stmt,
             Err(e) => return Some(Err(error_with_ctx(e, self.tokenizer.current_line()))),
         };
+        //println!("Final parsed op: {}", stmt);
         #[cfg(debug_assertions)]
         if !self.buffer.is_empty() {
             panic!("Token buffer was not emptied! (rem: {:?})", self.buffer)

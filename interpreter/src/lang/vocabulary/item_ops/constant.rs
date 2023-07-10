@@ -38,7 +38,7 @@ pub struct ConstantItemOpFactory;
 
 impl ItemOpFactory<ConstantItemOp> for ConstantItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<Token>) -> bool {
-        tokens.len() == 1 && check_is_type(&tokens[0])
+        !tokens.is_empty() && check_is_type(&tokens[0])
     }
 
     fn build_item_op(

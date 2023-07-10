@@ -46,7 +46,7 @@ pub struct NotItemOpFactory;
 
 impl ItemOpFactory<NotItemOp> for NotItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<Token>) -> bool {
-        tokens.len() >= 2 && tokens[0].is_exclamation()
+        !tokens.is_empty() && tokens[0].is_exclamation()
     }
 
     fn build_item_op(

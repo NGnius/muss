@@ -90,7 +90,7 @@ pub struct UniqueFilterFactory;
 
 impl FilterFactory<UniqueFieldFilter> for UniqueFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
-        tokens.len() >= 2 && check_name("unique", tokens[0]) && tokens[1].is_dot()
+        tokens.len() > 1 && check_name("unique", tokens[0]) && tokens[1].is_dot()
     }
 
     fn build_filter(
@@ -108,7 +108,7 @@ impl FilterFactory<UniqueFieldFilter> for UniqueFilterFactory {
             Token::Name("field_name".into()),
             tokens,
         )?;
-        let error_handling = if !tokens.is_empty() {
+        let error_handling = if !tokens.is_empty() && (tokens[0].is_exclamation() || tokens[0].is_interrogation()) {
             if tokens[0].is_exclamation() {
                 assert_token_raw(Token::Exclamation, tokens)?;
                 FieldFilterErrorHandling::Ignore
@@ -129,7 +129,7 @@ impl FilterFactory<UniqueFieldFilter> for UniqueFilterFactory {
 
 impl FilterFactory<UniqueFilter> for UniqueFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
-        tokens.len() == 1 && check_name("unique", tokens[0])
+        tokens.len() > 1 && check_name("unique", tokens[0])
     }
 
     fn build_filter(

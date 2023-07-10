@@ -15,7 +15,6 @@ use crate::lang::{RuntimeError, SyntaxError};
 pub struct RepeatStatement {
     inner_statement: PseudoOp,
     inner_done: bool,
-    context: Option<Context>,
     cache: Vec<Item>,
     cache_position: usize,
     repetitions: usize,
@@ -42,7 +41,6 @@ impl std::clone::Clone for RepeatStatement {
         Self {
             inner_statement: self.inner_statement.clone(),
             inner_done: self.inner_done,
-            context: None,
             cache: self.cache.clone(),
             cache_position: self.cache_position,
             repetitions: self.repetitions,
@@ -60,11 +58,6 @@ impl Iterator for RepeatStatement {
             Err(e) => return Some(Err(e)),
             Ok(real) => real,
         };
-        // give context to inner (should only occur on first run)
-        if self.context.is_some() {
-            let ctx = self.context.take().unwrap();
-            real_op.enter(ctx);
-        }
         if real_op.is_resetable() {
             while self.loop_forever || !self.inner_done {
                 if let Some(item) = real_op.next() {
@@ -73,8 +66,6 @@ impl Iterator for RepeatStatement {
                 if !self.loop_forever {
                     if self.repetitions == 0 {
                         self.inner_done = true;
-                        // take context from inner (should only occur when inner is no longer needed)
-                        self.context = Some(real_op.escape());
                     } else {
                         self.repetitions -= 1;
                         if let Err(e) = real_op.reset() {
@@ -88,17 +79,10 @@ impl Iterator for RepeatStatement {
                     }
                 }
             }
-            if self.context.is_none() {
-                self.context = Some(real_op.escape());
-            }
             None
         } else {
             // cache items in RepeatStatement since inner_statement cannot be reset
             if !self.inner_done {
-                if self.context.is_some() {
-                    let ctx = self.context.take().unwrap();
-                    real_op.enter(ctx);
-                }
                 let inner_item = real_op.next();
                 match inner_item {
                     Some(x) => {
@@ -113,7 +97,6 @@ impl Iterator for RepeatStatement {
                     None => {
                         // inner has completed it's only run
                         self.inner_done = true;
-                        self.context = Some(real_op.escape());
                     }
                 }
             }
@@ -156,27 +139,23 @@ impl Iterator for RepeatStatement {
 
 impl Op for RepeatStatement {
     fn enter(&mut self, ctx: Context) {
-        self.context = Some(ctx)
+        self.inner_statement.try_real().unwrap().enter(ctx)
     }
 
     fn escape(&mut self) -> Context {
-        if self.context.is_some() {
-            self.context.take().unwrap()
-        } else {
-            self.inner_statement.try_real().unwrap().escape()
-        }
+        self.inner_statement.try_real().unwrap().escape()
     }
 
     fn is_resetable(&self) -> bool {
-        true
+        if let Ok(real_op) = self.inner_statement.try_real_ref() {
+            real_op.is_resetable()
+        } else {
+            false
+        }
     }
 
     fn reset(&mut self) -> Result<(), RuntimeError> {
         let real_op = self.inner_statement.try_real()?;
-        if self.context.is_some() {
-            let ctx = self.context.take().unwrap();
-            real_op.enter(ctx);
-        }
         if real_op.is_resetable() {
             real_op.reset()?;
             if self.original_repetitions == 0 {
@@ -204,7 +183,6 @@ impl Op for RepeatStatement {
         let clone = Self {
             inner_statement: PseudoOp::from(self.inner_statement.try_real_ref().unwrap().dup()),
             inner_done: self.original_repetitions == 0,
-            context: None,
             cache: Vec::new(),
             cache_position: 0,
             repetitions: if self.original_repetitions != 0 {
@@ -239,7 +217,7 @@ impl FunctionFactory<RepeatStatement> for RepeatFunctionFactory {
         tokens.extend(end_tokens);
         let mut count: Option<usize> = None;
         let mut inner_done = false;
-        if !tokens.is_empty() {
+        if !tokens.is_empty() && tokens[0].is_comma() {
             // repititions specified
             assert_token_raw(Token::Comma, tokens)?;
             count = Some(assert_token(
@@ -264,7 +242,6 @@ impl FunctionFactory<RepeatStatement> for RepeatFunctionFactory {
         Ok(RepeatStatement {
             inner_statement: inner_statement.into(),
             inner_done,
-            context: None,
             cache: Vec::new(),
             cache_position: 0,
             repetitions: count.unwrap_or(0),

@@ -61,12 +61,12 @@ pub struct FieldAssignItemOpFactory;
 
 impl ItemOpFactory<FieldAssignItemOp> for FieldAssignItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<Token>) -> bool {
-        (tokens.len() > 4
+        (tokens.len() > 3
             && tokens[0].is_name()
             && tokens[1].is_dot()
             && tokens[2].is_name()
             && tokens[3].is_equals())
-            || (tokens.len() > 3
+            || (tokens.len() > 2
                 && tokens[0].is_dot()
                 && tokens[1].is_name()
                 && tokens[2].is_equals())

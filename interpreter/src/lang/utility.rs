@@ -49,29 +49,6 @@ pub fn assert_token_raw(token: Token, tokens: &mut VecDeque<Token>) -> Result<To
     }
 }
 
-pub fn assert_token_raw_back(
-    token: Token,
-    tokens: &mut VecDeque<Token>,
-) -> Result<Token, SyntaxError> {
-    let result = match tokens.pop_back() {
-        Some(x) => Ok(x),
-        None => Err(SyntaxError {
-            line: 0,
-            token: token.clone(),
-            got: None,
-        }),
-    }?;
-    if std::mem::discriminant(&token) == std::mem::discriminant(&result) {
-        Ok(result)
-    } else {
-        Err(SyntaxError {
-            line: 0,
-            token,
-            got: Some(result),
-        })
-    }
-}
-
 pub fn check_token_raw(token: Token, token_target: &Token) -> bool {
     std::mem::discriminant(&token) == std::mem::discriminant(token_target)
 }

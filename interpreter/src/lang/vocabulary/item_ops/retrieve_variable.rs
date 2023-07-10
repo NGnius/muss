@@ -2,7 +2,7 @@ use core::ops::Deref;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display, Error, Formatter};
 
-use crate::lang::utility::{assert_token, assert_token_raw};
+use crate::lang::utility::assert_token;
 use crate::lang::LanguageDictionary;
 use crate::lang::{ItemBlockFactory, ItemOp, ItemOpFactory};
 use crate::lang::{RuntimeMsg, SyntaxError};
@@ -12,8 +12,8 @@ use crate::Context;
 
 #[derive(Debug)]
 pub struct VariableRetrieveItemOp {
-    variable_name: String,
-    field_name: Option<String>,
+    pub(super) variable_name: String,
+    pub(super) field_name: Option<String>,
 }
 
 impl Deref for VariableRetrieveItemOp {
@@ -65,11 +65,7 @@ pub struct VariableRetrieveItemOpFactory;
 
 impl ItemOpFactory<VariableRetrieveItemOp> for VariableRetrieveItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<Token>) -> bool {
-        (tokens.len() == 1 && tokens[0].is_name())
-            || (tokens.len() == 3
-                && tokens[0].is_name()
-                && tokens[1].is_dot()
-                && tokens[2].is_name())
+        !tokens.is_empty() && tokens[0].is_name()
     }
 
     fn build_item_op(
@@ -86,22 +82,9 @@ impl ItemOpFactory<VariableRetrieveItemOp> for VariableRetrieveItemOpFactory {
             Token::Name("variable_name".into()),
             tokens,
         )?;
-        let field_opt = if tokens.is_empty() {
-            None
-        } else {
-            assert_token_raw(Token::Dot, tokens)?;
-            Some(assert_token(
-                |t| match t {
-                    Token::Name(s) => Some(s),
-                    _ => None,
-                },
-                Token::Name("field_name".into()),
-                tokens,
-            )?)
-        };
         Ok(VariableRetrieveItemOp {
             variable_name: var_name,
-            field_name: field_opt,
+            field_name: None,
         })
     }
 }

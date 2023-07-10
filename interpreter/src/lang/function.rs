@@ -45,7 +45,6 @@ impl<O: Op + 'static, F: FunctionFactory<O> + 'static> BoxedOpFactory
                 Token::Name(n) => {
                     self.op_factory.is_function(n)
                         && tokens[1].is_open_bracket()
-                        && tokens[tokens_len - 1].is_close_bracket()
                 }
                 _ => false,
             }
@@ -66,9 +65,9 @@ impl<O: Op + 'static, F: FunctionFactory<O> + 'static> BoxedOpFactory
             tokens,
         )?;
         assert_token_raw(Token::OpenBracket, tokens)?;
-        let end_tokens = tokens.split_off(tokens.len() - 1);
+        //let end_tokens = tokens.split_off(tokens.len() - 1);
         let func = self.op_factory.build_function_params(name, tokens, dict)?;
-        tokens.extend(end_tokens);
+        //tokens.extend(end_tokens);
         assert_token_raw(Token::CloseBracket, tokens)?;
         Ok(Box::new(func))
     }

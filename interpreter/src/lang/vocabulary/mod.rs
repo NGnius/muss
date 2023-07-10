@@ -12,6 +12,7 @@ mod sql_query;
 mod sql_simple_query;
 mod union;
 mod variable_assign;
+mod variable_iter;
 
 pub use empties::{empties_function_factory, EmptiesStatementFactory};
 pub use empty::{empty_function_factory, EmptyStatementFactory};
@@ -26,6 +27,7 @@ pub use sql_query::{sql_function_factory, SqlStatementFactory};
 pub use sql_simple_query::{simple_sql_function_factory, SimpleSqlStatementFactory};
 pub use union::{union_function_factory, UnionStatementFactory};
 pub use variable_assign::{AssignStatement, AssignStatementFactory};
+pub use variable_iter::{VariableRetrieveStatement, VariableRetrieveStatementFactory};
 
 pub mod filters;
 pub mod item_ops;

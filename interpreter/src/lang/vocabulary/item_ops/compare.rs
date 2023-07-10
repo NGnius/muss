@@ -123,6 +123,9 @@ fn find_first_comparison(tokens: &VecDeque<Token>) -> Option<usize> {
                 {
                     return Some(i);
                 }
+            },
+            Token::Comma if curly_depth == 0 && bracket_depth == 0 => {
+                return None;
             }
             _ => {}
         }

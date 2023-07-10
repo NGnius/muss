@@ -126,10 +126,8 @@ impl ItemOpFactory<BranchItemOp> for BranchItemOpFactory {
         let end_tokens = tokens.split_off(next_close_curly);
         let mut inner_if_ops = Vec::new();
         while !tokens.is_empty() {
-            if let Some(next_comma) = find_next_comma(tokens) {
-                let end_tokens = tokens.split_off(next_comma);
+            if find_next_comma(tokens).is_some() {
                 inner_if_ops.push(factory.try_build_item_statement(tokens, dict)?);
-                tokens.extend(end_tokens);
                 assert_token_raw(Token::Comma, tokens)?;
             } else {
                 inner_if_ops.push(factory.try_build_item_statement(tokens, dict)?);
@@ -234,6 +232,8 @@ fn find_next_comma(tokens: &VecDeque<Token>) -> Option<usize> {
         let token = &tokens[i];
         if token.is_comma() && bracket_depth == 0 && curly_depth == 0 {
             return Some(i);
+        } else if token.is_comma() && (bracket_depth < 0 || curly_depth < 0) {
+            return None;
         } else if token.is_open_bracket() {
             bracket_depth += 1;
         } else if token.is_close_bracket() && bracket_depth != 0 {

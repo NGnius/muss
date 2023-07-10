@@ -36,10 +36,8 @@ pub struct EmptyItemOpFactory;
 
 impl ItemOpFactory<EmptyItemOp> for EmptyItemOpFactory {
     fn is_item_op(&self, tokens: &VecDeque<Token>) -> bool {
-        tokens.len() == 3
+        !tokens.is_empty()
             && check_name("empty", &tokens[0])
-            && tokens[1].is_open_bracket()
-            && tokens[2].is_close_bracket()
     }
 
     fn build_item_op(

@@ -3,7 +3,7 @@ use std::fmt::{Debug, Display, Error, Formatter};
 use std::iter::Iterator;
 
 use crate::lang::SingleItem;
-use crate::lang::{filter::VariableOrOp, FilterPredicate};
+use crate::lang::FilterPredicate;
 use crate::lang::{IteratorItem, Op, PseudoOp};
 use crate::lang::{RuntimeError, RuntimeMsg, RuntimeOp};
 use crate::processing::general::Type;
@@ -21,7 +21,7 @@ pub(super) fn item_cache_deque() -> VecDeque<Result<Item, RuntimeError>> {
 #[derive(Debug)]
 pub struct FilterReplaceStatement<P: FilterPredicate + 'static> {
     pub(super) predicate: P,
-    pub(super) iterable: VariableOrOp,
+    pub(super) iterable: PseudoOp,
     pub(super) context: Option<Context>,
     pub(super) op_if: PseudoOp,
     pub(super) op_else: Option<PseudoOp>,
@@ -70,20 +70,8 @@ impl<P: FilterPredicate + 'static> Op for FilterReplaceStatement<P> {
 
     fn is_resetable(&self) -> bool {
         match &self.iterable {
-            VariableOrOp::Variable(s) => {
-                if self.context.is_some() {
-                    let var = self.context.as_ref().unwrap().variables.get_opt(s);
-                    if let Some(Type::Op(var)) = var {
-                        var.is_resetable()
-                    } else {
-                        false
-                    }
-                } else {
-                    true
-                } // ASSUMPTION
-            }
-            VariableOrOp::Op(PseudoOp::Real(op)) => op.is_resetable(),
-            VariableOrOp::Op(PseudoOp::Fake(_)) => false,
+            PseudoOp::Real(op) => op.is_resetable(),
+            PseudoOp::Fake(_) => false,
         }
     }
 
@@ -94,45 +82,13 @@ impl<P: FilterPredicate + 'static> Op for FilterReplaceStatement<P> {
             .reset()
             .map_err(|x| x.with(RuntimeOp(fake.clone())))?;
         match &mut self.iterable {
-            VariableOrOp::Variable(s) => {
-                if self.context.as_mut().unwrap().variables.exists(s) {
-                    let mut var = self
-                        .context
-                        .as_mut()
-                        .unwrap()
-                        .variables
-                        .remove(s)
-                        .map_err(|e| e.with(RuntimeOp(fake.clone())))?;
-                    let result = if let Type::Op(var) = &mut var {
-                        var.enter(self.context.take().unwrap());
-                        let result = var.reset();
-                        self.context = Some(var.escape());
-                        result
-                    } else {
-                        Err(RuntimeError {
-                            line: 0,
-                            op: fake.clone(),
-                            msg: "Cannot reset non-iterable filter variable".to_string(),
-                        })
-                    };
-                    self.context
-                        .as_mut()
-                        .unwrap()
-                        .variables
-                        .declare(s, var)
-                        .map_err(|e| e.with(RuntimeOp(fake)))?;
-                    result
-                } else {
-                    Ok(())
-                }
-            }
-            VariableOrOp::Op(PseudoOp::Real(op)) => {
+            PseudoOp::Real(op) => {
                 op.enter(self.context.take().unwrap());
                 let result = op.reset();
                 self.context = Some(op.escape());
                 result
             }
-            VariableOrOp::Op(PseudoOp::Fake(_)) => Err(RuntimeError {
+            PseudoOp::Fake(_) => Err(RuntimeError {
                 line: 0,
                 op: fake,
                 msg: "Cannot reset PseudoOp::Fake filter".to_string(),
@@ -143,10 +99,7 @@ impl<P: FilterPredicate + 'static> Op for FilterReplaceStatement<P> {
     fn dup(&self) -> Box<dyn Op> {
         Box::new(Self {
             predicate: self.predicate.clone(),
-            iterable: match &self.iterable {
-                VariableOrOp::Variable(s) => VariableOrOp::Variable(s.clone()),
-                VariableOrOp::Op(op) => VariableOrOp::Op(op.try_real_ref().unwrap().dup().into()),
-            },
+            iterable: self.iterable.try_real_ref().unwrap().dup().into(),
             context: None,
             op_if: PseudoOp::from(self.op_if.try_real_ref().unwrap().dup()),
             op_else: self
@@ -167,53 +120,15 @@ impl<P: FilterPredicate + 'static> Iterator for FilterReplaceStatement<P> {
         }
         let fake = PseudoOp::Fake(format!("{}", self));
         // get next item in iterator
-        let next_item = match &mut self.iterable {
-            VariableOrOp::Op(op) => match op.try_real() {
-                Ok(real_op) => {
-                    let ctx = self.context.take().unwrap();
-                    real_op.enter(ctx);
-                    let item = real_op.next();
-                    self.context = Some(real_op.escape());
-                    item
-                }
-                Err(e) => return Some(Err(e)),
-            },
-            VariableOrOp::Variable(variable_name) => {
-                let mut variable = match self
-                    .context
-                    .as_mut()
-                    .unwrap()
-                    .variables
-                    .remove(variable_name)
-                {
-                    Ok(Type::Op(op)) => op,
-                    Ok(x) => {
-                        return Some(Err(RuntimeError {
-                            line: 0,
-                            op: fake,
-                            msg: format!(
-                                "Expected operation/iterable type in variable {}, got {}",
-                                &variable_name, x
-                            ),
-                        }))
-                    }
-                    Err(e) => return Some(Err(e.with(RuntimeOp(fake)))),
-                };
+        let next_item = match self.iterable.try_real() {
+            Ok(real_op) => {
                 let ctx = self.context.take().unwrap();
-                variable.enter(ctx);
-                let item = variable.next();
-                self.context = Some(variable.escape());
-                if let Err(e) = self
-                    .context
-                    .as_mut()
-                    .unwrap()
-                    .variables
-                    .declare(variable_name, Type::Op(variable))
-                {
-                    return Some(Err(e.with(RuntimeOp(fake))));
-                }
+                real_op.enter(ctx);
+                let item = real_op.next();
+                self.context = Some(real_op.escape());
                 item
             }
+            Err(e) => return Some(Err(e)),
         };
         // process item
         match next_item {
@@ -242,6 +157,7 @@ impl<P: FilterPredicate + 'static> Iterator for FilterReplaceStatement<P> {
                                     real_op.enter(self.context.take().unwrap());
                                     if real_op.is_resetable() {
                                         if let Err(e) = real_op.reset() {
+                                            self.context = Some(real_op.escape());
                                             return Some(Err(e));
                                         }
                                     }
@@ -269,6 +185,7 @@ impl<P: FilterPredicate + 'static> Iterator for FilterReplaceStatement<P> {
                                 replacement
                             }
                         } else if let Some(op_else) = &mut self.op_else {
+                            println!("op_else {}\n{:?}", op_else, op_else);
                             // unwrap inner operation
                             match op_else.try_real() {
                                 Ok(real_op) => {
@@ -286,6 +203,7 @@ impl<P: FilterPredicate + 'static> Iterator for FilterReplaceStatement<P> {
                                     real_op.enter(self.context.take().unwrap());
                                     if real_op.is_resetable() {
                                         if let Err(e) = real_op.reset() {
+                                            self.context = Some(real_op.escape());
                                             return Some(Err(e));
                                         }
                                     }
@@ -325,18 +243,7 @@ impl<P: FilterPredicate + 'static> Iterator for FilterReplaceStatement<P> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        match &self.iterable {
-            VariableOrOp::Variable(s) => self
-                .context
-                .as_ref()
-                .and_then(|x| x.variables.get_opt(s))
-                .and_then(|x| match x {
-                    Type::Op(op) => Some(op.size_hint()),
-                    _ => None,
-                }),
-            VariableOrOp::Op(op) => op.try_real_ref().map(|x| x.size_hint()).ok(),
-        }
-        .unwrap_or((0, None))
+        self.iterable.try_real_ref().map(|x| x.size_hint()).ok().unwrap_or((0, None))
     }
 }
 

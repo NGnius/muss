@@ -315,7 +315,14 @@ fn execute_replacefilter_line() -> Result<(), InterpreterError> {
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(if 4: item.() else files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).(0 || 1).(if 200: files() else repeat(item.(), 2)))",
+        r#"files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)
+    .(
+        if 4: item.()
+        else files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)
+            .(0 || 1)
+
+            .(if 200: files() else repeat(item.(), 2))
+    )"#,
         false,
         true,
     )
@@ -323,11 +330,6 @@ fn execute_replacefilter_line() -> Result<(), InterpreterError> {
 
 #[test]
 fn execute_emptysort_line() -> Result<(), InterpreterError> {
-    execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).sort()",
-        false,
-        true,
-    )?;
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~()",
         false,
@@ -367,7 +369,7 @@ fn execute_fieldsort_line() -> Result<(), InterpreterError> {
         true,
     )?;
     execute_single_line(
-        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).sort(.not_a_field)",
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`)~(.not_a_field)",
         false,
         true,
     )
@@ -661,6 +663,13 @@ fn execute_bracketsitemop_line() -> Result<(), InterpreterError> {
 
 #[test]
 fn execute_stringifyitemop_line() -> Result<(), InterpreterError> {
+    execute_single_line(
+        "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
+    item.title = ~`test out: {track_number}` item
+}",
+        false,
+        true,
+    )?;
     execute_single_line(
         "files(`~/Music/MusicFlac/Bruno Mars/24K Magic/`).{
     item.filepath = ~`test out: {test}` item,

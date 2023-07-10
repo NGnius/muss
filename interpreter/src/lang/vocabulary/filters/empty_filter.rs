@@ -35,7 +35,7 @@ pub struct EmptyFilterFactory;
 
 impl FilterFactory<EmptyFilter> for EmptyFilterFactory {
     fn is_filter(&self, tokens: &VecDeque<&Token>) -> bool {
-        tokens.is_empty()
+        !tokens.is_empty() && tokens[0].is_close_bracket()
     }
 
     fn build_filter(
