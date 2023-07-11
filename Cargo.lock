@@ -1143,6 +1143,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "mpd"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e12cace5746cb0aa78faa6cd2caec9f9c01882fc0e6b54d34685a2d3303ea34"
+dependencies = [
+ "bufstream",
+]
+
+[[package]]
 name = "mpris-player"
 version = "0.6.1"
 dependencies = [
@@ -1169,7 +1178,7 @@ dependencies = [
  "criterion",
  "dirs",
  "m3u8-rs",
- "mpd",
+ "mpd 0.1.0",
  "rand 0.8.5",
  "regex 1.9.1",
  "rusqlite",
@@ -1194,7 +1203,7 @@ version = "0.9.0"
 dependencies = [
  "base64",
  "m3u8-rs",
- "mpd",
+ "mpd 0.0.12",
  "mpris-player",
  "muss-interpreter",
  "rodio",

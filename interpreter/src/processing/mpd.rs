@@ -95,7 +95,7 @@ fn song_to_item(song: Song) -> Item {
     */
 
     if let Some(dur) = song.duration {
-        item.set_field("duration", dur.num_seconds().into());
+        item.set_field("duration", dur.as_secs().into());
     }
     if let Some(place) = song.place {
         item.set_field("tracknumber", (place.pos as u64).into());

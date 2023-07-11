@@ -227,7 +227,8 @@ impl ItemBlockFactory {
         tokens: &mut VecDeque<Token>,
         dict: &LanguageDictionary,
     ) -> Result<Box<dyn ItemOp>, SyntaxError> {
-        for (i, factory) in self.vocabulary.iter().enumerate() {
+        //for (i, factory) in self.vocabulary.iter().enumerate() {
+        for factory in self.vocabulary.iter() {
             if factory.is_item_op(tokens) {
                 return factory.build_item_op(tokens, self, dict);
             }
